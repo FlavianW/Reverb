@@ -1,0 +1,11 @@
+.git
+.github
+**/node_modules
+**/dist
+**/.svelte-kit
+**/coverage
+**/.env*
+apps/web
+apps/mobile
+docs
+*.md

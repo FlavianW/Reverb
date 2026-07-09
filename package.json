@@ -1,0 +1,12 @@
+{
+  "name": "reverb",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lint": "pnpm -r lint",
+    "test": "pnpm --filter api test"
+  }
+}
