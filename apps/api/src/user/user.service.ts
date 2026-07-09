@@ -41,6 +41,10 @@ export class UserService {
     return this.prisma.user.findUnique({ where: { googleId } });
   }
 
+  findById(id: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { id } });
+  }
+
   /**
    * Retourne le compte existant pour ce profil Google, ou le crée s'il s'agit
    * de la première connexion. Le pseudo est dérivé du nom Google et rendu
