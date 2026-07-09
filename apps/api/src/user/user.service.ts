@@ -29,9 +29,8 @@ export function toPublicUser(user: User): PublicUser {
 }
 
 /**
- * Gère les comptes utilisateur. Aucune création manuelle : un compte naît
- * uniquement de la première connexion OAuth Google (US-1.1), il n'y a pas
- * de mot de passe local à gérer.
+ * Gère les comptes utilisateur. Un compte naît soit de la première connexion
+ * OAuth Google (US-1.1), soit d'une inscription email/mot de passe (US-1.1 bis).
  */
 @Injectable()
 export class UserService {
@@ -41,8 +40,24 @@ export class UserService {
     return this.prisma.user.findUnique({ where: { googleId } });
   }
 
+  findByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { email } });
+  }
+
+  findByPseudo(pseudo: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { pseudo } });
+  }
+
   findById(id: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { id } });
+  }
+
+  createWithPassword(input: {
+    email: string;
+    pseudo: string;
+    passwordHash: string;
+  }): Promise<User> {
+    return this.prisma.user.create({ data: input });
   }
 
   /**

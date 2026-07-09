@@ -1,4 +1,6 @@
 import {
+  Body,
+  ConflictException,
   Controller,
   Get,
   HttpCode,
@@ -11,8 +13,10 @@ import type { Request, Response } from 'express';
 import type { GoogleProfile, PublicUser } from '../user/user.service';
 import { UserService, toPublicUser } from '../user/user.service';
 import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
 import { GoogleAuthGuard } from './google-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { PasswordService } from './password.service';
 import { SESSION_COOKIE_NAME } from './session-cookie';
 
 @Controller('auth')
@@ -20,6 +24,7 @@ export class AuthController {
   constructor(
     private readonly userService: UserService,
     private readonly authService: AuthService,
+    private readonly passwordService: PasswordService,
   ) {}
 
   /** Déclenche la redirection vers l'écran de consentement Google. */
@@ -40,14 +45,34 @@ export class AuthController {
   ): Promise<PublicUser> {
     const profile = req.user as GoogleProfile;
     const user = await this.userService.findOrCreateFromGoogleProfile(profile);
-    const token = this.authService.issueSessionToken(user);
+    this.openSession(user, res);
+    return toPublicUser(user);
+  }
 
-    res.cookie(SESSION_COOKIE_NAME, token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+  /**
+   * Inscription email/mot de passe (US-1.1 bis). Alternative à l'OAuth Google :
+   * ouvre directement la session applicative comme un login réussi.
+   */
+  @Post('register')
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<PublicUser> {
+    if (await this.userService.findByEmail(dto.email)) {
+      throw new ConflictException('Cette adresse e-mail est déjà utilisée.');
+    }
+    if (await this.userService.findByPseudo(dto.pseudo)) {
+      throw new ConflictException('Ce pseudo est déjà pris.');
+    }
+
+    const passwordHash = await this.passwordService.hashPassword(dto.password);
+    const user = await this.userService.createWithPassword({
+      email: dto.email,
+      pseudo: dto.pseudo,
+      passwordHash,
     });
 
+    this.openSession(user, res);
     return toPublicUser(user);
   }
 
@@ -64,5 +89,15 @@ export class AuthController {
   @HttpCode(204)
   logout(@Res({ passthrough: true }) res: Response): void {
     res.clearCookie(SESSION_COOKIE_NAME);
+  }
+
+  /** Émet un JWT de session et le pose dans un cookie httpOnly. */
+  private openSession(user: { id: string }, res: Response): void {
+    const token = this.authService.issueSessionToken(user);
+    res.cookie(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
   }
 }
