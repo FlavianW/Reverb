@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { GoogleProfile, UserService } from './user.service';
+import { GoogleProfile, UserService, toPublicUser } from './user.service';
 
 describe('UserService', () => {
   let service: UserService;
@@ -82,6 +82,27 @@ describe('UserService', () => {
           data: expect.objectContaining({ pseudo: 'ana-etoile-2' }),
         }),
       );
+    });
+  });
+
+  describe('toPublicUser', () => {
+    it("n'expose ni googleId ni dates internes", () => {
+      const user = {
+        id: 'user-1',
+        pseudo: 'ana-etoile',
+        email: 'ana@example.com',
+        avatarUrl: 'https://example.com/avatar.png',
+        googleId: 'google-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as User;
+
+      expect(toPublicUser(user)).toEqual({
+        id: 'user-1',
+        pseudo: 'ana-etoile',
+        email: 'ana@example.com',
+        avatarUrl: 'https://example.com/avatar.png',
+      });
     });
   });
 });

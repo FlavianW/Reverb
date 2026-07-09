@@ -10,6 +10,24 @@ export interface GoogleProfile {
   avatarUrl?: string;
 }
 
+/** Représentation d'un utilisateur exposable au client (sans googleId ni dates internes). */
+export interface PublicUser {
+  id: string;
+  pseudo: string;
+  email: string;
+  avatarUrl: string | null;
+}
+
+/** Ne garde que les champs d'un `User` destinés à être exposés hors de l'API. */
+export function toPublicUser(user: User): PublicUser {
+  return {
+    id: user.id,
+    pseudo: user.pseudo,
+    email: user.email,
+    avatarUrl: user.avatarUrl,
+  };
+}
+
 /**
  * Gère les comptes utilisateur. Aucune création manuelle : un compte naît
  * uniquement de la première connexion OAuth Google (US-1.1), il n'y a pas
