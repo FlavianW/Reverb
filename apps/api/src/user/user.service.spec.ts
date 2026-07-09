@@ -85,6 +85,28 @@ describe('UserService', () => {
     });
   });
 
+  describe('createWithPassword', () => {
+    it('crée un compte avec le hash fourni, jamais le mot de passe en clair', async () => {
+      const created = { id: 'user-4' } as User;
+      prisma.user.create.mockResolvedValueOnce(created);
+
+      const result = await service.createWithPassword({
+        email: 'ana@example.com',
+        pseudo: 'ana-etoile',
+        passwordHash: 'hashed-value',
+      });
+
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: {
+          email: 'ana@example.com',
+          pseudo: 'ana-etoile',
+          passwordHash: 'hashed-value',
+        },
+      });
+      expect(result).toBe(created);
+    });
+  });
+
   describe('toPublicUser', () => {
     it("n'expose ni googleId ni dates internes", () => {
       const user = {
