@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Concert } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CommentService, CommentSummary } from './comment/comment.service';
+import {
+  ConcertRatingService,
+  ConcertRatingSummary,
+} from './rating/concert-rating.service';
 import { SetlistFmResult, SetlistFmService } from './setlistfm.service';
 
 export interface CreateConcertInput {
@@ -10,9 +15,11 @@ export interface CreateConcertInput {
   date: Date;
 }
 
-/** Page concert exposée au client : les infos de base + la setlist si disponible. */
+/** Page concert exposée au client : les infos de base + setlist, notation et commentaires. */
 export interface ConcertPage extends Concert {
   setlist: SetlistFmResult | null;
+  rating: ConcertRatingSummary;
+  comments: CommentSummary[];
 }
 
 /**
@@ -25,12 +32,19 @@ export class ConcertService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly setlistFmService: SetlistFmService,
+    private readonly ratingService: ConcertRatingService,
+    private readonly commentService: CommentService,
   ) {}
 
   create(input: CreateConcertInput, createdById: string): Promise<Concert> {
     return this.prisma.concert.create({
       data: { ...input, createdById },
     });
+  }
+
+  async exists(id: string): Promise<boolean> {
+    const count = await this.prisma.concert.count({ where: { id } });
+    return count > 0;
   }
 
   async findPageById(id: string): Promise<ConcertPage | null> {
@@ -40,14 +54,18 @@ export class ConcertService {
     }
 
     const isPast = concert.date.getTime() <= Date.now();
-    const setlist = isPast
-      ? await this.setlistFmService.findSetlist({
-          artistName: concert.artistName,
-          city: concert.city,
-          date: concert.date,
-        })
-      : null;
+    const [setlist, rating, comments] = await Promise.all([
+      isPast
+        ? this.setlistFmService.findSetlist({
+            artistName: concert.artistName,
+            city: concert.city,
+            date: concert.date,
+          })
+        : Promise.resolve(null),
+      this.ratingService.getSummary(id),
+      this.commentService.findByConcert(id),
+    ]);
 
-    return { ...concert, setlist };
+    return { ...concert, setlist, rating, comments };
   }
 }

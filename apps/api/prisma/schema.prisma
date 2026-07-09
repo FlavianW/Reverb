@@ -10,14 +10,17 @@ datasource db {
 /// Compte utilisateur. Créé automatiquement à la première connexion OAuth (US-1.1) :
 /// aucun mot de passe local, l'authentification est entièrement déléguée à Google.
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  googleId  String    @unique
-  pseudo    String    @unique
-  avatarUrl String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  concerts  Concert[]
+  id          String              @id @default(uuid())
+  email       String              @unique
+  googleId    String              @unique
+  pseudo      String              @unique
+  avatarUrl   String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  concerts    Concert[]
+  attendances ConcertAttendance[]
+  ratings     ConcertRating[]
+  comments    Comment[]
 
   @@map("users")
 }
@@ -25,15 +28,59 @@ model User {
 /// Fiche concert (artiste, lieu, date). La setlist n'est pas stockée ici :
 /// elle est récupérée en direct depuis Setlist.fm quand le concert est passé (US-2.1).
 model Concert {
-  id          String   @id @default(uuid())
+  id          String              @id @default(uuid())
   artistName  String
   venueName   String
   city        String
   date        DateTime
   createdById String
-  createdBy   User     @relation(fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdBy   User                @relation(fields: [createdById], references: [id])
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  attendances ConcertAttendance[]
+  ratings     ConcertRating[]
+  comments    Comment[]
 
   @@map("concerts")
+}
+
+/// Marque « J'y étais » d'un utilisateur sur un concert (US-2.2).
+model ConcertAttendance {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concertId String
+  concert   Concert  @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, concertId])
+  @@map("concert_attendances")
+}
+
+/// Note (1 à 5) d'un utilisateur sur un concert, modifiable (US-2.3).
+model ConcertRating {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concertId String
+  concert   Concert  @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  value     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, concertId])
+  @@map("concert_ratings")
+}
+
+/// Commentaire sur un concert, supprimable uniquement par son auteur (US-2.4).
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concertId String
+  concert   Concert  @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("comments")
 }
