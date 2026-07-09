@@ -12,12 +12,14 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { Concert } from '@prisma/client';
+import { Comment, Concert } from '@prisma/client';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { PublicUser } from '../user/user.service';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
 import { ConcertPage, ConcertService } from './concert.service';
+import { CommentService } from './comment/comment.service';
+import { CreateCommentDto } from './comment/dto/create-comment.dto';
 import { CreateConcertDto } from './dto/create-concert.dto';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { RateConcertDto } from './rating/dto/rate-concert.dto';
@@ -28,6 +30,7 @@ export class ConcertController {
     private readonly concertService: ConcertService,
     private readonly attendanceService: ConcertAttendanceService,
     private readonly ratingService: ConcertRatingService,
+    private readonly commentService: CommentService,
   ) {}
 
   @Post()
@@ -109,6 +112,19 @@ export class ConcertController {
     await this.assertConcertExists(id);
     const user = req.user as PublicUser;
     await this.ratingService.rate(id, user.id, dto.value);
+  }
+
+  /** Ajoute un commentaire au concert (US-2.4). */
+  @Post(':id/comments')
+  @UseGuards(JwtAuthGuard)
+  async addComment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateCommentDto,
+    @Req() req: Request,
+  ): Promise<Comment> {
+    await this.assertConcertExists(id);
+    const user = req.user as PublicUser;
+    return this.commentService.create(id, user.id, dto.content);
   }
 
   private async assertConcertExists(id: string): Promise<void> {

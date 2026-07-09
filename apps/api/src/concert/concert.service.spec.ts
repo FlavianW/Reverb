@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
+import { CommentService } from './comment/comment.service';
 import { ConcertService } from './concert.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { SetlistFmService } from './setlistfm.service';
@@ -9,6 +10,7 @@ describe('ConcertService', () => {
   let prisma: { concert: { create: jest.Mock; findUnique: jest.Mock } };
   let setlistFmService: { findSetlist: jest.Mock };
   let ratingService: { getSummary: jest.Mock };
+  let commentService: { findByConcert: jest.Mock };
 
   const baseConcert = {
     id: 'concert-1',
@@ -20,6 +22,7 @@ describe('ConcertService', () => {
     updatedAt: new Date(),
   };
   const emptyRating = { average: null, count: 0 };
+  const noComments: never[] = [];
 
   beforeEach(async () => {
     prisma = {
@@ -30,6 +33,7 @@ describe('ConcertService', () => {
     };
     setlistFmService = { findSetlist: jest.fn() };
     ratingService = { getSummary: jest.fn().mockResolvedValue(emptyRating) };
+    commentService = { findByConcert: jest.fn().mockResolvedValue(noComments) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -37,6 +41,7 @@ describe('ConcertService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: SetlistFmService, useValue: setlistFmService },
         { provide: ConcertRatingService, useValue: ratingService },
+        { provide: CommentService, useValue: commentService },
       ],
     }).compile();
 
@@ -98,6 +103,7 @@ describe('ConcertService', () => {
         ...futureConcert,
         setlist: null,
         rating: emptyRating,
+        comments: noComments,
       });
     });
 
@@ -120,6 +126,7 @@ describe('ConcertService', () => {
         ...pastConcert,
         setlist: { songs: ['Song A'] },
         rating: emptyRating,
+        comments: noComments,
       });
     });
 
@@ -137,6 +144,7 @@ describe('ConcertService', () => {
         ...pastConcert,
         setlist: null,
         rating: emptyRating,
+        comments: noComments,
       });
     });
 
@@ -156,6 +164,29 @@ describe('ConcertService', () => {
 
       expect(ratingService.getSummary).toHaveBeenCalledWith('concert-1');
       expect(result?.rating).toEqual({ average: 4.5, count: 2 });
+    });
+
+    it('inclut les commentaires du concert dans la page', async () => {
+      const pastConcert = {
+        ...baseConcert,
+        date: new Date('2020-01-01'),
+      };
+      prisma.concert.findUnique.mockResolvedValueOnce(pastConcert);
+      setlistFmService.findSetlist.mockResolvedValueOnce(null);
+      const comments = [
+        {
+          id: 'comment-1',
+          content: 'Super concert !',
+          pseudo: 'ana-etoile',
+          createdAt: new Date(),
+        },
+      ];
+      commentService.findByConcert.mockResolvedValueOnce(comments);
+
+      const result = await service.findPageById('concert-1');
+
+      expect(commentService.findByConcert).toHaveBeenCalledWith('concert-1');
+      expect(result?.comments).toBe(comments);
     });
   });
 });

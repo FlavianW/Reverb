@@ -5,6 +5,7 @@ import type { PublicUser } from '../user/user.service';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
 import { ConcertController } from './concert.controller';
 import { ConcertService } from './concert.service';
+import { CommentService } from './comment/comment.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 
 describe('ConcertController', () => {
@@ -20,6 +21,7 @@ describe('ConcertController', () => {
     isAttendedBy: jest.Mock;
   };
   let ratingService: { rate: jest.Mock };
+  let commentService: { create: jest.Mock };
 
   const currentUser: PublicUser = {
     id: 'user-1',
@@ -41,6 +43,7 @@ describe('ConcertController', () => {
       isAttendedBy: jest.fn(),
     };
     ratingService = { rate: jest.fn() };
+    commentService = { create: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ConcertController],
@@ -48,6 +51,7 @@ describe('ConcertController', () => {
         { provide: ConcertService, useValue: concertService },
         { provide: ConcertAttendanceService, useValue: attendanceService },
         { provide: ConcertRatingService, useValue: ratingService },
+        { provide: CommentService, useValue: commentService },
       ],
     }).compile();
 
@@ -134,6 +138,40 @@ describe('ConcertController', () => {
       await controller.rate('concert-1', { value: 4 }, requestAsCurrentUser);
 
       expect(ratingService.rate).toHaveBeenCalledWith('concert-1', 'user-1', 4);
+    });
+  });
+
+  describe('addComment', () => {
+    it("lève une 404 si le concert n'existe pas", async () => {
+      concertService.exists.mockResolvedValueOnce(false);
+
+      await expect(
+        controller.addComment(
+          'concert-1',
+          { content: 'Super !' },
+          requestAsCurrentUser,
+        ),
+      ).rejects.toThrow(NotFoundException);
+      expect(commentService.create).not.toHaveBeenCalled();
+    });
+
+    it("crée le commentaire pour l'utilisateur connecté", async () => {
+      concertService.exists.mockResolvedValueOnce(true);
+      const created = { id: 'comment-1', content: 'Super !' };
+      commentService.create.mockResolvedValueOnce(created);
+
+      const result = await controller.addComment(
+        'concert-1',
+        { content: 'Super !' },
+        requestAsCurrentUser,
+      );
+
+      expect(commentService.create).toHaveBeenCalledWith(
+        'concert-1',
+        'user-1',
+        'Super !',
+      );
+      expect(result).toBe(created);
     });
   });
 });
