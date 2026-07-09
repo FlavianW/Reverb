@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
 import { Request, Response } from 'express';
@@ -17,7 +17,7 @@ describe('AuthController', () => {
     createWithPassword: jest.Mock;
   };
   let authService: { issueSessionToken: jest.Mock };
-  let passwordService: { hashPassword: jest.Mock };
+  let passwordService: { hashPassword: jest.Mock; verifyPassword: jest.Mock };
 
   const googleProfile: GoogleProfile = {
     googleId: 'google-123',
@@ -40,7 +40,7 @@ describe('AuthController', () => {
       createWithPassword: jest.fn(),
     };
     authService = { issueSessionToken: jest.fn() };
-    passwordService = { hashPassword: jest.fn() };
+    passwordService = { hashPassword: jest.fn(), verifyPassword: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -146,6 +146,79 @@ describe('AuthController', () => {
         pseudo: 'ana-etoile',
         passwordHash: 'hashed-password',
       });
+      expect(res.cookie).toHaveBeenCalledWith(
+        SESSION_COOKIE_NAME,
+        'signed-jwt',
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(result).toEqual({
+        id: 'user-1',
+        pseudo: 'ana-etoile',
+        email: 'ana@example.com',
+        avatarUrl: null,
+      });
+    });
+  });
+
+  describe('login', () => {
+    const loginDto = {
+      email: 'ana@example.com',
+      password: 'correct horse battery',
+    };
+
+    it("rejette avec un message générique si l'email est inconnu (pas d'énumération de comptes)", async () => {
+      userService.findByEmail.mockResolvedValueOnce(null);
+      passwordService.verifyPassword.mockResolvedValueOnce(false);
+      const res = createResMock();
+
+      await expect(controller.login(loginDto, res)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      // bcrypt.compare doit quand même être appelé pour normaliser le temps de réponse
+      expect(passwordService.verifyPassword).toHaveBeenCalled();
+    });
+
+    it("rejette avec le même message générique si le compte n'a pas de mot de passe (compte Google)", async () => {
+      userService.findByEmail.mockResolvedValueOnce({
+        id: 'user-1',
+        passwordHash: null,
+      });
+      passwordService.verifyPassword.mockResolvedValueOnce(false);
+      const res = createResMock();
+
+      await expect(controller.login(loginDto, res)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('rejette si le mot de passe est incorrect', async () => {
+      userService.findByEmail.mockResolvedValueOnce({
+        id: 'user-1',
+        passwordHash: 'stored-hash',
+      });
+      passwordService.verifyPassword.mockResolvedValueOnce(false);
+      const res = createResMock();
+
+      await expect(controller.login(loginDto, res)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('ouvre la session si les identifiants sont corrects', async () => {
+      const user = {
+        id: 'user-1',
+        pseudo: 'ana-etoile',
+        email: 'ana@example.com',
+        avatarUrl: null,
+        passwordHash: 'stored-hash',
+      } as User;
+      userService.findByEmail.mockResolvedValueOnce(user);
+      passwordService.verifyPassword.mockResolvedValueOnce(true);
+      authService.issueSessionToken.mockReturnValueOnce('signed-jwt');
+      const res = createResMock();
+
+      const result = await controller.login(loginDto, res);
+
       expect(res.cookie).toHaveBeenCalledWith(
         SESSION_COOKIE_NAME,
         'signed-jwt',
