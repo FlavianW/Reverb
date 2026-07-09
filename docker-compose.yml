@@ -1,0 +1,19 @@
+# Postgres pour le développement local de apps/api uniquement.
+# N'intervient pas dans l'image de production (voir apps/api/Dockerfile).
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: reverb
+      POSTGRES_PASSWORD: reverb
+      POSTGRES_DB: reverb
+    # Port hôte 5433 (et non 5432) pour ne pas entrer en conflit avec une
+    # éventuelle instance PostgreSQL déjà installée nativement sur la machine.
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
