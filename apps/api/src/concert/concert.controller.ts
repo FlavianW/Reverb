@@ -19,12 +19,15 @@ import type { PublicUser } from '../user/user.service';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
 import { ConcertPage, ConcertService } from './concert.service';
 import { CreateConcertDto } from './dto/create-concert.dto';
+import { ConcertRatingService } from './rating/concert-rating.service';
+import { RateConcertDto } from './rating/dto/rate-concert.dto';
 
 @Controller('concerts')
 export class ConcertController {
   constructor(
     private readonly concertService: ConcertService,
     private readonly attendanceService: ConcertAttendanceService,
+    private readonly ratingService: ConcertRatingService,
   ) {}
 
   @Post()
@@ -92,6 +95,20 @@ export class ConcertController {
     await this.assertConcertExists(id);
     const user = req.user as PublicUser;
     await this.attendanceService.unmarkAttended(id, user.id);
+  }
+
+  /** Crée ou remplace la note (1 à 5) de l'utilisateur connecté (US-2.3). */
+  @Put(':id/rating')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(204)
+  async rate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RateConcertDto,
+    @Req() req: Request,
+  ): Promise<void> {
+    await this.assertConcertExists(id);
+    const user = req.user as PublicUser;
+    await this.ratingService.rate(id, user.id, dto.value);
   }
 
   private async assertConcertExists(id: string): Promise<void> {

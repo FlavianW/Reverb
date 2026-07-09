@@ -5,6 +5,7 @@ import type { PublicUser } from '../user/user.service';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
 import { ConcertController } from './concert.controller';
 import { ConcertService } from './concert.service';
+import { ConcertRatingService } from './rating/concert-rating.service';
 
 describe('ConcertController', () => {
   let controller: ConcertController;
@@ -18,6 +19,7 @@ describe('ConcertController', () => {
     unmarkAttended: jest.Mock;
     isAttendedBy: jest.Mock;
   };
+  let ratingService: { rate: jest.Mock };
 
   const currentUser: PublicUser = {
     id: 'user-1',
@@ -38,12 +40,14 @@ describe('ConcertController', () => {
       unmarkAttended: jest.fn(),
       isAttendedBy: jest.fn(),
     };
+    ratingService = { rate: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ConcertController],
       providers: [
         { provide: ConcertService, useValue: concertService },
         { provide: ConcertAttendanceService, useValue: attendanceService },
+        { provide: ConcertRatingService, useValue: ratingService },
       ],
     }).compile();
 
@@ -111,6 +115,25 @@ describe('ConcertController', () => {
       );
 
       expect(result).toEqual({ attending: true });
+    });
+  });
+
+  describe('rate', () => {
+    it("lève une 404 si le concert n'existe pas", async () => {
+      concertService.exists.mockResolvedValueOnce(false);
+
+      await expect(
+        controller.rate('concert-1', { value: 4 }, requestAsCurrentUser),
+      ).rejects.toThrow(NotFoundException);
+      expect(ratingService.rate).not.toHaveBeenCalled();
+    });
+
+    it("enregistre la note de l'utilisateur connecté", async () => {
+      concertService.exists.mockResolvedValueOnce(true);
+
+      await controller.rate('concert-1', { value: 4 }, requestAsCurrentUser);
+
+      expect(ratingService.rate).toHaveBeenCalledWith('concert-1', 'user-1', 4);
     });
   });
 });
