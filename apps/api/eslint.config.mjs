@@ -39,6 +39,7 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
       // `expect(mock.method).toHaveBeenCalledWith(...)` est le pattern Jest
       // standard ; les mocks n'ont pas de `this` dont la perte de liaison
       // pourrait poser problème.

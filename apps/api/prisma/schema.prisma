@@ -10,13 +10,30 @@ datasource db {
 /// Compte utilisateur. Créé automatiquement à la première connexion OAuth (US-1.1) :
 /// aucun mot de passe local, l'authentification est entièrement déléguée à Google.
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  googleId  String   @unique
-  pseudo    String   @unique
+  id        String    @id @default(uuid())
+  email     String    @unique
+  googleId  String    @unique
+  pseudo    String    @unique
   avatarUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  concerts  Concert[]
 
   @@map("users")
+}
+
+/// Fiche concert (artiste, lieu, date). La setlist n'est pas stockée ici :
+/// elle est récupérée en direct depuis Setlist.fm quand le concert est passé (US-2.1).
+model Concert {
+  id          String   @id @default(uuid())
+  artistName  String
+  venueName   String
+  city        String
+  date        DateTime
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("concerts")
 }
