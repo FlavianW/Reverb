@@ -7,17 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Compte utilisateur. Créé automatiquement à la première connexion OAuth (US-1.1) :
-/// aucun mot de passe local, l'authentification est entièrement déléguée à Google.
+/// Compte utilisateur, créé soit via OAuth Google (US-1.1), soit via
+/// inscription email/mot de passe classique. `googleId` et `passwordHash`
+/// sont mutuellement facultatifs : chaque compte a l'un des deux (jamais aucun).
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  googleId  String    @unique
-  pseudo    String    @unique
-  avatarUrl String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  concerts  Concert[]
+  id           String    @id @default(uuid())
+  email        String    @unique
+  googleId     String?   @unique
+  passwordHash String?
+  pseudo       String    @unique
+  avatarUrl    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  concerts     Concert[]
 
   @@map("users")
 }
