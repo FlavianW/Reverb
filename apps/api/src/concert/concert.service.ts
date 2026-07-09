@@ -33,6 +33,11 @@ export class ConcertService {
     });
   }
 
+  async exists(id: string): Promise<boolean> {
+    const count = await this.prisma.concert.count({ where: { id } });
+    return count > 0;
+  }
+
   async findPageById(id: string): Promise<ConcertPage | null> {
     const concert = await this.prisma.concert.findUnique({ where: { id } });
     if (!concert) {
