@@ -14,6 +14,7 @@ describe('ConcertController', () => {
     findPageById: jest.Mock;
     create: jest.Mock;
     exists: jest.Mock;
+    search: jest.Mock;
   };
   let attendanceService: {
     markAttended: jest.Mock;
@@ -36,6 +37,7 @@ describe('ConcertController', () => {
       findPageById: jest.fn(),
       create: jest.fn(),
       exists: jest.fn(),
+      search: jest.fn(),
     };
     attendanceService = {
       markAttended: jest.fn(),
@@ -56,6 +58,26 @@ describe('ConcertController', () => {
     }).compile();
 
     controller = module.get(ConcertController);
+  });
+
+  describe('search', () => {
+    it('délègue la recherche au service et renvoie ses résultats', async () => {
+      const results = [{ id: 'concert-1', artistName: 'Muse' }];
+      concertService.search.mockResolvedValueOnce(results);
+
+      const result = await controller.search({ q: 'muse' });
+
+      expect(concertService.search).toHaveBeenCalledWith('muse');
+      expect(result).toBe(results);
+    });
+
+    it("renvoie une liste vide s'il n'y a aucun résultat", async () => {
+      concertService.search.mockResolvedValueOnce([]);
+
+      const result = await controller.search({ q: 'inconnu' });
+
+      expect(result).toEqual([]);
+    });
   });
 
   describe('getById', () => {

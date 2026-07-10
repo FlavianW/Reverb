@@ -47,6 +47,24 @@ export class ConcertService {
     return count > 0;
   }
 
+  /**
+   * Recherche des concerts par artiste ou par salle (US-3.1). Les résultats
+   * les plus récents sont priorisés ; la liste est vide s'il n'y a aucune
+   * correspondance (« aucun résultat » géré côté client).
+   */
+  search(query: string): Promise<Concert[]> {
+    return this.prisma.concert.findMany({
+      where: {
+        OR: [
+          { artistName: { contains: query, mode: 'insensitive' } },
+          { venueName: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { date: 'desc' },
+      take: 20,
+    });
+  }
+
   async findPageById(id: string): Promise<ConcertPage | null> {
     const concert = await this.prisma.concert.findUnique({ where: { id } });
     if (!concert) {
