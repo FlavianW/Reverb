@@ -1,5 +1,7 @@
-# Postgres pour le développement local de apps/api uniquement.
-# N'intervient pas dans l'image de production (voir apps/api/Dockerfile).
+# Services pour le développement local de apps/api uniquement.
+# N'interviennent pas dans l'image de production (voir apps/api/Dockerfile).
+# En prod, Postgres est RDS et le stockage média est S3 + CloudFront (voir CLAUDE.md) :
+# MinIO ci-dessous ne sert qu'à émuler l'API S3 en local, sans compte AWS.
 services:
   postgres:
     image: postgres:16-alpine
@@ -15,5 +17,31 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: reverb
+      MINIO_ROOT_PASSWORD: reverb-minio
+    ports:
+      - "9000:9000" # API compatible S3
+      - "9001:9001" # console web
+    volumes:
+      - minio_data:/data
+
+  # Crée le bucket "reverb-media" au démarrage puis s'arrête (pas de service persistant).
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (mc alias set local http://minio:9000 reverb reverb-minio) do sleep 1; done;
+      mc mb --ignore-existing local/reverb-media;
+      mc anonymous set download local/reverb-media;
+      "
+
 volumes:
   postgres_data:
+  minio_data:

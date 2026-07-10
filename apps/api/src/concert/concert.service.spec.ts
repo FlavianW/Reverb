@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommentService } from './comment/comment.service';
 import { ConcertService } from './concert.service';
+import { PhotoService } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { SetlistFmService } from './setlistfm.service';
 
@@ -13,6 +14,7 @@ describe('ConcertService', () => {
   let setlistFmService: { findSetlist: jest.Mock };
   let ratingService: { getSummary: jest.Mock };
   let commentService: { findByConcert: jest.Mock };
+  let photoService: { findByConcert: jest.Mock };
 
   const baseConcert = {
     id: 'concert-1',
@@ -25,6 +27,7 @@ describe('ConcertService', () => {
   };
   const emptyRating = { average: null, count: 0 };
   const noComments: never[] = [];
+  const noPhotos: never[] = [];
 
   beforeEach(async () => {
     prisma = {
@@ -37,6 +40,7 @@ describe('ConcertService', () => {
     setlistFmService = { findSetlist: jest.fn() };
     ratingService = { getSummary: jest.fn().mockResolvedValue(emptyRating) };
     commentService = { findByConcert: jest.fn().mockResolvedValue(noComments) };
+    photoService = { findByConcert: jest.fn().mockResolvedValue(noPhotos) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -45,6 +49,7 @@ describe('ConcertService', () => {
         { provide: SetlistFmService, useValue: setlistFmService },
         { provide: ConcertRatingService, useValue: ratingService },
         { provide: CommentService, useValue: commentService },
+        { provide: PhotoService, useValue: photoService },
       ],
     }).compile();
 
@@ -107,6 +112,7 @@ describe('ConcertService', () => {
         setlist: null,
         rating: emptyRating,
         comments: noComments,
+        photos: noPhotos,
       });
     });
 
@@ -130,6 +136,7 @@ describe('ConcertService', () => {
         setlist: { songs: ['Song A'] },
         rating: emptyRating,
         comments: noComments,
+        photos: noPhotos,
       });
     });
 
@@ -148,6 +155,7 @@ describe('ConcertService', () => {
         setlist: null,
         rating: emptyRating,
         comments: noComments,
+        photos: noPhotos,
       });
     });
 
@@ -190,6 +198,29 @@ describe('ConcertService', () => {
 
       expect(commentService.findByConcert).toHaveBeenCalledWith('concert-1');
       expect(result?.comments).toBe(comments);
+    });
+
+    it('inclut les photos du concert dans la page', async () => {
+      const pastConcert = {
+        ...baseConcert,
+        date: new Date('2020-01-01'),
+      };
+      prisma.concert.findUnique.mockResolvedValueOnce(pastConcert);
+      setlistFmService.findSetlist.mockResolvedValueOnce(null);
+      const photos = [
+        {
+          id: 'photo-1',
+          url: 'https://example.com/reverb-media/concerts/concert-1/a.jpg',
+          pseudo: 'ana-etoile',
+          createdAt: new Date(),
+        },
+      ];
+      photoService.findByConcert.mockResolvedValueOnce(photos);
+
+      const result = await service.findPageById('concert-1');
+
+      expect(photoService.findByConcert).toHaveBeenCalledWith('concert-1');
+      expect(result?.photos).toBe(photos);
     });
   });
 

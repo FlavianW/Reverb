@@ -6,13 +6,17 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  ParseFilePipeBuilder,
   ParseUUIDPipe,
   Post,
   Put,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Comment, Concert } from '@prisma/client';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -23,8 +27,11 @@ import { CommentService } from './comment/comment.service';
 import { CreateCommentDto } from './comment/dto/create-comment.dto';
 import { CreateConcertDto } from './dto/create-concert.dto';
 import { SearchConcertsDto } from './dto/search-concerts.dto';
+import { PhotoService, PhotoSummary } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { RateConcertDto } from './rating/dto/rate-concert.dto';
+
+const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
 
 @Controller('concerts')
 export class ConcertController {
@@ -33,6 +40,7 @@ export class ConcertController {
     private readonly attendanceService: ConcertAttendanceService,
     private readonly ratingService: ConcertRatingService,
     private readonly commentService: CommentService,
+    private readonly photoService: PhotoService,
   ) {}
 
   @Post()
@@ -136,6 +144,28 @@ export class ConcertController {
     await this.assertConcertExists(id);
     const user = req.user as PublicUser;
     return this.commentService.create(id, user.id, dto.content);
+  }
+
+  /** Ajoute une photo à la galerie du concert (US-5.1). */
+  @Post(':id/photos')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('photo'))
+  async addPhoto(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: /^(image\/jpeg|image\/png|image\/webp)$/,
+        })
+        .addMaxSizeValidator({ maxSize: MAX_PHOTO_SIZE_BYTES })
+        .build({ errorHttpStatusCode: 400 }),
+    )
+    file: Express.Multer.File,
+    @Req() req: Request,
+  ): Promise<PhotoSummary> {
+    await this.assertConcertExists(id);
+    const user = req.user as PublicUser;
+    return this.photoService.uploadForConcert(id, user.id, file);
   }
 
   private async assertConcertExists(id: string): Promise<void> {

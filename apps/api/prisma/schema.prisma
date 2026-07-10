@@ -24,6 +24,7 @@ model User {
   attendances  ConcertAttendance[]
   ratings      ConcertRating[]
   comments     Comment[]
+  photos       Photo[]
 
   @@map("users")
 }
@@ -43,6 +44,7 @@ model Concert {
   attendances ConcertAttendance[]
   ratings     ConcertRating[]
   comments    Comment[]
+  photos      Photo[]
 
   @@map("concerts")
 }
@@ -86,4 +88,19 @@ model Comment {
   createdAt DateTime @default(now())
 
   @@map("comments")
+}
+
+/// Photo uploadée sur une page concert (US-5.1). `key` est le chemin S3, utile
+/// pour une suppression future ; `url` est le lien public déjà résolu.
+model Photo {
+  id           String   @id @default(uuid())
+  key          String
+  url          String
+  concertId    String
+  concert      Concert  @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@map("photos")
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Concert } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommentService, CommentSummary } from './comment/comment.service';
+import { PhotoService, PhotoSummary } from './photo/photo.service';
 import {
   ConcertRatingService,
   ConcertRatingSummary,
@@ -15,11 +16,12 @@ export interface CreateConcertInput {
   date: Date;
 }
 
-/** Page concert exposée au client : les infos de base + setlist, notation et commentaires. */
+/** Page concert exposée au client : les infos de base + setlist, notation, commentaires et photos. */
 export interface ConcertPage extends Concert {
   setlist: SetlistFmResult | null;
   rating: ConcertRatingSummary;
   comments: CommentSummary[];
+  photos: PhotoSummary[];
 }
 
 /**
@@ -34,6 +36,7 @@ export class ConcertService {
     private readonly setlistFmService: SetlistFmService,
     private readonly ratingService: ConcertRatingService,
     private readonly commentService: CommentService,
+    private readonly photoService: PhotoService,
   ) {}
 
   create(input: CreateConcertInput, createdById: string): Promise<Concert> {
@@ -72,7 +75,7 @@ export class ConcertService {
     }
 
     const isPast = concert.date.getTime() <= Date.now();
-    const [setlist, rating, comments] = await Promise.all([
+    const [setlist, rating, comments, photos] = await Promise.all([
       isPast
         ? this.setlistFmService.findSetlist({
             artistName: concert.artistName,
@@ -82,8 +85,9 @@ export class ConcertService {
         : Promise.resolve(null),
       this.ratingService.getSummary(id),
       this.commentService.findByConcert(id),
+      this.photoService.findByConcert(id),
     ]);
 
-    return { ...concert, setlist, rating, comments };
+    return { ...concert, setlist, rating, comments, photos };
   }
 }

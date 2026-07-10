@@ -6,6 +6,7 @@ import { ConcertAttendanceService } from './attendance/concert-attendance.servic
 import { ConcertController } from './concert.controller';
 import { ConcertService } from './concert.service';
 import { CommentService } from './comment/comment.service';
+import { PhotoService } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 
 describe('ConcertController', () => {
@@ -23,6 +24,7 @@ describe('ConcertController', () => {
   };
   let ratingService: { rate: jest.Mock };
   let commentService: { create: jest.Mock };
+  let photoService: { uploadForConcert: jest.Mock };
 
   const currentUser: PublicUser = {
     id: 'user-1',
@@ -47,6 +49,7 @@ describe('ConcertController', () => {
     };
     ratingService = { rate: jest.fn() };
     commentService = { create: jest.fn() };
+    photoService = { uploadForConcert: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ConcertController],
@@ -55,6 +58,7 @@ describe('ConcertController', () => {
         { provide: ConcertAttendanceService, useValue: attendanceService },
         { provide: ConcertRatingService, useValue: ratingService },
         { provide: CommentService, useValue: commentService },
+        { provide: PhotoService, useValue: photoService },
       ],
     }).compile();
 
@@ -195,6 +199,48 @@ describe('ConcertController', () => {
         'Super !',
       );
       expect(result).toBe(created);
+    });
+  });
+
+  describe('addPhoto', () => {
+    const fakeFile = {
+      buffer: Buffer.from('fake-image-content'),
+      mimetype: 'image/jpeg',
+      originalname: 'concert.jpg',
+      size: 1024,
+    } as Express.Multer.File;
+
+    it("lève une 404 si le concert n'existe pas", async () => {
+      concertService.exists.mockResolvedValueOnce(false);
+
+      await expect(
+        controller.addPhoto('concert-1', fakeFile, requestAsCurrentUser),
+      ).rejects.toThrow(NotFoundException);
+      expect(photoService.uploadForConcert).not.toHaveBeenCalled();
+    });
+
+    it("téléverse la photo pour l'utilisateur connecté", async () => {
+      concertService.exists.mockResolvedValueOnce(true);
+      const uploaded = {
+        id: 'photo-1',
+        url: 'https://example.com/reverb-media/concerts/concert-1/a.jpg',
+        pseudo: 'ana-etoile',
+        createdAt: new Date(),
+      };
+      photoService.uploadForConcert.mockResolvedValueOnce(uploaded);
+
+      const result = await controller.addPhoto(
+        'concert-1',
+        fakeFile,
+        requestAsCurrentUser,
+      );
+
+      expect(photoService.uploadForConcert).toHaveBeenCalledWith(
+        'concert-1',
+        'user-1',
+        fakeFile,
+      );
+      expect(result).toBe(uploaded);
     });
   });
 });
