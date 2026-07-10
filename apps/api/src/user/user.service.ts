@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { Concert, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Profil minimal renvoyé par Google après une authentification OAuth réussie. */
@@ -16,6 +16,7 @@ export interface PublicUser {
   pseudo: string;
   email: string;
   avatarUrl: string | null;
+  bio: string | null;
 }
 
 /** Ne garde que les champs d'un `User` destinés à être exposés hors de l'API. */
@@ -25,7 +26,19 @@ export function toPublicUser(user: User): PublicUser {
     pseudo: user.pseudo,
     email: user.email,
     avatarUrl: user.avatarUrl,
+    bio: user.bio,
   };
+}
+
+/**
+ * Profil consultable par n'importe quel visiteur (US-4.1, US-4.2) : ni email
+ * ni id, contrairement à `PublicUser` qui est réservé au propriétaire du compte.
+ */
+export interface PublicProfile {
+  pseudo: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  attendedConcerts: Concert[];
 }
 
 /**
@@ -58,6 +71,24 @@ export class UserService {
     passwordHash: string;
   }): Promise<User> {
     return this.prisma.user.create({ data: input });
+  }
+
+  /** Met à jour les champs de profil fournis (US-4.1). */
+  updateProfile(
+    userId: string,
+    data: { pseudo?: string; bio?: string; avatarUrl?: string },
+  ): Promise<User> {
+    return this.prisma.user.update({ where: { id: userId }, data });
+  }
+
+  /** Concerts marqués « J'y étais » par cet utilisateur, du plus récent au plus ancien (US-4.2). */
+  async findAttendedConcerts(userId: string): Promise<Concert[]> {
+    const attendances = await this.prisma.concertAttendance.findMany({
+      where: { userId },
+      include: { concert: true },
+      orderBy: { concert: { date: 'desc' } },
+    });
+    return attendances.map((attendance) => attendance.concert);
   }
 
   /**

@@ -29,6 +29,7 @@ describe('ConcertController', () => {
     pseudo: 'ana-etoile',
     email: 'ana@example.com',
     avatarUrl: null,
+    bio: null,
   };
   const requestAsCurrentUser = { user: currentUser } as unknown as Request;
 

@@ -61,6 +61,7 @@ describe('AuthController', () => {
         pseudo: 'ana-etoile',
         email: googleProfile.email,
         avatarUrl: googleProfile.avatarUrl,
+        bio: null,
         googleId: googleProfile.googleId,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -86,6 +87,7 @@ describe('AuthController', () => {
         pseudo: 'ana-etoile',
         email: googleProfile.email,
         avatarUrl: googleProfile.avatarUrl,
+        bio: null,
       });
     });
   });
@@ -131,6 +133,7 @@ describe('AuthController', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: null,
+        bio: null,
       } as User;
       userService.createWithPassword.mockResolvedValueOnce(createdUser);
       authService.issueSessionToken.mockReturnValueOnce('signed-jwt');
@@ -156,6 +159,7 @@ describe('AuthController', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: null,
+        bio: null,
       });
     });
   });
@@ -210,6 +214,7 @@ describe('AuthController', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: null,
+        bio: null,
         passwordHash: 'stored-hash',
       } as User;
       userService.findByEmail.mockResolvedValueOnce(user);
@@ -229,6 +234,7 @@ describe('AuthController', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: null,
+        bio: null,
       });
     });
   });
@@ -240,6 +246,7 @@ describe('AuthController', () => {
         pseudo: 'ana-etoile',
         email: googleProfile.email,
         avatarUrl: googleProfile.avatarUrl ?? null,
+        bio: null,
       };
       const req = { user: publicUser } as unknown as Request;
 
