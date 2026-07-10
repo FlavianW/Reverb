@@ -8,30 +8,24 @@ describe('PasswordService', () => {
   });
 
   it('vérifie positivement un mot de passe contre son propre hash', async () => {
-    const passwordHash = await service.hashPassword(
-      'correct horse battery staple',
-    );
+    const passwordHash = await service.hashPassword('MotDePasse123!');
 
     await expect(
-      service.verifyPassword('correct horse battery staple', passwordHash),
+      service.verifyPassword('MotDePasse123!', passwordHash),
     ).resolves.toBe(true);
   });
 
   it('rejette un mot de passe incorrect', async () => {
-    const passwordHash = await service.hashPassword(
-      'correct horse battery staple',
-    );
+    const passwordHash = await service.hashPassword('MotDePasse123!');
 
     await expect(
-      service.verifyPassword('wrong password', passwordHash),
+      service.verifyPassword('AutreMotDePasse456!', passwordHash),
     ).resolves.toBe(false);
   });
 
   it('ne stocke jamais le mot de passe en clair dans le hash', async () => {
-    const passwordHash = await service.hashPassword(
-      'correct horse battery staple',
-    );
+    const passwordHash = await service.hashPassword('MotDePasse123!');
 
-    expect(passwordHash).not.toContain('correct horse battery staple');
+    expect(passwordHash).not.toContain('MotDePasse123!');
   });
 });

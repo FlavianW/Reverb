@@ -93,7 +93,7 @@ describe('AuthController', () => {
   describe('register', () => {
     const registerDto = {
       email: 'ana@example.com',
-      password: 'correct horse battery',
+      password: 'MotDePasse123!',
       pseudo: 'ana-etoile',
     };
 
@@ -139,7 +139,7 @@ describe('AuthController', () => {
       const result = await controller.register(registerDto, res);
 
       expect(passwordService.hashPassword).toHaveBeenCalledWith(
-        'correct horse battery',
+        'MotDePasse123!',
       );
       expect(userService.createWithPassword).toHaveBeenCalledWith({
         email: 'ana@example.com',
@@ -163,7 +163,7 @@ describe('AuthController', () => {
   describe('login', () => {
     const loginDto = {
       email: 'ana@example.com',
-      password: 'correct horse battery',
+      password: 'MotDePasse123!',
     };
 
     it("rejette avec un message générique si l'email est inconnu (pas d'énumération de comptes)", async () => {
