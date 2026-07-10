@@ -7,7 +7,9 @@ import { SetlistFmService } from './setlistfm.service';
 
 describe('ConcertService', () => {
   let service: ConcertService;
-  let prisma: { concert: { create: jest.Mock; findUnique: jest.Mock } };
+  let prisma: {
+    concert: { create: jest.Mock; findUnique: jest.Mock; findMany: jest.Mock };
+  };
   let setlistFmService: { findSetlist: jest.Mock };
   let ratingService: { getSummary: jest.Mock };
   let commentService: { findByConcert: jest.Mock };
@@ -29,6 +31,7 @@ describe('ConcertService', () => {
       concert: {
         create: jest.fn(),
         findUnique: jest.fn(),
+        findMany: jest.fn(),
       },
     };
     setlistFmService = { findSetlist: jest.fn() };
@@ -187,6 +190,35 @@ describe('ConcertService', () => {
 
       expect(commentService.findByConcert).toHaveBeenCalledWith('concert-1');
       expect(result?.comments).toBe(comments);
+    });
+  });
+
+  describe('search', () => {
+    it("recherche par nom d'artiste ou de salle, insensible à la casse", async () => {
+      const matches = [baseConcert];
+      prisma.concert.findMany.mockResolvedValueOnce(matches);
+
+      const result = await service.search('muse');
+
+      expect(prisma.concert.findMany).toHaveBeenCalledWith({
+        where: {
+          OR: [
+            { artistName: { contains: 'muse', mode: 'insensitive' } },
+            { venueName: { contains: 'muse', mode: 'insensitive' } },
+          ],
+        },
+        orderBy: { date: 'desc' },
+        take: 20,
+      });
+      expect(result).toBe(matches);
+    });
+
+    it("renvoie une liste vide s'il n'y a aucune correspondance", async () => {
+      prisma.concert.findMany.mockResolvedValueOnce([]);
+
+      const result = await service.search('inconnu');
+
+      expect(result).toEqual([]);
     });
   });
 });

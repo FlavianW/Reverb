@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -21,6 +22,7 @@ import { ConcertPage, ConcertService } from './concert.service';
 import { CommentService } from './comment/comment.service';
 import { CreateCommentDto } from './comment/dto/create-comment.dto';
 import { CreateConcertDto } from './dto/create-concert.dto';
+import { SearchConcertsDto } from './dto/search-concerts.dto';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { RateConcertDto } from './rating/dto/rate-concert.dto';
 
@@ -46,6 +48,15 @@ export class ConcertController {
       },
       user.id,
     );
+  }
+
+  /**
+   * Recherche des concerts par artiste ou par salle (US-3.1). Déclarée avant
+   * `:id` pour que « search » ne soit pas intercepté comme un identifiant.
+   */
+  @Get('search')
+  search(@Query() dto: SearchConcertsDto): Promise<Concert[]> {
+    return this.concertService.search(dto.q);
   }
 
   /**
