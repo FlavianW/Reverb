@@ -5,7 +5,10 @@ import { GoogleProfile, UserService, toPublicUser } from './user.service';
 
 describe('UserService', () => {
   let service: UserService;
-  let prisma: { user: { findUnique: jest.Mock; create: jest.Mock } };
+  let prisma: {
+    user: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
+    concertAttendance: { findMany: jest.Mock };
+  };
 
   const googleProfile: GoogleProfile = {
     googleId: 'google-123',
@@ -19,6 +22,10 @@ describe('UserService', () => {
       user: {
         findUnique: jest.fn(),
         create: jest.fn(),
+        update: jest.fn(),
+      },
+      concertAttendance: {
+        findMany: jest.fn(),
       },
     };
 
@@ -107,6 +114,41 @@ describe('UserService', () => {
     });
   });
 
+  describe('updateProfile', () => {
+    it("met à jour uniquement les champs fournis pour l'utilisateur ciblé", async () => {
+      const updated = { id: 'user-1', bio: 'Fan de metal.' } as User;
+      prisma.user.update.mockResolvedValueOnce(updated);
+
+      const result = await service.updateProfile('user-1', {
+        bio: 'Fan de metal.',
+      });
+
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { bio: 'Fan de metal.' },
+      });
+      expect(result).toBe(updated);
+    });
+  });
+
+  describe('findAttendedConcerts', () => {
+    it('renvoie les concerts assistés du plus récent au plus ancien', async () => {
+      const concert = { id: 'concert-1', artistName: 'Muse' };
+      prisma.concertAttendance.findMany.mockResolvedValueOnce([
+        { id: 'attendance-1', concert },
+      ]);
+
+      const result = await service.findAttendedConcerts('user-1');
+
+      expect(prisma.concertAttendance.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+        include: { concert: true },
+        orderBy: { concert: { date: 'desc' } },
+      });
+      expect(result).toEqual([concert]);
+    });
+  });
+
   describe('toPublicUser', () => {
     it("n'expose ni googleId ni dates internes", () => {
       const user = {
@@ -114,6 +156,7 @@ describe('UserService', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: 'https://example.com/avatar.png',
+        bio: 'Fan de rock depuis toujours.',
         googleId: 'google-123',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -124,6 +167,7 @@ describe('UserService', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: 'https://example.com/avatar.png',
+        bio: 'Fan de rock depuis toujours.',
       });
     });
   });
