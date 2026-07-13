@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { S3Service } from '../../media/s3.service';
 
@@ -20,6 +24,8 @@ const EXTENSION_BY_MIME_TYPE: Record<string, string> = {
 /** Gère la galerie photo d'un concert (US-5.1). */
 @Injectable()
 export class PhotoService {
+  private readonly logger = new Logger(PhotoService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly s3Service: S3Service,
@@ -32,11 +38,19 @@ export class PhotoService {
   ): Promise<PhotoSummary> {
     const extension = EXTENSION_BY_MIME_TYPE[file.mimetype] ?? 'jpg';
     const key = `concerts/${concertId}/${randomUUID()}.${extension}`;
-    const url = await this.s3Service.uploadObject(
-      key,
-      file.buffer,
-      file.mimetype,
-    );
+
+    let url: string;
+    try {
+      url = await this.s3Service.uploadObject(key, file.buffer, file.mimetype);
+    } catch (error) {
+      this.logger.error(
+        `Échec de l'upload S3 pour le concert ${concertId}`,
+        error instanceof Error ? error.stack : error,
+      );
+      throw new ServiceUnavailableException(
+        'Le service de stockage est momentanément indisponible.',
+      );
+    }
 
     const photo = await this.prisma.photo.create({
       data: { key, url, concertId, uploadedById: userId },

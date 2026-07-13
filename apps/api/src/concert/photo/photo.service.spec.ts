@@ -1,3 +1,4 @@
+import { ServiceUnavailableException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { S3Service } from '../../media/s3.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -74,6 +75,15 @@ describe('PhotoService', () => {
         pseudo: 'ana-etoile',
         createdAt,
       });
+    });
+
+    it("signale une indisponibilité du stockage si l'upload S3 échoue, sans créer de photo orpheline", async () => {
+      s3Service.uploadObject.mockRejectedValueOnce(new Error('S3 down'));
+
+      await expect(
+        service.uploadForConcert('concert-1', 'user-1', fakeFile),
+      ).rejects.toThrow(ServiceUnavailableException);
+      expect(prisma.photo.create).not.toHaveBeenCalled();
     });
   });
 
