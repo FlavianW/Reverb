@@ -15,6 +15,7 @@ import type { Request, Response } from 'express';
 import type { GoogleProfile, PublicUser } from '../user/user.service';
 import { UserService, toPublicUser } from '../user/user.service';
 import { AuthService } from './auth.service';
+import { CurrentUser } from './current-user.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { GoogleAuthGuard } from './google-auth.guard';
@@ -118,8 +119,8 @@ export class AuthController {
   /** Profil de l'utilisateur actuellement connecté. */
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  me(@Req() req: Request): PublicUser {
-    return req.user as PublicUser;
+  me(@CurrentUser() user: PublicUser): PublicUser {
+    return user;
   }
 
   /** Invalide la session en supprimant le cookie (US-1.2). */

@@ -242,7 +242,7 @@ describe('AuthController', () => {
   });
 
   describe('me', () => {
-    it('renvoie le profil public attaché à la requête par le JwtAuthGuard', () => {
+    it("renvoie l'utilisateur injecté par @CurrentUser()", () => {
       const publicUser: PublicUser = {
         id: 'user-1',
         pseudo: 'ana-etoile',
@@ -250,9 +250,8 @@ describe('AuthController', () => {
         avatarUrl: googleProfile.avatarUrl ?? null,
         bio: null,
       };
-      const req = { user: publicUser } as unknown as Request;
 
-      expect(controller.me(req)).toBe(publicUser);
+      expect(controller.me(publicUser)).toBe(publicUser);
     });
   });
 
