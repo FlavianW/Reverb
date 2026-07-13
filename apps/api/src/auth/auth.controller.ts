@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import type { GoogleProfile, PublicUser } from '../user/user.service';
 import { UserService, toPublicUser } from '../user/user.service';
@@ -65,6 +66,7 @@ export class AuthController {
    * ouvre directement la session applicative comme un login réussi.
    */
   @Post('register')
+  @UseGuards(ThrottlerGuard)
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -94,6 +96,7 @@ export class AuthController {
    */
   @Post('login')
   @HttpCode(200)
+  @UseGuards(ThrottlerGuard)
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,

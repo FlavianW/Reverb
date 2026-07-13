@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ThrottlerModule, seconds } from '@nestjs/throttler';
 import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -13,6 +14,9 @@ import { PasswordService } from './password.service';
   imports: [
     UserModule,
     PassportModule,
+    // Limite les tentatives de connexion/inscription (US-1.2, protection
+    // contre le bruteforce de mot de passe — OWASP A07).
+    ThrottlerModule.forRoot([{ ttl: seconds(60), limit: 5 }]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({

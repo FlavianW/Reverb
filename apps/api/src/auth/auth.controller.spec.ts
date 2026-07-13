@@ -1,5 +1,6 @@
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ThrottlerModule, seconds } from '@nestjs/throttler';
 import { User } from '@prisma/client';
 import { Request, Response } from 'express';
 import { GoogleProfile, PublicUser, UserService } from '../user/user.service';
@@ -43,6 +44,7 @@ describe('AuthController', () => {
     passwordService = { hashPassword: jest.fn(), verifyPassword: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ThrottlerModule.forRoot([{ ttl: seconds(60), limit: 5 }])],
       controllers: [AuthController],
       providers: [
         { provide: UserService, useValue: userService },
