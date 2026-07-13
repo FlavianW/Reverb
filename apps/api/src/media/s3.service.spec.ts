@@ -8,6 +8,9 @@ jest.mock('@aws-sdk/client-s3', () => ({
   PutObjectCommand: jest
     .fn()
     .mockImplementation((input: unknown) => ({ input })),
+  DeleteObjectCommand: jest
+    .fn()
+    .mockImplementation((input: unknown) => ({ input })),
 }));
 
 describe('S3Service', () => {
@@ -50,5 +53,18 @@ describe('S3Service', () => {
     expect(url).toBe(
       'http://localhost:9000/reverb-media/concerts/concert-1/photo.jpg',
     );
+  });
+
+  it("supprime l'objet identifié par sa clé", async () => {
+    await service.deleteObject('concerts/concert-1/photo.jpg');
+
+    expect(sendMock).toHaveBeenCalledTimes(1);
+    const command = sendMock.mock.calls[0][0] as {
+      input: { Bucket: string; Key: string };
+    };
+    expect(command.input).toEqual({
+      Bucket: 'reverb-media',
+      Key: 'concerts/concert-1/photo.jpg',
+    });
   });
 });

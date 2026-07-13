@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { S3Service } from '../../media/s3.service';
 
@@ -20,6 +26,8 @@ const EXTENSION_BY_MIME_TYPE: Record<string, string> = {
 /** Gère la galerie photo d'un concert (US-5.1). */
 @Injectable()
 export class PhotoService {
+  private readonly logger = new Logger(PhotoService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly s3Service: S3Service,
@@ -32,11 +40,19 @@ export class PhotoService {
   ): Promise<PhotoSummary> {
     const extension = EXTENSION_BY_MIME_TYPE[file.mimetype] ?? 'jpg';
     const key = `concerts/${concertId}/${randomUUID()}.${extension}`;
-    const url = await this.s3Service.uploadObject(
-      key,
-      file.buffer,
-      file.mimetype,
-    );
+
+    let url: string;
+    try {
+      url = await this.s3Service.uploadObject(key, file.buffer, file.mimetype);
+    } catch (error) {
+      this.logger.error(
+        `Échec de l'upload S3 pour le concert ${concertId}`,
+        error instanceof Error ? error.stack : error,
+      );
+      throw new ServiceUnavailableException(
+        'Le service de stockage est momentanément indisponible.',
+      );
+    }
 
     const photo = await this.prisma.photo.create({
       data: { key, url, concertId, uploadedById: userId },
@@ -49,6 +65,23 @@ export class PhotoService {
       pseudo: photo.uploadedBy.pseudo,
       createdAt: photo.createdAt,
     };
+  }
+
+  async delete(photoId: string, userId: string): Promise<void> {
+    const photo = await this.prisma.photo.findUnique({
+      where: { id: photoId },
+    });
+    if (!photo) {
+      throw new NotFoundException('Photo introuvable.');
+    }
+    if (photo.uploadedById !== userId) {
+      throw new ForbiddenException(
+        "Seul l'auteur peut supprimer cette photo.",
+      );
+    }
+
+    await this.s3Service.deleteObject(photo.key);
+    await this.prisma.photo.delete({ where: { id: photoId } });
   }
 
   async findByConcert(concertId: string): Promise<PhotoSummary[]> {
