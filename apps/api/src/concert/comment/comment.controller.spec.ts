@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportReason } from '@prisma/client';
-import type { Request } from 'express';
 import type { PublicUser } from '../../user/user.service';
 import { ReportService } from '../report/report.service';
 import { CommentController } from './comment.controller';
@@ -18,8 +17,6 @@ describe('CommentController', () => {
     avatarUrl: null,
     bio: null,
   };
-  const requestAsCurrentUser = { user: currentUser } as unknown as Request;
-
   beforeEach(async () => {
     commentService = { delete: jest.fn() };
     reportService = { reportComment: jest.fn() };
@@ -37,7 +34,7 @@ describe('CommentController', () => {
 
   describe('delete', () => {
     it("délègue la suppression au service avec l'id de l'utilisateur connecté", async () => {
-      await controller.delete('comment-1', requestAsCurrentUser);
+      await controller.delete('comment-1', currentUser);
 
       expect(commentService.delete).toHaveBeenCalledWith('comment-1', 'user-1');
     });
@@ -48,7 +45,7 @@ describe('CommentController', () => {
       await controller.report(
         'comment-1',
         { reason: ReportReason.SPAM },
-        requestAsCurrentUser,
+        currentUser,
       );
 
       expect(reportService.reportComment).toHaveBeenCalledWith(

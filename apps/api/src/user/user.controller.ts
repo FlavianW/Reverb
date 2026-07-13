@@ -6,10 +6,9 @@ import {
   NotFoundException,
   Param,
   Patch,
-  Req,
   UseGuards,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import type { PublicProfile, PublicUser } from './user.service';
@@ -45,10 +44,8 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async updateMyProfile(
     @Body() dto: UpdateProfileDto,
-    @Req() req: Request,
+    @CurrentUser() currentUser: PublicUser,
   ): Promise<PublicUser> {
-    const currentUser = req.user as PublicUser;
-
     if (dto.pseudo && dto.pseudo !== currentUser.pseudo) {
       const existing = await this.userService.findByPseudo(dto.pseudo);
       if (existing) {

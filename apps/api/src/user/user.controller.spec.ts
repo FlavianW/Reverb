@@ -1,7 +1,6 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
-import type { Request } from 'express';
 import { UserController } from './user.controller';
 import { PublicUser, UserService } from './user.service';
 
@@ -20,8 +19,6 @@ describe('UserController', () => {
     avatarUrl: null,
     bio: null,
   };
-  const requestAsCurrentUser = { user: currentUser } as unknown as Request;
-
   beforeEach(async () => {
     userService = {
       findByPseudo: jest.fn(),
@@ -76,10 +73,7 @@ describe('UserController', () => {
       userService.findByPseudo.mockResolvedValueOnce({ id: 'other-user' });
 
       await expect(
-        controller.updateMyProfile(
-          { pseudo: 'pseudo-pris' },
-          requestAsCurrentUser,
-        ),
+        controller.updateMyProfile({ pseudo: 'pseudo-pris' }, currentUser),
       ).rejects.toThrow(ConflictException);
       expect(userService.updateProfile).not.toHaveBeenCalled();
     });
@@ -90,7 +84,7 @@ describe('UserController', () => {
 
       await controller.updateMyProfile(
         { pseudo: 'ana-etoile', bio: 'Fan de rock.' },
-        requestAsCurrentUser,
+        currentUser,
       );
 
       expect(userService.findByPseudo).not.toHaveBeenCalled();
@@ -108,7 +102,7 @@ describe('UserController', () => {
 
       const result = await controller.updateMyProfile(
         { bio: 'Fan de rock.' },
-        requestAsCurrentUser,
+        currentUser,
       );
 
       expect(userService.updateProfile).toHaveBeenCalledWith('user-1', {

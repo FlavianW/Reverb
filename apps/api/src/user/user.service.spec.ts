@@ -1,7 +1,14 @@
+import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GoogleProfile, UserService, toPublicUser } from './user.service';
+
+const uniqueConstraintViolation = () =>
+  new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+    code: 'P2002',
+    clientVersion: '6.19.3',
+  });
 
 describe('UserService', () => {
   let service: UserService;
@@ -112,6 +119,18 @@ describe('UserService', () => {
       });
       expect(result).toBe(created);
     });
+
+    it('convertit une violation de contrainte unique en ConflictException (fenêtre de course avec le contrôleur)', async () => {
+      prisma.user.create.mockRejectedValueOnce(uniqueConstraintViolation());
+
+      await expect(
+        service.createWithPassword({
+          email: 'ana@example.com',
+          pseudo: 'ana-etoile',
+          passwordHash: 'hashed-value',
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
   });
 
   describe('updateProfile', () => {
@@ -128,6 +147,14 @@ describe('UserService', () => {
         data: { bio: 'Fan de metal.' },
       });
       expect(result).toBe(updated);
+    });
+
+    it('convertit une violation de contrainte unique en ConflictException', async () => {
+      prisma.user.update.mockRejectedValueOnce(uniqueConstraintViolation());
+
+      await expect(
+        service.updateProfile('user-1', { pseudo: 'pseudo-pris' }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 

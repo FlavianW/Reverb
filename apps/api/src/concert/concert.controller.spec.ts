@@ -1,6 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import type { Request } from 'express';
 import type { PublicUser } from '../user/user.service';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
 import { ConcertController } from './concert.controller';
@@ -33,8 +32,6 @@ describe('ConcertController', () => {
     avatarUrl: null,
     bio: null,
   };
-  const requestAsCurrentUser = { user: currentUser } as unknown as Request;
-
   beforeEach(async () => {
     concertService = {
       findPageById: jest.fn(),
@@ -109,7 +106,7 @@ describe('ConcertController', () => {
       concertService.exists.mockResolvedValueOnce(false);
 
       await expect(
-        controller.markAttendance('concert-1', requestAsCurrentUser),
+        controller.markAttendance('concert-1', currentUser),
       ).rejects.toThrow(NotFoundException);
       expect(attendanceService.markAttended).not.toHaveBeenCalled();
     });
@@ -117,7 +114,7 @@ describe('ConcertController', () => {
     it("marque le concert comme vu pour l'utilisateur connecté", async () => {
       concertService.exists.mockResolvedValueOnce(true);
 
-      await controller.markAttendance('concert-1', requestAsCurrentUser);
+      await controller.markAttendance('concert-1', currentUser);
 
       expect(attendanceService.markAttended).toHaveBeenCalledWith(
         'concert-1',
@@ -128,7 +125,7 @@ describe('ConcertController', () => {
     it('retire la marque pour l’utilisateur connecté', async () => {
       concertService.exists.mockResolvedValueOnce(true);
 
-      await controller.unmarkAttendance('concert-1', requestAsCurrentUser);
+      await controller.unmarkAttendance('concert-1', currentUser);
 
       expect(attendanceService.unmarkAttended).toHaveBeenCalledWith(
         'concert-1',
@@ -140,10 +137,7 @@ describe('ConcertController', () => {
       concertService.exists.mockResolvedValueOnce(true);
       attendanceService.isAttendedBy.mockResolvedValueOnce(true);
 
-      const result = await controller.getAttendance(
-        'concert-1',
-        requestAsCurrentUser,
-      );
+      const result = await controller.getAttendance('concert-1', currentUser);
 
       expect(result).toEqual({ attending: true });
     });
@@ -154,7 +148,7 @@ describe('ConcertController', () => {
       concertService.exists.mockResolvedValueOnce(false);
 
       await expect(
-        controller.rate('concert-1', { value: 4 }, requestAsCurrentUser),
+        controller.rate('concert-1', { value: 4 }, currentUser),
       ).rejects.toThrow(NotFoundException);
       expect(ratingService.rate).not.toHaveBeenCalled();
     });
@@ -162,7 +156,7 @@ describe('ConcertController', () => {
     it("enregistre la note de l'utilisateur connecté", async () => {
       concertService.exists.mockResolvedValueOnce(true);
 
-      await controller.rate('concert-1', { value: 4 }, requestAsCurrentUser);
+      await controller.rate('concert-1', { value: 4 }, currentUser);
 
       expect(ratingService.rate).toHaveBeenCalledWith('concert-1', 'user-1', 4);
     });
@@ -173,11 +167,7 @@ describe('ConcertController', () => {
       concertService.exists.mockResolvedValueOnce(false);
 
       await expect(
-        controller.addComment(
-          'concert-1',
-          { content: 'Super !' },
-          requestAsCurrentUser,
-        ),
+        controller.addComment('concert-1', { content: 'Super !' }, currentUser),
       ).rejects.toThrow(NotFoundException);
       expect(commentService.create).not.toHaveBeenCalled();
     });
@@ -190,7 +180,7 @@ describe('ConcertController', () => {
       const result = await controller.addComment(
         'concert-1',
         { content: 'Super !' },
-        requestAsCurrentUser,
+        currentUser,
       );
 
       expect(commentService.create).toHaveBeenCalledWith(
@@ -214,7 +204,7 @@ describe('ConcertController', () => {
       concertService.exists.mockResolvedValueOnce(false);
 
       await expect(
-        controller.addPhoto('concert-1', fakeFile, requestAsCurrentUser),
+        controller.addPhoto('concert-1', fakeFile, currentUser),
       ).rejects.toThrow(NotFoundException);
       expect(photoService.uploadForConcert).not.toHaveBeenCalled();
     });
@@ -232,7 +222,7 @@ describe('ConcertController', () => {
       const result = await controller.addPhoto(
         'concert-1',
         fakeFile,
-        requestAsCurrentUser,
+        currentUser,
       );
 
       expect(photoService.uploadForConcert).toHaveBeenCalledWith(

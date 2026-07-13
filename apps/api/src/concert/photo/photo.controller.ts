@@ -6,11 +6,10 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { Report } from '@prisma/client';
-import type { Request } from 'express';
+import { CurrentUser } from '../../auth/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import type { PublicUser } from '../../user/user.service';
 import { CreateReportDto } from '../report/dto/create-report.dto';
@@ -30,9 +29,8 @@ export class PhotoController {
   @HttpCode(204)
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request,
+    @CurrentUser() user: PublicUser,
   ): Promise<void> {
-    const user = req.user as PublicUser;
     await this.photoService.delete(id, user.id);
   }
 
@@ -42,9 +40,8 @@ export class PhotoController {
   async report(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateReportDto,
-    @Req() req: Request,
+    @CurrentUser() user: PublicUser,
   ): Promise<Report> {
-    const user = req.user as PublicUser;
     return this.reportService.reportPhoto(id, user.id, dto.reason);
   }
 }

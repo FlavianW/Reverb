@@ -10,10 +10,12 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import type { GoogleProfile, PublicUser } from '../user/user.service';
 import { UserService, toPublicUser } from '../user/user.service';
 import { AuthService } from './auth.service';
+import { CurrentUser } from './current-user.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { GoogleAuthGuard } from './google-auth.guard';
@@ -65,6 +67,7 @@ export class AuthController {
    * ouvre directement la session applicative comme un login réussi.
    */
   @Post('register')
+  @UseGuards(ThrottlerGuard)
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -94,6 +97,7 @@ export class AuthController {
    */
   @Post('login')
   @HttpCode(200)
+  @UseGuards(ThrottlerGuard)
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -115,8 +119,8 @@ export class AuthController {
   /** Profil de l'utilisateur actuellement connecté. */
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  me(@Req() req: Request): PublicUser {
-    return req.user as PublicUser;
+  me(@CurrentUser() user: PublicUser): PublicUser {
+    return user;
   }
 
   /** Invalide la session en supprimant le cookie (US-1.2). */

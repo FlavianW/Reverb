@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportReason } from '@prisma/client';
-import type { Request } from 'express';
 import type { PublicUser } from '../../user/user.service';
 import { ReportService } from '../report/report.service';
 import { PhotoController } from './photo.controller';
@@ -18,8 +17,6 @@ describe('PhotoController', () => {
     avatarUrl: null,
     bio: null,
   };
-  const requestAsCurrentUser = { user: currentUser } as unknown as Request;
-
   beforeEach(async () => {
     photoService = { delete: jest.fn() };
     reportService = { reportPhoto: jest.fn() };
@@ -37,7 +34,7 @@ describe('PhotoController', () => {
 
   describe('delete', () => {
     it("délègue la suppression au service avec l'id de l'utilisateur connecté", async () => {
-      await controller.delete('photo-1', requestAsCurrentUser);
+      await controller.delete('photo-1', currentUser);
 
       expect(photoService.delete).toHaveBeenCalledWith('photo-1', 'user-1');
     });
@@ -48,7 +45,7 @@ describe('PhotoController', () => {
       await controller.report(
         'photo-1',
         { reason: ReportReason.INAPPROPRIATE },
-        requestAsCurrentUser,
+        currentUser,
       );
 
       expect(reportService.reportPhoto).toHaveBeenCalledWith(

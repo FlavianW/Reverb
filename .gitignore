@@ -1,10 +1,10 @@
-docs
-CLAUDE.md
 .claude
+CLAUDE.md
 .env
 .env.*
 !.env.example
 
+docs/
 node_modules
 dist
 coverage

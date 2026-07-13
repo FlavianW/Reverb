@@ -11,14 +11,13 @@ import {
   Post,
   Put,
   Query,
-  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Comment, Concert } from '@prisma/client';
-import type { Request } from 'express';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { PublicUser } from '../user/user.service';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
@@ -45,8 +44,10 @@ export class ConcertController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(@Body() dto: CreateConcertDto, @Req() req: Request): Promise<Concert> {
-    const user = req.user as PublicUser;
+  create(
+    @Body() dto: CreateConcertDto,
+    @CurrentUser() user: PublicUser,
+  ): Promise<Concert> {
     return this.concertService.create(
       {
         artistName: dto.artistName,
@@ -85,10 +86,9 @@ export class ConcertController {
   @UseGuards(JwtAuthGuard)
   async getAttendance(
     @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request,
+    @CurrentUser() user: PublicUser,
   ): Promise<{ attending: boolean }> {
     await this.assertConcertExists(id);
-    const user = req.user as PublicUser;
     const attending = await this.attendanceService.isAttendedBy(id, user.id);
     return { attending };
   }
@@ -99,10 +99,9 @@ export class ConcertController {
   @HttpCode(204)
   async markAttendance(
     @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request,
+    @CurrentUser() user: PublicUser,
   ): Promise<void> {
     await this.assertConcertExists(id);
-    const user = req.user as PublicUser;
     await this.attendanceService.markAttended(id, user.id);
   }
 
@@ -112,10 +111,9 @@ export class ConcertController {
   @HttpCode(204)
   async unmarkAttendance(
     @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request,
+    @CurrentUser() user: PublicUser,
   ): Promise<void> {
     await this.assertConcertExists(id);
-    const user = req.user as PublicUser;
     await this.attendanceService.unmarkAttended(id, user.id);
   }
 
@@ -126,10 +124,9 @@ export class ConcertController {
   async rate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RateConcertDto,
-    @Req() req: Request,
+    @CurrentUser() user: PublicUser,
   ): Promise<void> {
     await this.assertConcertExists(id);
-    const user = req.user as PublicUser;
     await this.ratingService.rate(id, user.id, dto.value);
   }
 
@@ -139,10 +136,9 @@ export class ConcertController {
   async addComment(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateCommentDto,
-    @Req() req: Request,
+    @CurrentUser() user: PublicUser,
   ): Promise<Comment> {
     await this.assertConcertExists(id);
-    const user = req.user as PublicUser;
     return this.commentService.create(id, user.id, dto.content);
   }
 
@@ -161,10 +157,9 @@ export class ConcertController {
         .build({ errorHttpStatusCode: 400 }),
     )
     file: Express.Multer.File,
-    @Req() req: Request,
+    @CurrentUser() user: PublicUser,
   ): Promise<PhotoSummary> {
     await this.assertConcertExists(id);
-    const user = req.user as PublicUser;
     return this.photoService.uploadForConcert(id, user.id, file);
   }
 

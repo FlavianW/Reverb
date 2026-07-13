@@ -26,16 +26,10 @@ export class ReportService {
       throw new NotFoundException('Commentaire introuvable.');
     }
 
-    const alreadyReported = await this.prisma.report.findFirst({
-      where: { commentId, reporterId },
-    });
-    if (alreadyReported) {
-      throw new ConflictException('Vous avez déjà signalé ce commentaire.');
-    }
-
-    return this.prisma.report.create({
-      data: { commentId, reporterId, reason },
-    });
+    return this.createIfNotDuplicate(
+      { commentId, reporterId, reason },
+      'Vous avez déjà signalé ce commentaire.',
+    );
   }
 
   async reportPhoto(
@@ -50,13 +44,32 @@ export class ReportService {
       throw new NotFoundException('Photo introuvable.');
     }
 
+    return this.createIfNotDuplicate(
+      { photoId, reporterId, reason },
+      'Vous avez déjà signalé cette photo.',
+    );
+  }
+
+  private async createIfNotDuplicate(
+    data: {
+      reporterId: string;
+      reason: ReportReason;
+      commentId?: string;
+      photoId?: string;
+    },
+    duplicateMessage: string,
+  ): Promise<Report> {
     const alreadyReported = await this.prisma.report.findFirst({
-      where: { photoId, reporterId },
+      where: {
+        reporterId: data.reporterId,
+        commentId: data.commentId,
+        photoId: data.photoId,
+      },
     });
     if (alreadyReported) {
-      throw new ConflictException('Vous avez déjà signalé cette photo.');
+      throw new ConflictException(duplicateMessage);
     }
 
-    return this.prisma.report.create({ data: { photoId, reporterId, reason } });
+    return this.prisma.report.create({ data });
   }
 }

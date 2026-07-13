@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { Concert, User } from '@prisma/client';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { Concert, Prisma, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+/** Code Prisma d'une violation de contrainte unique (ex. email/pseudo déjà pris). */
+const UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
 
 /** Profil minimal renvoyé par Google après une authentification OAuth réussie. */
 export interface GoogleProfile {
@@ -65,20 +68,45 @@ export class UserService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  createWithPassword(input: {
+  async createWithPassword(input: {
     email: string;
     pseudo: string;
     passwordHash: string;
   }): Promise<User> {
-    return this.prisma.user.create({ data: input });
+    try {
+      return await this.prisma.user.create({ data: input });
+    } catch (error) {
+      throw this.toConflictIfUniqueViolation(error);
+    }
   }
 
   /** Met à jour les champs de profil fournis (US-4.1). */
-  updateProfile(
+  async updateProfile(
     userId: string,
     data: { pseudo?: string; bio?: string; avatarUrl?: string },
   ): Promise<User> {
-    return this.prisma.user.update({ where: { id: userId }, data });
+    try {
+      return await this.prisma.user.update({ where: { id: userId }, data });
+    } catch (error) {
+      throw this.toConflictIfUniqueViolation(error);
+    }
+  }
+
+  /**
+   * Les contrôleurs vérifient déjà l'unicité de l'email/pseudo avant d'appeler
+   * ces méthodes, mais ce filet couvre la fenêtre de course entre la
+   * vérification et l'écriture (deux requêtes concurrentes).
+   */
+  private toConflictIfUniqueViolation(error: unknown): unknown {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === UNIQUE_CONSTRAINT_VIOLATION
+    ) {
+      return new ConflictException(
+        'Cette adresse e-mail ou ce pseudo est déjà utilisé.',
+      );
+    }
+    return error;
   }
 
   /** Concerts marqués « J'y étais » par cet utilisateur, du plus récent au plus ancien (US-4.2). */
