@@ -1,4 +1,8 @@
-import { ServiceUnavailableException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { S3Service } from '../../media/s3.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -6,8 +10,15 @@ import { PhotoService } from './photo.service';
 
 describe('PhotoService', () => {
   let service: PhotoService;
-  let prisma: { photo: { create: jest.Mock; findMany: jest.Mock } };
-  let s3Service: { uploadObject: jest.Mock };
+  let prisma: {
+    photo: {
+      create: jest.Mock;
+      findMany: jest.Mock;
+      findUnique: jest.Mock;
+      delete: jest.Mock;
+    };
+  };
+  let s3Service: { uploadObject: jest.Mock; deleteObject: jest.Mock };
 
   const fakeFile = {
     buffer: Buffer.from('fake-image-content'),
@@ -21,9 +32,11 @@ describe('PhotoService', () => {
       photo: {
         create: jest.fn(),
         findMany: jest.fn(),
+        findUnique: jest.fn(),
+        delete: jest.fn(),
       },
     };
-    s3Service = { uploadObject: jest.fn() };
+    s3Service = { uploadObject: jest.fn(), deleteObject: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -84,6 +97,47 @@ describe('PhotoService', () => {
         service.uploadForConcert('concert-1', 'user-1', fakeFile),
       ).rejects.toThrow(ServiceUnavailableException);
       expect(prisma.photo.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('delete', () => {
+    it("lève une 404 si la photo n'existe pas", async () => {
+      prisma.photo.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.delete('photo-1', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(prisma.photo.delete).not.toHaveBeenCalled();
+    });
+
+    it("refuse la suppression si l'utilisateur n'est pas l'auteur", async () => {
+      prisma.photo.findUnique.mockResolvedValueOnce({
+        id: 'photo-1',
+        key: 'concerts/concert-1/a.jpg',
+        uploadedById: 'other-user',
+      });
+
+      await expect(service.delete('photo-1', 'user-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(prisma.photo.delete).not.toHaveBeenCalled();
+    });
+
+    it("supprime l'objet S3 puis la photo quand l'utilisateur en est l'auteur", async () => {
+      prisma.photo.findUnique.mockResolvedValueOnce({
+        id: 'photo-1',
+        key: 'concerts/concert-1/a.jpg',
+        uploadedById: 'user-1',
+      });
+
+      await service.delete('photo-1', 'user-1');
+
+      expect(s3Service.deleteObject).toHaveBeenCalledWith(
+        'concerts/concert-1/a.jpg',
+      );
+      expect(prisma.photo.delete).toHaveBeenCalledWith({
+        where: { id: 'photo-1' },
+      });
     });
   });
 

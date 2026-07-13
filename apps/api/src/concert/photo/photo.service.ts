@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import {
+  ForbiddenException,
   Injectable,
   Logger,
+  NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -63,6 +65,23 @@ export class PhotoService {
       pseudo: photo.uploadedBy.pseudo,
       createdAt: photo.createdAt,
     };
+  }
+
+  async delete(photoId: string, userId: string): Promise<void> {
+    const photo = await this.prisma.photo.findUnique({
+      where: { id: photoId },
+    });
+    if (!photo) {
+      throw new NotFoundException('Photo introuvable.');
+    }
+    if (photo.uploadedById !== userId) {
+      throw new ForbiddenException(
+        "Seul l'auteur peut supprimer cette photo.",
+      );
+    }
+
+    await this.s3Service.deleteObject(photo.key);
+    await this.prisma.photo.delete({ where: { id: photoId } });
   }
 
   async findByConcert(concertId: string): Promise<PhotoSummary[]> {
