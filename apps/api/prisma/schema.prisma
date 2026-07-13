@@ -25,6 +25,7 @@ model User {
   ratings      ConcertRating[]
   comments     Comment[]
   photos       Photo[]
+  reports      Report[]
 
   @@map("users")
 }
@@ -86,6 +87,7 @@ model Comment {
   concertId String
   concert   Concert  @relation(fields: [concertId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  reports   Report[]
 
   @@map("comments")
 }
@@ -101,6 +103,32 @@ model Photo {
   uploadedById String
   uploadedBy   User     @relation(fields: [uploadedById], references: [id])
   createdAt    DateTime @default(now())
+  reports      Report[]
 
   @@map("photos")
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  HARASSMENT
+  OTHER
+}
+
+/// Signalement d'un commentaire ou d'une photo (US-6.1). Le traitement par un
+/// modérateur est hors périmètre MVP : seul l'enregistrement est couvert.
+model Report {
+  id         String       @id @default(uuid())
+  reason     ReportReason
+  reporterId String
+  reporter   User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  commentId  String?
+  comment    Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  photoId    String?
+  photo      Photo?       @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  createdAt  DateTime     @default(now())
+
+  @@unique([reporterId, commentId])
+  @@unique([reporterId, photoId])
+  @@map("reports")
 }
