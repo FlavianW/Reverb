@@ -137,10 +137,7 @@ describe('ConcertController', () => {
       concertService.exists.mockResolvedValueOnce(true);
       attendanceService.isAttendedBy.mockResolvedValueOnce(true);
 
-      const result = await controller.getAttendance(
-        'concert-1',
-        currentUser,
-      );
+      const result = await controller.getAttendance('concert-1', currentUser);
 
       expect(result).toEqual({ attending: true });
     });
@@ -170,11 +167,7 @@ describe('ConcertController', () => {
       concertService.exists.mockResolvedValueOnce(false);
 
       await expect(
-        controller.addComment(
-          'concert-1',
-          { content: 'Super !' },
-          currentUser,
-        ),
+        controller.addComment('concert-1', { content: 'Super !' }, currentUser),
       ).rejects.toThrow(NotFoundException);
       expect(commentService.create).not.toHaveBeenCalled();
     });

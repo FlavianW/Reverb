@@ -73,10 +73,7 @@ describe('UserController', () => {
       userService.findByPseudo.mockResolvedValueOnce({ id: 'other-user' });
 
       await expect(
-        controller.updateMyProfile(
-          { pseudo: 'pseudo-pris' },
-          currentUser,
-        ),
+        controller.updateMyProfile({ pseudo: 'pseudo-pris' }, currentUser),
       ).rejects.toThrow(ConflictException);
       expect(userService.updateProfile).not.toHaveBeenCalled();
     });
