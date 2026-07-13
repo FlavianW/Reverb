@@ -75,9 +75,7 @@ export class PhotoService {
       throw new NotFoundException('Photo introuvable.');
     }
     if (photo.uploadedById !== userId) {
-      throw new ForbiddenException(
-        "Seul l'auteur peut supprimer cette photo.",
-      );
+      throw new ForbiddenException("Seul l'auteur peut supprimer cette photo.");
     }
 
     await this.s3Service.deleteObject(photo.key);

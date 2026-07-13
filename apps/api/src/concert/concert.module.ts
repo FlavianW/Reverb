@@ -9,6 +9,7 @@ import { ConcertService } from './concert.service';
 import { PhotoController } from './photo/photo.controller';
 import { PhotoService } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
+import { ReportService } from './report/report.service';
 import { SetlistFmService } from './setlistfm.service';
 
 @Module({
@@ -21,6 +22,7 @@ import { SetlistFmService } from './setlistfm.service';
     ConcertRatingService,
     CommentService,
     PhotoService,
+    ReportService,
   ],
 })
 export class ConcertModule {}
