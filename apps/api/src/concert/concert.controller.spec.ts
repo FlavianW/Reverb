@@ -80,6 +80,16 @@ describe('ConcertController', () => {
 
       expect(result).toEqual([]);
     });
+
+    it("sans q, délègue au service avec undefined (fil d'accueil)", async () => {
+      const recents = [{ id: 'concert-1', artistName: 'Muse' }];
+      concertService.search.mockResolvedValueOnce(recents);
+
+      const result = await controller.search({});
+
+      expect(concertService.search).toHaveBeenCalledWith(undefined);
+      expect(result).toBe(recents);
+    });
   });
 
   describe('getById', () => {

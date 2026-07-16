@@ -49,18 +49,23 @@ export class ConcertService {
   }
 
   /**
-   * Recherche des concerts par artiste ou par salle (US-3.1). Les résultats
-   * les plus récents sont priorisés ; la liste est vide s'il n'y a aucune
-   * correspondance (« aucun résultat » géré côté client).
+   * Recherche des concerts par artiste ou par salle (US-3.1). Sans `query`
+   * (absente ou vide), sert aussi de fil d'accueil : les concerts les plus
+   * récents. Les résultats les plus récents sont toujours priorisés ; la
+   * liste est vide s'il n'y a aucune correspondance (« aucun résultat » géré
+   * côté client).
    */
-  search(query: string): Promise<Concert[]> {
+  search(query?: string): Promise<Concert[]> {
+    const trimmed = query?.trim();
     return this.prisma.concert.findMany({
-      where: {
-        OR: [
-          { artistName: { contains: query, mode: 'insensitive' } },
-          { venueName: { contains: query, mode: 'insensitive' } },
-        ],
-      },
+      where: trimmed
+        ? {
+            OR: [
+              { artistName: { contains: trimmed, mode: 'insensitive' } },
+              { venueName: { contains: trimmed, mode: 'insensitive' } },
+            ],
+          }
+        : undefined,
       orderBy: { date: 'desc' },
       take: 20,
     });

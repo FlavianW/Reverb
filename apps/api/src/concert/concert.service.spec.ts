@@ -251,5 +251,31 @@ describe('ConcertService', () => {
 
       expect(result).toEqual([]);
     });
+
+    it("sans requête, renvoie les concerts les plus récents (fil d'accueil)", async () => {
+      const recents = [baseConcert];
+      prisma.concert.findMany.mockResolvedValueOnce(recents);
+
+      const result = await service.search(undefined);
+
+      expect(prisma.concert.findMany).toHaveBeenCalledWith({
+        where: undefined,
+        orderBy: { date: 'desc' },
+        take: 20,
+      });
+      expect(result).toBe(recents);
+    });
+
+    it('avec une requête vide ou uniquement des espaces, se comporte comme sans requête', async () => {
+      prisma.concert.findMany.mockResolvedValueOnce([]);
+
+      await service.search('   ');
+
+      expect(prisma.concert.findMany).toHaveBeenCalledWith({
+        where: undefined,
+        orderBy: { date: 'desc' },
+        take: 20,
+      });
+    });
   });
 });

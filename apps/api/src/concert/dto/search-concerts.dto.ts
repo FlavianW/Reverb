@@ -1,8 +1,9 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import type { SearchConcertsRequest } from '@reverb/shared';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
-export class SearchConcertsDto {
+export class SearchConcertsDto implements SearchConcertsRequest {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(200)
-  q!: string;
+  q?: string;
 }
