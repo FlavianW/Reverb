@@ -2,6 +2,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
 import type { PublicUser } from '@reverb/shared';
+import { AvatarService } from './avatar/avatar.service';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
@@ -12,6 +13,7 @@ describe('UserController', () => {
     findAttendedConcerts: jest.Mock;
     updateProfile: jest.Mock;
   };
+  let avatarService: { uploadForUser: jest.Mock };
 
   const currentUser: PublicUser = {
     id: 'user-1',
@@ -26,10 +28,14 @@ describe('UserController', () => {
       findAttendedConcerts: jest.fn(),
       updateProfile: jest.fn(),
     };
+    avatarService = { uploadForUser: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
-      providers: [{ provide: UserService, useValue: userService }],
+      providers: [
+        { provide: UserService, useValue: userService },
+        { provide: AvatarService, useValue: avatarService },
+      ],
     }).compile();
 
     controller = module.get(UserController);
@@ -116,6 +122,22 @@ describe('UserController', () => {
         avatarUrl: null,
         bio: 'Fan de rock.',
       });
+    });
+  });
+
+  describe('uploadMyAvatar', () => {
+    it("délègue l'upload au service avec l'id de l'utilisateur connecté", async () => {
+      const file = { buffer: Buffer.from('img') } as Express.Multer.File;
+      const updated: PublicUser = {
+        ...currentUser,
+        avatarUrl: 'https://example.com/avatar.jpg',
+      };
+      avatarService.uploadForUser.mockResolvedValueOnce(updated);
+
+      const result = await controller.uploadMyAvatar(file, currentUser);
+
+      expect(avatarService.uploadForUser).toHaveBeenCalledWith('user-1', file);
+      expect(result).toBe(updated);
     });
   });
 });

@@ -6,7 +6,6 @@ import {
   HttpCode,
   NotFoundException,
   Param,
-  ParseFilePipeBuilder,
   ParseUUIDPipe,
   Post,
   Put,
@@ -20,6 +19,7 @@ import { Comment, Concert } from '@prisma/client';
 import type { PublicUser } from '@reverb/shared';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { buildImageFileValidator } from '../media/image-upload.validator';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
 import { ConcertPage, ConcertService } from './concert.service';
 import { CommentService } from './comment/comment.service';
@@ -29,8 +29,6 @@ import { SearchConcertsDto } from './dto/search-concerts.dto';
 import { PhotoService, PhotoSummary } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { RateConcertDto } from './rating/dto/rate-concert.dto';
-
-const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
 
 @Controller('concerts')
 export class ConcertController {
@@ -148,15 +146,7 @@ export class ConcertController {
   @UseInterceptors(FileInterceptor('photo'))
   async addPhoto(
     @Param('id', ParseUUIDPipe) id: string,
-    @UploadedFile(
-      new ParseFilePipeBuilder()
-        .addFileTypeValidator({
-          fileType: /^(image\/jpeg|image\/png|image\/webp)$/,
-        })
-        .addMaxSizeValidator({ maxSize: MAX_PHOTO_SIZE_BYTES })
-        .build({ errorHttpStatusCode: 400 }),
-    )
-    file: Express.Multer.File,
+    @UploadedFile(buildImageFileValidator()) file: Express.Multer.File,
     @CurrentUser() user: PublicUser,
   ): Promise<PhotoSummary> {
     await this.assertConcertExists(id);
