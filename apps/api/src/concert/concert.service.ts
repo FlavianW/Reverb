@@ -1,12 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Concert } from '@prisma/client';
+import type { ConcertRatingSummary } from '@reverb/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommentService, CommentSummary } from './comment/comment.service';
 import { PhotoService, PhotoSummary } from './photo/photo.service';
-import {
-  ConcertRatingService,
-  ConcertRatingSummary,
-} from './rating/concert-rating.service';
+import { ConcertRatingService } from './rating/concert-rating.service';
 import { SetlistFmResult, SetlistFmService } from './setlistfm.service';
 
 export interface CreateConcertInput {

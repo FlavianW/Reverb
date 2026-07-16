@@ -1,11 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import type { ConcertRatingSummary } from '@reverb/shared';
 import { PrismaService } from '../../prisma/prisma.service';
-
-/** Moyenne des notes d'un concert. `average` est `null` s'il n'y a aucune note. */
-export interface ConcertRatingSummary {
-  average: number | null;
-  count: number;
-}
 
 /** Gère la notation (1 à 5) d'un concert par un utilisateur, une note par personne (US-2.3). */
 @Injectable()

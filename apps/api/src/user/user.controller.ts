@@ -8,10 +8,11 @@ import {
   Patch,
   UseGuards,
 } from '@nestjs/common';
+import type { PublicUser } from '@reverb/shared';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import type { PublicProfile, PublicUser } from './user.service';
+import type { PublicProfile } from './user.service';
 import { UserService, toPublicUser } from './user.service';
 
 @Controller('users')

@@ -17,9 +17,9 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Comment, Concert } from '@prisma/client';
+import type { PublicUser } from '@reverb/shared';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { PublicUser } from '../user/user.service';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
 import { ConcertPage, ConcertService } from './concert.service';
 import { CommentService } from './comment/comment.service';

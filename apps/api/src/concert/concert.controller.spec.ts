@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import type { PublicUser } from '../user/user.service';
+import type { PublicUser } from '@reverb/shared';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
 import { ConcertController } from './concert.controller';
 import { ConcertService } from './concert.service';

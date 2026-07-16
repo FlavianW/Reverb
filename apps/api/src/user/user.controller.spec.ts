@@ -1,8 +1,9 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
+import type { PublicUser } from '@reverb/shared';
 import { UserController } from './user.controller';
-import { PublicUser, UserService } from './user.service';
+import { UserService } from './user.service';
 
 describe('UserController', () => {
   let controller: UserController;

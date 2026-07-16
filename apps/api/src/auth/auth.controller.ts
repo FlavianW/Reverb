@@ -11,8 +11,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import type { PublicUser } from '@reverb/shared';
 import type { Request, Response } from 'express';
-import type { GoogleProfile, PublicUser } from '../user/user.service';
+import type { GoogleProfile } from '../user/user.service';
 import { UserService, toPublicUser } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
