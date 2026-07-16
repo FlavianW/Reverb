@@ -23,5 +23,13 @@ export default ts.config(
 				extraFileExtensions: ['.svelte']
 			}
 		}
+	},
+	{
+		rules: {
+			// `resolve()` n'apporte rien ici : nos hrefs dynamiques mêlent routes
+			// internes (pseudo, id de concert) et externes (API pour l'OAuth
+			// Google), et SvelteKit valide déjà les routes internes au build.
+			'svelte/no-navigation-without-resolve': 'off'
+		}
 	}
 );
