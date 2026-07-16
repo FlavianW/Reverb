@@ -1,4 +1,5 @@
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerModule, seconds } from '@nestjs/throttler';
 import { User } from '@prisma/client';
@@ -20,6 +21,7 @@ describe('AuthController', () => {
   };
   let authService: { issueSessionToken: jest.Mock };
   let passwordService: { hashPassword: jest.Mock; verifyPassword: jest.Mock };
+  let configService: { get: jest.Mock };
 
   const googleProfile: GoogleProfile = {
     googleId: 'google-123',
@@ -32,6 +34,7 @@ describe('AuthController', () => {
     ({
       cookie: jest.fn(),
       clearCookie: jest.fn(),
+      redirect: jest.fn(),
     }) as unknown as Response;
 
   beforeEach(async () => {
@@ -43,6 +46,7 @@ describe('AuthController', () => {
     };
     authService = { issueSessionToken: jest.fn() };
     passwordService = { hashPassword: jest.fn(), verifyPassword: jest.fn() };
+    configService = { get: jest.fn().mockReturnValue('http://localhost:5173') };
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [ThrottlerModule.forRoot([{ ttl: seconds(60), limit: 5 }])],
@@ -51,6 +55,7 @@ describe('AuthController', () => {
         { provide: UserService, useValue: userService },
         { provide: AuthService, useValue: authService },
         { provide: PasswordService, useValue: passwordService },
+        { provide: ConfigService, useValue: configService },
       ],
     }).compile();
 
@@ -58,7 +63,7 @@ describe('AuthController', () => {
   });
 
   describe('googleCallback', () => {
-    it('crée ou récupère le compte, ouvre la session (cookie JWT) et renvoie le profil public', async () => {
+    it('crée ou récupère le compte, ouvre la session (cookie JWT) et redirige vers le front', async () => {
       const user = {
         id: 'user-1',
         pseudo: 'ana-etoile',
@@ -74,7 +79,7 @@ describe('AuthController', () => {
       const req = { user: googleProfile } as unknown as Request;
       const res = createResMock();
 
-      const result = await controller.googleCallback(req, res);
+      await controller.googleCallback(req, res);
 
       expect(userService.findOrCreateFromGoogleProfile).toHaveBeenCalledWith(
         googleProfile,
@@ -85,13 +90,20 @@ describe('AuthController', () => {
         'signed-jwt',
         expect.objectContaining({ httpOnly: true }),
       );
-      expect(result).toEqual({
-        id: 'user-1',
-        pseudo: 'ana-etoile',
-        email: googleProfile.email,
-        avatarUrl: googleProfile.avatarUrl,
-        bio: null,
-      });
+      expect(res.redirect).toHaveBeenCalledWith('http://localhost:5173');
+    });
+
+    it("redirige vers '/' si CORS_ORIGIN n'est pas configuré", async () => {
+      configService.get.mockReturnValueOnce(undefined);
+      const user = { id: 'user-1' } as User;
+      userService.findOrCreateFromGoogleProfile.mockResolvedValueOnce(user);
+      authService.issueSessionToken.mockReturnValueOnce('signed-jwt');
+      const req = { user: googleProfile } as unknown as Request;
+      const res = createResMock();
+
+      await controller.googleCallback(req, res);
+
+      expect(res.redirect).toHaveBeenCalledWith('/');
     });
   });
 
