@@ -16,7 +16,7 @@ export class ApiError extends Error {
 /**
  * Appel serveur→serveur vers l'API, avec transfert manuel du cookie de
  * session : le `fetch` de SvelteKit tournant côté Node (SSR) ne partage pas
- * le pot de cookies du navigateur pour une origine tierce.
+ * les cookies du navigateur pour une origine tierce.
  */
 export async function apiFetch<T>(
 	event: Pick<RequestEvent, 'cookies' | 'fetch'>,
