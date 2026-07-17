@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+jobs:
+  api:
+    name: API (lint, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        # Sans --fix (contrairement au script local) : en CI, une violation doit
+        # faire échouer le job plutôt que d'être corrigée silencieusement dans
+        # le runner éphémère sans jamais être commitée.
+        run: pnpm --filter api exec eslint "{src,apps,libs,test}/**/*.ts"
+
+      - name: Tests unitaires
+        run: pnpm --filter api test
+
+      - name: Build
+        run: pnpm --filter api build
+
+  web:
+    name: Web (check, lint, build)
+    runs-on: ubuntu-latest
+    env:
+      # Valeur factice : aucune étape n'effectue d'appel réseau, mais
+      # $env/static/public (résolu dès `svelte-kit sync`, pas seulement au
+      # build) a besoin que PUBLIC_API_URL existe. En local, ça vient de
+      # apps/web/.env, absent ici puisque gitignoré.
+      PUBLIC_API_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Vérification des types (svelte-check)
+        run: pnpm --filter web check
+
+      - name: Lint
+        run: pnpm --filter web lint
+
+      - name: Build
+        run: pnpm --filter web build
