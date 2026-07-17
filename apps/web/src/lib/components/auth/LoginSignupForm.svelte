@@ -16,7 +16,7 @@
 	const title = $derived(isSignup ? 'Rejoindre Reverb' : 'Bon retour parmi nous');
 	const subtitle = $derived(
 		isSignup
-			? 'Créez votre compte pour garder la mémoire de chaque concert.'
+			? 'Créez votre compte pour garder le souvenir de chaque concert.'
 			: 'Retrouvez vos concerts et vos discussions.'
 	);
 	const submitLabel = $derived(isSignup ? 'Créer mon compte' : 'Se connecter');
