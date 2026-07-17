@@ -37,6 +37,12 @@ jobs:
   web:
     name: Web (check, lint, build)
     runs-on: ubuntu-latest
+    env:
+      # Valeur factice : aucune étape n'effectue d'appel réseau, mais
+      # $env/static/public (résolu dès `svelte-kit sync`, pas seulement au
+      # build) a besoin que PUBLIC_API_URL existe. En local, ça vient de
+      # apps/web/.env, absent ici puisque gitignoré.
+      PUBLIC_API_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
 
@@ -57,7 +63,3 @@ jobs:
 
       - name: Build
         run: pnpm --filter web build
-        env:
-          # Valeurs factices : le build n'effectue aucun appel réseau, il a
-          # seulement besoin que $env/static/public soit résolu.
-          PUBLIC_API_URL: http://localhost:3000
