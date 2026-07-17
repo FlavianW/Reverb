@@ -28,7 +28,7 @@
 </script>
 
 <button type="button" class="attendance" class:active={attending} aria-pressed={attending} onclick={toggle} disabled={pending}>
-	{attending ? "J'y étais" : "J'y étais ?"}
+	J'y étais
 </button>
 
 <style>
