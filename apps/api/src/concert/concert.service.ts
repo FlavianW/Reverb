@@ -54,9 +54,20 @@ export class ConcertService {
    * récents. Les résultats les plus récents sont toujours priorisés ; la
    * liste est vide s'il n'y a aucune correspondance (« aucun résultat » géré
    * côté client).
+   *
+   * Quand `importedForUserId` est fourni avec une requête non vide, Reverb
+   * interroge aussi Setlist.fm et importe les concerts correspondants pas
+   * encore en base avant de renvoyer les résultats : la page concert (avec
+   * sa setlist réelle) existe donc dès la recherche, pas seulement pour les
+   * concerts déjà connus de Reverb.
    */
-  search(query?: string): Promise<Concert[]> {
+  async search(query?: string, importedForUserId?: string): Promise<Concert[]> {
     const trimmed = query?.trim();
+
+    if (trimmed && importedForUserId) {
+      await this.importFromSetlistFm(trimmed, importedForUserId);
+    }
+
     return this.prisma.concert.findMany({
       where: trimmed
         ? {
@@ -69,6 +80,29 @@ export class ConcertService {
       orderBy: { date: 'desc' },
       take: 20,
     });
+  }
+
+  /** Importe les concerts que Setlist.fm connaît pour cet artiste, sans dupliquer ceux déjà en base. */
+  private async importFromSetlistFm(
+    artistName: string,
+    createdById: string,
+  ): Promise<void> {
+    const matches = await this.setlistFmService.searchConcerts(artistName);
+
+    for (const match of matches) {
+      const alreadyImported = await this.prisma.concert.findFirst({
+        where: {
+          artistName: match.artistName,
+          venueName: match.venueName,
+          city: match.city,
+          date: match.date,
+        },
+      });
+
+      if (!alreadyImported) {
+        await this.prisma.concert.create({ data: { ...match, createdById } });
+      }
+    }
   }
 
   async findPageById(id: string): Promise<ConcertPage | null> {
