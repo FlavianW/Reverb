@@ -10,9 +10,11 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import type { PublicUser } from '@reverb/shared';
 import type { Request, Response } from 'express';
-import type { GoogleProfile, PublicUser } from '../user/user.service';
+import type { GoogleProfile } from '../user/user.service';
 import { UserService, toPublicUser } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
@@ -38,6 +40,7 @@ export class AuthController {
     private readonly userService: UserService,
     private readonly authService: AuthService,
     private readonly passwordService: PasswordService,
+    private readonly configService: ConfigService,
   ) {}
 
   /** Déclenche la redirection vers l'écran de consentement Google. */
@@ -47,19 +50,20 @@ export class AuthController {
 
   /**
    * Callback appelé par Google après consentement. Crée le compte à la
-   * première connexion (US-1.1), puis ouvre la session applicative en
-   * posant un JWT dans un cookie httpOnly (US-1.2).
+   * première connexion (US-1.1), ouvre la session applicative en posant un
+   * JWT dans un cookie httpOnly (US-1.2), puis redirige vers le front — ce
+   * n'est pas un appel `fetch` du client, mais une navigation du navigateur.
    */
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   async googleCallback(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<PublicUser> {
+  ): Promise<void> {
     const profile = req.user as GoogleProfile;
     const user = await this.userService.findOrCreateFromGoogleProfile(profile);
     this.openSession(user, res);
-    return toPublicUser(user);
+    res.redirect(this.webOrigin());
   }
 
   /**
@@ -139,5 +143,11 @@ export class AuthController {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
+  }
+
+  /** Première origine autorisée par CORS_ORIGIN — cible de la redirection post-OAuth. */
+  private webOrigin(): string {
+    const corsOrigin = this.configService.get<string>('CORS_ORIGIN');
+    return corsOrigin?.split(',')[0]?.trim() ?? '/';
   }
 }

@@ -1,6 +1,7 @@
+import type { CreateCommentRequest } from '@reverb/shared';
 import { IsNotEmpty, IsString, Matches, MaxLength } from 'class-validator';
 
-export class CreateCommentDto {
+export class CreateCommentDto implements CreateCommentRequest {
   @IsString()
   @IsNotEmpty()
   @MaxLength(1000)

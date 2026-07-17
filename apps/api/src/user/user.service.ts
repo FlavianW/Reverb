@@ -1,5 +1,6 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { Concert, Prisma, User } from '@prisma/client';
+import type { PublicUser } from '@reverb/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Code Prisma d'une violation de contrainte unique (ex. email/pseudo déjà pris). */
@@ -11,15 +12,6 @@ export interface GoogleProfile {
   email: string;
   displayName: string;
   avatarUrl?: string;
-}
-
-/** Représentation d'un utilisateur exposable au client (sans googleId ni dates internes). */
-export interface PublicUser {
-  id: string;
-  pseudo: string;
-  email: string;
-  avatarUrl: string | null;
-  bio: string | null;
 }
 
 /** Ne garde que les champs d'un `User` destinés à être exposés hors de l'API. */

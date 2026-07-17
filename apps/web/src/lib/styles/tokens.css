@@ -1,0 +1,17 @@
+:root {
+	--paper: #f7f4ee;
+	--paper-alt: #ffffff;
+	--ink: #1c1a17;
+	--ink-soft: #6b6259;
+	--line: #e4ddd0;
+	--accent: #c1502b;
+	--accent-soft: #f3ddcb;
+	--accent-deep: #8f3a1d;
+
+	--font-serif: 'Newsreader', serif;
+	--font-sans: 'Manrope', sans-serif;
+
+	--radius-sm: 8px;
+	--radius-md: 10px;
+	--radius-lg: 14px;
+}

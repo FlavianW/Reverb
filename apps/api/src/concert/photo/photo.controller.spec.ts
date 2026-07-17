@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportReason } from '@prisma/client';
-import type { PublicUser } from '../../user/user.service';
+import type { PublicUser } from '@reverb/shared';
 import { ReportService } from '../report/report.service';
 import { PhotoController } from './photo.controller';
 import { PhotoService } from './photo.service';

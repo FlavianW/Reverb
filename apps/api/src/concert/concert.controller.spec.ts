@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import type { PublicUser } from '../user/user.service';
+import type { PublicUser } from '@reverb/shared';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
 import { ConcertController } from './concert.controller';
 import { ConcertService } from './concert.service';
@@ -79,6 +79,16 @@ describe('ConcertController', () => {
       const result = await controller.search({ q: 'inconnu' });
 
       expect(result).toEqual([]);
+    });
+
+    it("sans q, délègue au service avec undefined (fil d'accueil)", async () => {
+      const recents = [{ id: 'concert-1', artistName: 'Muse' }];
+      concertService.search.mockResolvedValueOnce(recents);
+
+      const result = await controller.search({});
+
+      expect(concertService.search).toHaveBeenCalledWith(undefined);
+      expect(result).toBe(recents);
     });
   });
 

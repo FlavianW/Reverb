@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
-import type { PublicUser } from '../user/user.service';
+import type { PublicUser } from '@reverb/shared';
 
 /** Extrait l'utilisateur authentifié posé sur la requête par `JwtAuthGuard`. */
 export const CurrentUser = createParamDecorator(

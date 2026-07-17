@@ -1,6 +1,7 @@
+import type { CreateConcertRequest } from '@reverb/shared';
 import { IsDateString, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
-export class CreateConcertDto {
+export class CreateConcertDto implements CreateConcertRequest {
   @IsString()
   @IsNotEmpty()
   @MaxLength(200)

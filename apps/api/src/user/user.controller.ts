@@ -6,17 +6,27 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Post,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { PublicUser } from '@reverb/shared';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { buildImageFileValidator } from '../media/image-upload.validator';
+import { AvatarService } from './avatar/avatar.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import type { PublicProfile, PublicUser } from './user.service';
+import type { PublicProfile } from './user.service';
 import { UserService, toPublicUser } from './user.service';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly avatarService: AvatarService,
+  ) {}
 
   /** Profil public d'un utilisateur : bio, avatar et concerts assistés (US-4.1, US-4.2). */
   @Get(':pseudo')
@@ -55,5 +65,16 @@ export class UserController {
 
     const updated = await this.userService.updateProfile(currentUser.id, dto);
     return toPublicUser(updated);
+  }
+
+  /** Change l'avatar de l'utilisateur connecté (US-4.1). */
+  @Post('me/avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('avatar'))
+  async uploadMyAvatar(
+    @UploadedFile(buildImageFileValidator()) file: Express.Multer.File,
+    @CurrentUser() user: PublicUser,
+  ): Promise<PublicUser> {
+    return this.avatarService.uploadForUser(user.id, file);
   }
 }

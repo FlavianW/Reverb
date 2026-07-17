@@ -1,3 +1,4 @@
+import type { RegisterRequest } from '@reverb/shared';
 import {
   IsEmail,
   IsNotEmpty,
@@ -7,7 +8,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-export class RegisterDto {
+export class RegisterDto implements RegisterRequest {
   @IsEmail()
   email!: string;
 

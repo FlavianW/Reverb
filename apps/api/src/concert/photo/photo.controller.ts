@@ -9,9 +9,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Report } from '@prisma/client';
+import type { PublicUser } from '@reverb/shared';
 import { CurrentUser } from '../../auth/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
-import type { PublicUser } from '../../user/user.service';
 import { CreateReportDto } from '../report/dto/create-report.dto';
 import { ReportService } from '../report/report.service';
 import { PhotoService } from './photo.service';

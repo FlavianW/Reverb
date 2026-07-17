@@ -1,3 +1,4 @@
+import type { UpdateProfileRequest } from '@reverb/shared';
 import {
   IsOptional,
   IsString,
@@ -6,7 +7,7 @@ import {
   MaxLength,
 } from 'class-validator';
 
-export class UpdateProfileDto {
+export class UpdateProfileDto implements UpdateProfileRequest {
   @IsOptional()
   @IsString()
   @MaxLength(50)

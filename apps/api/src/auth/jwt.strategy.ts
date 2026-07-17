@@ -1,9 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
+import type { PublicUser } from '@reverb/shared';
 import type { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PublicUser, UserService, toPublicUser } from '../user/user.service';
+import { UserService, toPublicUser } from '../user/user.service';
 import { SessionTokenPayload } from './auth.service';
 import { SESSION_COOKIE_NAME } from './session-cookie';
 
