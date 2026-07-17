@@ -63,20 +63,23 @@ describe('ConcertController', () => {
   });
 
   describe('search', () => {
-    it('délègue la recherche au service et renvoie ses résultats', async () => {
+    it('délègue la recherche au service (avec l’utilisateur courant, pour un import Setlist.fm éventuel) et renvoie ses résultats', async () => {
       const results = [{ id: 'concert-1', artistName: 'Muse' }];
       concertService.search.mockResolvedValueOnce(results);
 
-      const result = await controller.search({ q: 'muse' });
+      const result = await controller.search({ q: 'muse' }, currentUser);
 
-      expect(concertService.search).toHaveBeenCalledWith('muse');
+      expect(concertService.search).toHaveBeenCalledWith(
+        'muse',
+        currentUser.id,
+      );
       expect(result).toBe(results);
     });
 
     it("renvoie une liste vide s'il n'y a aucun résultat", async () => {
       concertService.search.mockResolvedValueOnce([]);
 
-      const result = await controller.search({ q: 'inconnu' });
+      const result = await controller.search({ q: 'inconnu' }, currentUser);
 
       expect(result).toEqual([]);
     });
@@ -85,9 +88,12 @@ describe('ConcertController', () => {
       const recents = [{ id: 'concert-1', artistName: 'Muse' }];
       concertService.search.mockResolvedValueOnce(recents);
 
-      const result = await controller.search({});
+      const result = await controller.search({}, currentUser);
 
-      expect(concertService.search).toHaveBeenCalledWith(undefined);
+      expect(concertService.search).toHaveBeenCalledWith(
+        undefined,
+        currentUser.id,
+      );
       expect(result).toBe(recents);
     });
   });

@@ -60,10 +60,16 @@ export class ConcertController {
   /**
    * Recherche des concerts par artiste ou par salle (US-3.1). Déclarée avant
    * `:id` pour que « search » ne soit pas intercepté comme un identifiant.
+   * Authentifiée car une requête non vide importe aussi les concerts trouvés
+   * sur Setlist.fm sous l'utilisateur courant (voir `ConcertService#search`).
    */
   @Get('search')
-  search(@Query() dto: SearchConcertsDto): Promise<Concert[]> {
-    return this.concertService.search(dto.q);
+  @UseGuards(JwtAuthGuard)
+  search(
+    @Query() dto: SearchConcertsDto,
+    @CurrentUser() user: PublicUser,
+  ): Promise<Concert[]> {
+    return this.concertService.search(dto.q, user.id);
   }
 
   /**

@@ -16,6 +16,22 @@ interface SetlistFmSearchResponse {
   }>;
 }
 
+/** Concert tel qu'identifié par Setlist.fm, prêt à être importé dans Reverb (US-3.1). */
+export interface SetlistFmConcertMatch {
+  artistName: string;
+  venueName: string;
+  city: string;
+  date: Date;
+}
+
+interface SetlistFmConcertSearchResponse {
+  setlist?: Array<{
+    artist?: { name?: string };
+    venue?: { name?: string; city?: { name?: string } };
+    eventDate?: string;
+  }>;
+}
+
 const SETLISTFM_BASE_URL = 'https://api.setlist.fm/rest/1.0';
 
 /**
@@ -69,6 +85,46 @@ export class SetlistFmService {
       return null;
     }
   }
+
+  /**
+   * Cherche les concerts réels d'un artiste sur Setlist.fm (US-3.1) : la
+   * recherche Reverb s'en sert pour importer automatiquement des concerts
+   * pas encore présents en base. Comme `findSetlist`, toute indisponibilité
+   * est absorbée en liste vide.
+   */
+  async searchConcerts(artistName: string): Promise<SetlistFmConcertMatch[]> {
+    const url = new URL(`${SETLISTFM_BASE_URL}/search/setlists`);
+    url.searchParams.set('artistName', artistName);
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'x-api-key':
+            this.configService.getOrThrow<string>('SETLISTFM_API_KEY'),
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.status === 404) {
+        return [];
+      }
+
+      if (!response.ok) {
+        this.logger.warn(
+          `Setlist.fm a répondu ${response.status} pour la recherche "${artistName}"`,
+        );
+        return [];
+      }
+
+      const data = (await response.json()) as SetlistFmConcertSearchResponse;
+      return parseConcertMatches(data);
+    } catch (error) {
+      this.logger.warn(
+        `Échec de la recherche Setlist.fm : ${(error as Error).message}`,
+      );
+      return [];
+    }
+  }
 }
 
 /** Setlist.fm attend une date au format `dd-MM-yyyy`. */
@@ -77,6 +133,45 @@ function formatSetlistFmDate(date: Date): string {
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const year = date.getUTCFullYear();
   return `${day}-${month}-${year}`;
+}
+
+/** Inverse de `formatSetlistFmDate` : Setlist.fm renvoie une date `dd-MM-yyyy`. */
+function parseSetlistFmDate(value: string): Date {
+  const [day, month, year] = value.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+/** Ignore les entrées incomplètes et dédoublonne (artiste/salle/ville/date identiques). */
+function parseConcertMatches(
+  data: SetlistFmConcertSearchResponse,
+): SetlistFmConcertMatch[] {
+  const seen = new Set<string>();
+  const matches: SetlistFmConcertMatch[] = [];
+
+  for (const entry of data.setlist ?? []) {
+    const artistName = entry.artist?.name;
+    const venueName = entry.venue?.name;
+    const city = entry.venue?.city?.name;
+    const eventDate = entry.eventDate;
+    if (!artistName || !venueName || !city || !eventDate) {
+      continue;
+    }
+
+    const key = `${artistName}|${venueName}|${city}|${eventDate}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+
+    matches.push({
+      artistName,
+      venueName,
+      city,
+      date: parseSetlistFmDate(eventDate),
+    });
+  }
+
+  return matches;
 }
 
 function parseFirstSetlist(

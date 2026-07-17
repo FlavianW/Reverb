@@ -9,9 +9,14 @@ import { SetlistFmService } from './setlistfm.service';
 describe('ConcertService', () => {
   let service: ConcertService;
   let prisma: {
-    concert: { create: jest.Mock; findUnique: jest.Mock; findMany: jest.Mock };
+    concert: {
+      create: jest.Mock;
+      findUnique: jest.Mock;
+      findMany: jest.Mock;
+      findFirst: jest.Mock;
+    };
   };
-  let setlistFmService: { findSetlist: jest.Mock };
+  let setlistFmService: { findSetlist: jest.Mock; searchConcerts: jest.Mock };
   let ratingService: { getSummary: jest.Mock };
   let commentService: { findByConcert: jest.Mock };
   let photoService: { findByConcert: jest.Mock };
@@ -35,9 +40,10 @@ describe('ConcertService', () => {
         create: jest.fn(),
         findUnique: jest.fn(),
         findMany: jest.fn(),
+        findFirst: jest.fn(),
       },
     };
-    setlistFmService = { findSetlist: jest.fn() };
+    setlistFmService = { findSetlist: jest.fn(), searchConcerts: jest.fn() };
     ratingService = { getSummary: jest.fn().mockResolvedValue(emptyRating) };
     commentService = { findByConcert: jest.fn().mockResolvedValue(noComments) };
     photoService = { findByConcert: jest.fn().mockResolvedValue(noPhotos) };
@@ -276,6 +282,61 @@ describe('ConcertService', () => {
         orderBy: { date: 'desc' },
         take: 20,
       });
+    });
+
+    it("n'interroge pas Setlist.fm sans utilisateur (fil d'accueil ou appel interne)", async () => {
+      prisma.concert.findMany.mockResolvedValueOnce([]);
+
+      await service.search('muse');
+
+      expect(setlistFmService.searchConcerts).not.toHaveBeenCalled();
+    });
+
+    it("n'interroge pas Setlist.fm pour une requête vide, même avec un utilisateur", async () => {
+      prisma.concert.findMany.mockResolvedValueOnce([]);
+
+      await service.search(undefined, 'user-1');
+
+      expect(setlistFmService.searchConcerts).not.toHaveBeenCalled();
+    });
+
+    it('importe les concerts trouvés sur Setlist.fm sous l’utilisateur courant', async () => {
+      const match = {
+        artistName: 'Radiohead',
+        venueName: 'The O2 Arena',
+        city: 'London',
+        date: new Date('2025-11-24'),
+      };
+      setlistFmService.searchConcerts.mockResolvedValueOnce([match]);
+      prisma.concert.findFirst.mockResolvedValueOnce(null);
+      prisma.concert.findMany.mockResolvedValueOnce([]);
+
+      await service.search('radiohead', 'user-1');
+
+      expect(setlistFmService.searchConcerts).toHaveBeenCalledWith('radiohead');
+      expect(prisma.concert.findFirst).toHaveBeenCalledWith({ where: match });
+      expect(prisma.concert.create).toHaveBeenCalledWith({
+        data: { ...match, createdById: 'user-1' },
+      });
+    });
+
+    it('ne duplique pas un concert Setlist.fm déjà importé (même artiste/salle/ville/date)', async () => {
+      const match = {
+        artistName: 'Radiohead',
+        venueName: 'The O2 Arena',
+        city: 'London',
+        date: new Date('2025-11-24'),
+      };
+      setlistFmService.searchConcerts.mockResolvedValueOnce([match]);
+      prisma.concert.findFirst.mockResolvedValueOnce({
+        ...baseConcert,
+        ...match,
+      });
+      prisma.concert.findMany.mockResolvedValueOnce([]);
+
+      await service.search('radiohead', 'user-1');
+
+      expect(prisma.concert.create).not.toHaveBeenCalled();
     });
   });
 });
