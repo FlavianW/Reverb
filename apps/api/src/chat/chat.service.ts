@@ -158,8 +158,11 @@ export class ChatService {
     });
   }
 
-  /** Vérifie que l'utilisateur fait partie de la conversation ; la renvoie sinon. */
-  private async assertParticipant(
+  /**
+   * Vérifie que l'utilisateur fait partie de la conversation ; la renvoie
+   * sinon. Publique : réutilisée par `ChatGateway` pour valider `joinConversation`.
+   */
+  async assertParticipant(
     userId: string,
     conversationId: string,
   ): Promise<Conversation> {
