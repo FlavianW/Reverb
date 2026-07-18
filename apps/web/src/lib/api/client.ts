@@ -8,6 +8,8 @@ import type {
 	FriendshipSummary,
 	LoginRequest,
 	PhotoSummary,
+	PostPage,
+	PostSummary,
 	PublicProfile,
 	PublicUser,
 	RegisterRequest,
@@ -96,5 +98,20 @@ export const api = {
 		request<FriendshipSummary>(`/friendships/requests/${pseudo}`, { method: 'POST' }),
 	acceptFriendRequest: (id: string) =>
 		request<void>(`/friendships/${id}/accept`, { method: 'PUT' }),
-	removeFriendship: (id: string) => request<void>(`/friendships/${id}`, { method: 'DELETE' })
+	removeFriendship: (id: string) => request<void>(`/friendships/${id}`, { method: 'DELETE' }),
+
+	getFeed: (cursor?: string) =>
+		request<PostPage>(`/posts/feed${cursor ? `?cursor=${cursor}` : ''}`),
+	getUserPosts: (pseudo: string, cursor?: string) =>
+		request<PostPage>(`/users/${pseudo}/posts${cursor ? `?cursor=${cursor}` : ''}`),
+	createPost: (body: { content?: string; concertId?: string; photos: File[] }) => {
+		const form = new FormData();
+		if (body.content) form.append('content', body.content);
+		if (body.concertId) form.append('concertId', body.concertId);
+		body.photos.forEach((file) => form.append('photos', file));
+		return request<PostSummary>('/posts', { method: 'POST', body: form });
+	},
+	deletePost: (id: string) => request<void>(`/posts/${id}`, { method: 'DELETE' }),
+	likePost: (id: string) => request<void>(`/posts/${id}/like`, { method: 'PUT' }),
+	unlikePost: (id: string) => request<void>(`/posts/${id}/like`, { method: 'DELETE' })
 };
