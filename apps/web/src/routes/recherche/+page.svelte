@@ -25,11 +25,6 @@
 		<button type="submit">Rechercher</button>
 	</form>
 
-	<p class="count" aria-live="polite">
-		{data.concerts.length}
-		{data.concerts.length > 1 ? 'concerts trouvés' : 'concert trouvé'}
-	</p>
-
 	{#if data.concerts.length === 0}
 		<p class="empty">Aucun concert ne correspond à cette recherche.</p>
 	{:else}
@@ -82,12 +77,6 @@
 		font-family: var(--font-sans);
 		font-size: 0.9375rem;
 		cursor: pointer;
-	}
-
-	.count {
-		color: var(--ink-soft);
-		font-size: 0.8125rem;
-		margin: 0 0 1.25rem;
 	}
 
 	.grid {
