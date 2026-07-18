@@ -10,7 +10,11 @@
 	<title>{data.profile.pseudo} — Reverb</title>
 </svelte:head>
 
-<ProfileHeader profile={data.profile} editableAs={data.isOwnProfile ? data.user : null} />
+<ProfileHeader
+	profile={data.profile}
+	editableAs={data.isOwnProfile ? data.user : null}
+	friendshipStatus={data.friendshipStatus}
+/>
 
 <div class="page">
 	<h2 class="section-label">Concerts assistés</h2>

@@ -1,14 +1,16 @@
 <script lang="ts">
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import EditProfileModal from './EditProfileModal.svelte';
-	import type { PublicProfile, PublicUser } from '@reverb/shared';
+	import FriendButton from './FriendButton.svelte';
+	import type { FriendshipStatusWithUser, PublicProfile, PublicUser } from '@reverb/shared';
 
 	interface Props {
 		profile: PublicProfile;
 		editableAs: PublicUser | null;
+		friendshipStatus: FriendshipStatusWithUser | null;
 	}
 
-	let { profile, editableAs }: Props = $props();
+	let { profile, editableAs, friendshipStatus }: Props = $props();
 </script>
 
 <header class="profile-header">
@@ -23,6 +25,12 @@
 		</div>
 		{#if editableAs}
 			<EditProfileModal user={editableAs} />
+		{:else if friendshipStatus}
+			<FriendButton
+				pseudo={profile.pseudo}
+				status={friendshipStatus.status}
+				friendshipId={friendshipStatus.friendshipId}
+			/>
 		{/if}
 	</div>
 </header>
