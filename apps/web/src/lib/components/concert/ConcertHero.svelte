@@ -1,9 +1,9 @@
 <script lang="ts">
 	import AttendanceButton from './AttendanceButton.svelte';
-	import type { Concert } from '@reverb/shared';
+	import type { ConcertPage } from '@reverb/shared';
 
 	interface Props {
-		concert: Concert;
+		concert: ConcertPage;
 		attending: boolean;
 	}
 
@@ -19,6 +19,9 @@
 </script>
 
 <header class="hero">
+	{#if concert.artistImageUrl}
+		<img class="artist-photo" src={concert.artistImageUrl} alt={concert.artistName} />
+	{/if}
 	<div class="text">
 		<h1>{concert.artistName}</h1>
 		<p class="venue">{concert.venueName}, {concert.city} — {formattedDate}</p>
@@ -35,6 +38,18 @@
 		padding: 3rem 3rem 2rem;
 		max-width: 1200px;
 		margin: 0 auto;
+	}
+
+	.artist-photo {
+		width: 88px;
+		height: 88px;
+		border-radius: 50%;
+		object-fit: cover;
+		flex-shrink: 0;
+	}
+
+	.text {
+		flex: 1;
 	}
 
 	h1 {
