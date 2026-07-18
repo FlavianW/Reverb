@@ -13,13 +13,15 @@
 		"lint": "eslint ."
 	},
 	"dependencies": {
-		"@reverb/shared": "workspace:*"
+		"@reverb/shared": "workspace:*",
+		"leaflet": "^1.9.4"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.18.0",
 		"@sveltejs/adapter-auto": "^7.0.1",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
+		"@types/leaflet": "^1.9.21",
 		"eslint": "^9.18.0",
 		"eslint-plugin-svelte": "^3.20.0",
 		"globals": "^17.0.0",
