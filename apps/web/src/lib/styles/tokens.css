@@ -15,3 +15,30 @@
 	--radius-md: 10px;
 	--radius-lg: 14px;
 }
+
+/* Thème sombre : suit la préférence système par défaut, la classe `data-theme`
+   (posée par le bouton de bascule, voir `$lib/theme.ts`) l'emporte dans les
+   deux sens sur cette préférence. */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		--paper: #1b1815;
+		--paper-alt: #242019;
+		--ink: #f2ece2;
+		--ink-soft: #b3a99c;
+		--line: #3a332b;
+		--accent: #e2734a;
+		--accent-soft: #3d2517;
+		--accent-deep: #f0a67d;
+	}
+}
+
+:root[data-theme='dark'] {
+	--paper: #1b1815;
+	--paper-alt: #242019;
+	--ink: #f2ece2;
+	--ink-soft: #b3a99c;
+	--line: #3a332b;
+	--accent: #e2734a;
+	--accent-soft: #3d2517;
+	--accent-deep: #f0a67d;
+}

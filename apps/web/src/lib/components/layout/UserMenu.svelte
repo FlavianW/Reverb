@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api/client';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
+	import { currentTheme, setTheme } from '$lib/theme';
 	import type { PublicUser } from '@reverb/shared';
 
 	interface Props {
@@ -10,9 +12,20 @@
 
 	let { user }: Props = $props();
 	let open = $state(false);
+	let isDark = $state(false);
+
+	onMount(() => {
+		isDark = currentTheme() === 'dark';
+	});
 
 	function toggle() {
 		open = !open;
+	}
+
+	function toggleTheme() {
+		const next = isDark ? 'light' : 'dark';
+		setTheme(next);
+		isDark = !isDark;
 	}
 
 	function close() {
@@ -52,6 +65,9 @@
 	{#if open}
 		<div class="menu" role="menu" tabindex="-1" onkeydown={onKeydown}>
 			<a role="menuitem" href="/profil/{user.pseudo}" onclick={close}>Mon profil</a>
+			<button role="menuitem" type="button" onclick={toggleTheme}>
+				{isDark ? 'Thème clair' : 'Thème sombre'}
+			</button>
 			<button role="menuitem" type="button" onclick={logout}>Se déconnecter</button>
 		</div>
 	{/if}
