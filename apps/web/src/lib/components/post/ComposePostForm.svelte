@@ -103,21 +103,23 @@
 	{/if}
 
 	<div class="photo-input">
-		<label for="compose-photos">Ajouter des photos (4 maximum)</label>
+		<label class="photo-upload-button" for="compose-photos">
+			<span class="plus" aria-hidden="true">+</span>
+			Ajouter des photos
+		</label>
 		<input
 			id="compose-photos"
 			type="file"
 			accept="image/jpeg,image/png,image/webp"
 			multiple
+			class="sr-only"
 			onchange={handleFiles}
 		/>
-		{#if photos.length > 0}
-			<p class="photo-count">
-				{photos.length} photo{photos.length > 1 ? 's' : ''} sélectionnée{photos.length > 1
-					? 's'
-					: ''}
-			</p>
-		{/if}
+		<p class="photo-count">
+			{photos.length > 0
+				? `${photos.length} photo${photos.length > 1 ? 's' : ''} sélectionnée${photos.length > 1 ? 's' : ''}`
+				: '4 photos maximum'}
+		</p>
 	</div>
 
 	{#if error}
@@ -217,22 +219,52 @@
 		padding: 0;
 	}
 
-	.photo-input label {
-		display: block;
-		font-size: 0.8125rem;
-		color: var(--ink-soft);
-		margin-bottom: 0.375rem;
+	.photo-upload-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-sm);
+		background: var(--paper-alt);
+		color: var(--ink);
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.photo-upload-button:hover {
+		border-color: var(--accent);
+		color: var(--accent-deep);
+	}
+
+	.plus {
+		font-size: 1.125rem;
+		line-height: 1;
+		font-weight: 700;
 	}
 
 	.photo-count {
 		font-size: 0.8125rem;
 		color: var(--ink-soft);
-		margin: 0.375rem 0 0;
+		margin: 0.5rem 0 0;
 	}
 
 	.error {
 		color: var(--accent-deep);
 		font-size: 0.875rem;
 		margin: 0;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
 </style>
