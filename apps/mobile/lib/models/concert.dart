@@ -108,6 +108,7 @@ class ConcertPage {
   final ConcertRatingSummary rating;
   final List<CommentSummary> comments;
   final List<PhotoSummary> photos;
+  final String? artistImageUrl;
 
   const ConcertPage({
     required this.concert,
@@ -115,6 +116,7 @@ class ConcertPage {
     required this.rating,
     required this.comments,
     required this.photos,
+    required this.artistImageUrl,
   });
 
   factory ConcertPage.fromJson(Map<String, dynamic> json) => ConcertPage(
@@ -131,6 +133,7 @@ class ConcertPage {
     photos: (json['photos'] as List<dynamic>)
         .map((e) => PhotoSummary.fromJson(e as Map<String, dynamic>))
         .toList(),
+    artistImageUrl: json['artistImageUrl'] as String?,
   );
 }
 

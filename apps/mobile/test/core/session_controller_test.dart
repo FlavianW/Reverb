@@ -9,7 +9,9 @@ const _user = PublicUser(
   pseudo: 'alice',
   email: 'alice@example.com',
   avatarUrl: null,
+  bannerUrl: null,
   bio: null,
+  favoriteArtist: null,
 );
 
 void main() {
@@ -103,7 +105,9 @@ void main() {
       pseudo: 'alice2',
       email: 'alice@example.com',
       avatarUrl: null,
+      bannerUrl: null,
       bio: 'Nouvelle bio',
+      favoriteArtist: null,
     );
     session.updateUser(updated);
 
