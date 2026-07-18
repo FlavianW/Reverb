@@ -125,10 +125,14 @@ class _ConcertContent extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (page.artistImageUrl != null) ...[
+                  CircleAvatar(radius: 24, backgroundImage: NetworkImage(page.artistImageUrl!)),
+                  const SizedBox(width: 12),
+                ],
                 Expanded(
                   child: Text(
                     '${concert.venueName}, ${concert.city} — $formattedDate',
-                    style: const TextStyle(color: ReverbColors.inkSoft),
+                    style: TextStyle(color: context.colors.inkSoft),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -180,7 +184,7 @@ class _SetlistTab extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: setlist!.songs.length,
-      separatorBuilder: (_, _) => const Divider(color: ReverbColors.line, height: 1),
+      separatorBuilder: (_, _) => Divider(color: context.colors.line, height: 1),
       itemBuilder: (context, index) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Text('${index + 1}. ${setlist!.songs[index]}'),
@@ -322,18 +326,18 @@ class _UploadTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(ReverbRadius.md),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border.all(color: ReverbColors.line, style: BorderStyle.solid),
+          border: Border.all(color: context.colors.line, style: BorderStyle.solid),
           borderRadius: BorderRadius.circular(ReverbRadius.md),
         ),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.add, color: ReverbColors.inkSoft),
+              Icon(Icons.add, color: context.colors.inkSoft),
               const SizedBox(height: 4),
               Text(
                 uploading ? 'Envoi…' : 'Ajouter une photo',
-                style: const TextStyle(color: ReverbColors.inkSoft, fontSize: 12),
+                style: TextStyle(color: context.colors.inkSoft, fontSize: 12),
               ),
             ],
           ),
@@ -424,7 +428,7 @@ class _NotesTabState extends State<_NotesTab> {
         ),
         if (error != null) ...[
           const SizedBox(height: 8),
-          Text(error!, style: const TextStyle(color: ReverbColors.accentDeep, fontSize: 13)),
+          Text(error!, style: TextStyle(color: context.colors.accentDeep, fontSize: 13)),
         ],
         const SizedBox(height: 8),
         Align(
@@ -436,7 +440,7 @@ class _NotesTabState extends State<_NotesTab> {
         ),
         const SizedBox(height: 24),
         if (widget.comments.isEmpty)
-          const Text('Aucun commentaire pour l\'instant.', style: TextStyle(color: ReverbColors.inkSoft))
+          Text('Aucun commentaire pour l\'instant.', style: TextStyle(color: context.colors.inkSoft))
         else
           ...widget.comments.map(
             (comment) => _CommentTile(
@@ -470,8 +474,8 @@ class _CommentTile extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: ReverbColors.line)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: context.colors.line)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,8 +489,8 @@ class _CommentTile extends StatelessWidget {
                 Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: comment.pseudo, style: const TextStyle(fontWeight: FontWeight.w700, color: ReverbColors.ink)),
-                      TextSpan(text: ' · $formattedDate', style: const TextStyle(color: ReverbColors.inkSoft)),
+                      TextSpan(text: comment.pseudo, style: TextStyle(fontWeight: FontWeight.w700, color: context.colors.ink)),
+                      TextSpan(text: ' · $formattedDate', style: TextStyle(color: context.colors.inkSoft)),
                     ],
                   ),
                   style: const TextStyle(fontSize: 13),
@@ -501,7 +505,7 @@ class _CommentTile extends StatelessWidget {
                       TextButton(
                         onPressed: onDelete,
                         style: TextButton.styleFrom(
-                          foregroundColor: ReverbColors.inkSoft,
+                          foregroundColor: context.colors.inkSoft,
                           padding: EdgeInsets.zero,
                           minimumSize: const Size(0, 0),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -529,6 +533,6 @@ class _EmptyMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text(message, style: const TextStyle(color: ReverbColors.inkSoft)));
+    return Center(child: Text(message, style: TextStyle(color: context.colors.inkSoft)));
   }
 }
