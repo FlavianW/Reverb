@@ -8,6 +8,7 @@ export * from './types/rating';
 export * from './types/report';
 export * from './types/friendship';
 export * from './types/post';
+export * from './types/chat';
 
 export * from './requests/auth';
 export * from './requests/concert';
@@ -16,3 +17,4 @@ export * from './requests/rating';
 export * from './requests/report';
 export * from './requests/user';
 export * from './requests/post';
+export * from './requests/chat';

@@ -41,5 +41,6 @@ import { PasswordService } from './password.service';
     PasswordService,
     GoogleTokenVerifierService,
   ],
+  exports: [JwtModule],
 })
 export class AuthModule {}

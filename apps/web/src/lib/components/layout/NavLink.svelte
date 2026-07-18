@@ -9,7 +9,9 @@
 
 	let { href, children }: Props = $props();
 
-	const isActive = $derived(page.url.pathname === href);
+	const isActive = $derived(
+		page.url.pathname === href || page.url.pathname.startsWith(`${href}/`)
+	);
 </script>
 
 <a {href} class="nav-link" class:active={isActive} aria-current={isActive ? 'page' : undefined}>

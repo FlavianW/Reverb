@@ -13,7 +13,7 @@
 </svelte:head>
 
 {#if data.user}
-	<AppShell user={data.user}>
+	<AppShell user={data.user} unreadMessageCount={data.unreadMessageCount}>
 		{@render children()}
 	</AppShell>
 {:else}
