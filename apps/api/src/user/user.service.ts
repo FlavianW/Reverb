@@ -21,7 +21,9 @@ export function toPublicUser(user: User): PublicUser {
     pseudo: user.pseudo,
     email: user.email,
     avatarUrl: user.avatarUrl,
+    bannerUrl: user.bannerUrl,
     bio: user.bio,
+    favoriteArtist: user.favoriteArtist,
   };
 }
 
@@ -33,6 +35,8 @@ export interface PublicProfile {
   pseudo: string;
   bio: string | null;
   avatarUrl: string | null;
+  bannerUrl: string | null;
+  favoriteArtist: string | null;
   attendedConcerts: Concert[];
 }
 
@@ -75,7 +79,12 @@ export class UserService {
   /** Met à jour les champs de profil fournis (US-4.1). */
   async updateProfile(
     userId: string,
-    data: { pseudo?: string; bio?: string; avatarUrl?: string },
+    data: {
+      pseudo?: string;
+      bio?: string;
+      avatarUrl?: string;
+      favoriteArtist?: string;
+    },
   ): Promise<User> {
     try {
       return await this.prisma.user.update({ where: { id: userId }, data });

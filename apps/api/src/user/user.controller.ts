@@ -20,6 +20,7 @@ import { buildImageFileValidator } from '../media/image-upload.validator';
 import { ListPostsDto } from '../post/dto/list-posts.dto';
 import { PostService } from '../post/post.service';
 import { AvatarService } from './avatar/avatar.service';
+import { BannerService } from './banner/banner.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import type { PublicProfile } from './user.service';
 import { UserService, toPublicUser } from './user.service';
@@ -29,6 +30,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly avatarService: AvatarService,
+    private readonly bannerService: BannerService,
     private readonly postService: PostService,
   ) {}
 
@@ -49,6 +51,8 @@ export class UserController {
       pseudo: user.pseudo,
       bio: user.bio,
       avatarUrl: user.avatarUrl,
+      bannerUrl: user.bannerUrl,
+      favoriteArtist: user.favoriteArtist,
       attendedConcerts,
     };
   }
@@ -101,5 +105,16 @@ export class UserController {
     @CurrentUser() user: PublicUser,
   ): Promise<PublicUser> {
     return this.avatarService.uploadForUser(user.id, file);
+  }
+
+  /** Change la bannière de l'utilisateur connecté (US-4.1). */
+  @Post('me/banner')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('banner'))
+  async uploadMyBanner(
+    @UploadedFile(buildImageFileValidator()) file: Express.Multer.File,
+    @CurrentUser() user: PublicUser,
+  ): Promise<PublicUser> {
+    return this.bannerService.uploadForUser(user.id, file);
   }
 }

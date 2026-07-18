@@ -183,7 +183,9 @@ describe('UserService', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: 'https://example.com/avatar.png',
+        bannerUrl: 'https://example.com/banner.png',
         bio: 'Fan de rock depuis toujours.',
+        favoriteArtist: 'Muse',
         googleId: 'google-123',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -194,7 +196,9 @@ describe('UserService', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: 'https://example.com/avatar.png',
+        bannerUrl: 'https://example.com/banner.png',
         bio: 'Fan de rock depuis toujours.',
+        favoriteArtist: 'Muse',
       });
     });
   });

@@ -15,7 +15,9 @@ describe('CommentController', () => {
     pseudo: 'ana-etoile',
     email: 'ana@example.com',
     avatarUrl: null,
+    bannerUrl: null,
     bio: null,
+    favoriteArtist: null,
   };
   beforeEach(async () => {
     commentService = { delete: jest.fn() };
