@@ -14,6 +14,9 @@ export interface Concert {
   venueName: string;
   city: string;
   date: string;
+  /** Précision ville, `null` si Setlist.fm ne les fournit pas et que le géocodage a échoué (US-9.1). */
+  latitude: number | null;
+  longitude: number | null;
   createdById: string;
   createdAt: string;
   updatedAt: string;
@@ -29,4 +32,9 @@ export interface ConcertPage extends Concert {
   rating: ConcertRatingSummary;
   comments: CommentSummary[];
   photos: PhotoSummary[];
+}
+
+/** Concert renvoyé par la recherche de proximité (US-9.1), trié par distance croissante. */
+export interface NearbyConcert extends Concert {
+  distanceKm: number;
 }

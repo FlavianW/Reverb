@@ -10,3 +10,11 @@ export interface CreateConcertRequest {
 export interface SearchConcertsRequest {
   q?: string;
 }
+
+/** Contrat de `GET /concerts/nearby` (US-9.1) — transmis en query params. */
+export interface NearbyConcertsRequest {
+  lat: number;
+  lng: number;
+  /** Rayon de recherche en kilomètres, défaut 50. */
+  radiusKm?: number;
+}
