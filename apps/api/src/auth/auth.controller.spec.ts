@@ -8,6 +8,7 @@ import { Request, Response } from 'express';
 import { GoogleProfile, UserService } from '../user/user.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { GoogleTokenVerifierService } from './google-token-verifier.service';
 import { PasswordService } from './password.service';
 import { SESSION_COOKIE_NAME } from './session-cookie';
 
@@ -22,6 +23,7 @@ describe('AuthController', () => {
   let authService: { issueSessionToken: jest.Mock };
   let passwordService: { hashPassword: jest.Mock; verifyPassword: jest.Mock };
   let configService: { get: jest.Mock };
+  let googleTokenVerifierService: { verify: jest.Mock };
 
   const googleProfile: GoogleProfile = {
     googleId: 'google-123',
@@ -47,6 +49,7 @@ describe('AuthController', () => {
     authService = { issueSessionToken: jest.fn() };
     passwordService = { hashPassword: jest.fn(), verifyPassword: jest.fn() };
     configService = { get: jest.fn().mockReturnValue('http://localhost:5173') };
+    googleTokenVerifierService = { verify: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [ThrottlerModule.forRoot([{ ttl: seconds(60), limit: 5 }])],
@@ -56,6 +59,10 @@ describe('AuthController', () => {
         { provide: AuthService, useValue: authService },
         { provide: PasswordService, useValue: passwordService },
         { provide: ConfigService, useValue: configService },
+        {
+          provide: GoogleTokenVerifierService,
+          useValue: googleTokenVerifierService,
+        },
       ],
     }).compile();
 
@@ -104,6 +111,57 @@ describe('AuthController', () => {
       await controller.googleCallback(req, res);
 
       expect(res.redirect).toHaveBeenCalledWith('/');
+    });
+  });
+
+  describe('googleMobileLogin', () => {
+    it('vérifie l’ID token, ouvre la session et renvoie l’utilisateur', async () => {
+      const user = {
+        id: 'user-1',
+        pseudo: 'ana-etoile',
+        email: googleProfile.email,
+        avatarUrl: googleProfile.avatarUrl,
+        bio: null,
+      } as User;
+      googleTokenVerifierService.verify.mockResolvedValueOnce(googleProfile);
+      userService.findOrCreateFromGoogleProfile.mockResolvedValueOnce(user);
+      authService.issueSessionToken.mockReturnValueOnce('signed-jwt');
+      const res = createResMock();
+
+      const result = await controller.googleMobileLogin(
+        { idToken: 'raw-id-token' },
+        res,
+      );
+
+      expect(googleTokenVerifierService.verify).toHaveBeenCalledWith(
+        'raw-id-token',
+      );
+      expect(userService.findOrCreateFromGoogleProfile).toHaveBeenCalledWith(
+        googleProfile,
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        SESSION_COOKIE_NAME,
+        'signed-jwt',
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(result).toEqual({
+        id: 'user-1',
+        pseudo: 'ana-etoile',
+        email: googleProfile.email,
+        avatarUrl: googleProfile.avatarUrl,
+        bio: null,
+      });
+    });
+
+    it('rejette un ID token invalide sans ouvrir de session', async () => {
+      googleTokenVerifierService.verify.mockResolvedValueOnce(null);
+      const res = createResMock();
+
+      await expect(
+        controller.googleMobileLogin({ idToken: 'invalide' }, res),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(userService.findOrCreateFromGoogleProfile).not.toHaveBeenCalled();
+      expect(res.cookie).not.toHaveBeenCalled();
     });
   });
 

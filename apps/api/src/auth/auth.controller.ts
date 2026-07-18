@@ -18,9 +18,11 @@ import type { GoogleProfile } from '../user/user.service';
 import { UserService, toPublicUser } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
+import { GoogleMobileLoginDto } from './dto/google-mobile-login.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { GoogleAuthGuard } from './google-auth.guard';
+import { GoogleTokenVerifierService } from './google-token-verifier.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { PasswordService } from './password.service';
 import { SESSION_COOKIE_NAME } from './session-cookie';
@@ -41,6 +43,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly passwordService: PasswordService,
     private readonly configService: ConfigService,
+    private readonly googleTokenVerifierService: GoogleTokenVerifierService,
   ) {}
 
   /** Déclenche la redirection vers l'écran de consentement Google. */
@@ -64,6 +67,27 @@ export class AuthController {
     const user = await this.userService.findOrCreateFromGoogleProfile(profile);
     this.openSession(user, res);
     res.redirect(this.webOrigin());
+  }
+
+  /**
+   * Connexion OAuth Google côté mobile (US-1.1) : contrairement au web, l'app
+   * native obtient directement un ID token auprès de Google (`google_sign_in`)
+   * et l'échange ici contre une session — pas de redirection navigateur.
+   */
+  @Post('google/mobile')
+  @UseGuards(ThrottlerGuard)
+  async googleMobileLogin(
+    @Body() dto: GoogleMobileLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<PublicUser> {
+    const profile = await this.googleTokenVerifierService.verify(dto.idToken);
+    if (!profile) {
+      throw new UnauthorizedException('ID token Google invalide.');
+    }
+
+    const user = await this.userService.findOrCreateFromGoogleProfile(profile);
+    this.openSession(user, res);
+    return toPublicUser(user);
   }
 
   /**
