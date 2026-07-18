@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ArtistModule } from '../artist/artist.module';
 import { AuthModule } from '../auth/auth.module';
 import { MediaModule } from '../media/media.module';
 import { PostModule } from '../post/post.module';
@@ -15,7 +16,7 @@ import { GeocodingService } from './geocoding.service';
 import { SetlistFmService } from './setlistfm.service';
 
 @Module({
-  imports: [AuthModule, MediaModule, PostModule],
+  imports: [ArtistModule, AuthModule, MediaModule, PostModule],
   controllers: [ConcertController, CommentController, PhotoController],
   providers: [
     ConcertService,

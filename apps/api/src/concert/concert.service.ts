@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Concert } from '@prisma/client';
 import type { ConcertRatingSummary } from '@reverb/shared';
+import { LastFmService } from '../artist/lastfm.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommentService, CommentSummary } from './comment/comment.service';
 import { GeocodingService } from './geocoding.service';
@@ -48,6 +49,7 @@ export interface ConcertPage extends Concert {
   rating: ConcertRatingSummary;
   comments: CommentSummary[];
   photos: PhotoSummary[];
+  artistImageUrl: string | null;
 }
 
 /**
@@ -64,6 +66,7 @@ export class ConcertService {
     private readonly ratingService: ConcertRatingService,
     private readonly commentService: CommentService,
     private readonly photoService: PhotoService,
+    private readonly lastFmService: LastFmService,
   ) {}
 
   /**
@@ -181,19 +184,21 @@ export class ConcertService {
     }
 
     const isPast = concert.date.getTime() <= Date.now();
-    const [setlist, rating, comments, photos] = await Promise.all([
-      isPast
-        ? this.setlistFmService.findSetlist({
-            artistName: concert.artistName,
-            city: concert.city,
-            date: concert.date,
-          })
-        : Promise.resolve(null),
-      this.ratingService.getSummary(id),
-      this.commentService.findByConcert(id),
-      this.photoService.findByConcert(id),
-    ]);
+    const [setlist, rating, comments, photos, artistImageUrl] =
+      await Promise.all([
+        isPast
+          ? this.setlistFmService.findSetlist({
+              artistName: concert.artistName,
+              city: concert.city,
+              date: concert.date,
+            })
+          : Promise.resolve(null),
+        this.ratingService.getSummary(id),
+        this.commentService.findByConcert(id),
+        this.photoService.findByConcert(id),
+        this.lastFmService.getArtistImage(concert.artistName),
+      ]);
 
-    return { ...concert, setlist, rating, comments, photos };
+    return { ...concert, setlist, rating, comments, photos, artistImageUrl };
   }
 }
