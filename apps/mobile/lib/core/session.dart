@@ -50,6 +50,12 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loginWithGoogle(String idToken) async {
+    user = await api.loginWithGoogleIdToken(idToken);
+    status = SessionStatus.authenticated;
+    notifyListeners();
+  }
+
   Future<void> logout() async {
     await api.logout();
     user = null;

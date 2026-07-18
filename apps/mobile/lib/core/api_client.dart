@@ -100,15 +100,13 @@ class ApiClient {
     decode: (d) => PublicUser.fromJson(d as Map<String, dynamic>),
   );
 
-  Future<PublicUser> login({
-    required String email,
-    required String password,
-  }) => _request(
-    'POST',
-    '/auth/login',
-    data: {'email': email, 'password': password},
-    decode: (d) => PublicUser.fromJson(d as Map<String, dynamic>),
-  );
+  Future<PublicUser> login({required String email, required String password}) =>
+      _request(
+        'POST',
+        '/auth/login',
+        data: {'email': email, 'password': password},
+        decode: (d) => PublicUser.fromJson(d as Map<String, dynamic>),
+      );
 
   Future<PublicUser?> me() async {
     try {
@@ -124,6 +122,16 @@ class ApiClient {
   }
 
   Future<void> logout() => _request('POST', '/auth/logout');
+
+  /// Échange un ID token Google (obtenu via `google_sign_in`) contre une
+  /// session applicative (US-1.1) — pendant mobile de la redirection
+  /// navigateur `GET /auth/google` utilisée côté web.
+  Future<PublicUser> loginWithGoogleIdToken(String idToken) => _request(
+    'POST',
+    '/auth/google/mobile',
+    data: {'idToken': idToken},
+    decode: (d) => PublicUser.fromJson(d as Map<String, dynamic>),
+  );
 
   // Concerts
 
@@ -220,10 +228,7 @@ class ApiClient {
   Future<PublicUser> updateProfile({String? pseudo, String? bio}) => _request(
     'PATCH',
     '/users/me',
-    data: {
-      if (pseudo != null) 'pseudo': pseudo,
-      if (bio != null) 'bio': bio,
-    },
+    data: {if (pseudo != null) 'pseudo': pseudo, if (bio != null) 'bio': bio},
     decode: (d) => PublicUser.fromJson(d as Map<String, dynamic>),
   );
 
