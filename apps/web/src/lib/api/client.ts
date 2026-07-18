@@ -3,6 +3,9 @@ import type {
 	Comment,
 	Concert,
 	ConcertPage,
+	FriendshipOverview,
+	FriendshipStatusWithUser,
+	FriendshipSummary,
 	LoginRequest,
 	PhotoSummary,
 	PublicProfile,
@@ -84,5 +87,14 @@ export const api = {
 		const body = new FormData();
 		body.append('avatar', file);
 		return request<PublicUser>('/users/me/avatar', { method: 'POST', body });
-	}
+	},
+
+	getFriendshipOverview: () => request<FriendshipOverview>('/friendships/me'),
+	getFriendshipStatus: (pseudo: string) =>
+		request<FriendshipStatusWithUser>(`/friendships/status/${pseudo}`),
+	sendFriendRequest: (pseudo: string) =>
+		request<FriendshipSummary>(`/friendships/requests/${pseudo}`, { method: 'POST' }),
+	acceptFriendRequest: (id: string) =>
+		request<void>(`/friendships/${id}/accept`, { method: 'PUT' }),
+	removeFriendship: (id: string) => request<void>(`/friendships/${id}`, { method: 'DELETE' })
 };
