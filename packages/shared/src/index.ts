@@ -6,6 +6,7 @@ export * from './types/comment';
 export * from './types/photo';
 export * from './types/rating';
 export * from './types/report';
+export * from './types/friendship';
 
 export * from './requests/auth';
 export * from './requests/concert';
