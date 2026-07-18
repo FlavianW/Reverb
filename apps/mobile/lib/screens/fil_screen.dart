@@ -224,9 +224,10 @@ class _FilScreenState extends State<FilScreen> {
                     ),
                   ),
                 ),
-                TextButton(
+                IconButton(
                   onPressed: () => setState(() => _selectedConcert = null),
-                  child: const Text('Retirer'),
+                  icon: const Icon(Icons.close, size: 18),
+                  tooltip: 'Retirer',
                 ),
               ],
             )

@@ -40,7 +40,7 @@ class _ReportButtonState extends State<ReportButton> {
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
+    return TextButton.icon(
       onPressed: reported ? null : _openDialog,
       style: TextButton.styleFrom(
         foregroundColor: context.colors.inkSoft,
@@ -48,7 +48,8 @@ class _ReportButtonState extends State<ReportButton> {
         minimumSize: const Size(0, 0),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      child: Text(
+      icon: Icon(reported ? Icons.flag : Icons.flag_outlined, size: 14),
+      label: Text(
         reported ? 'Signalé' : 'Signaler',
         style: TextStyle(
           fontSize: 13,

@@ -502,18 +502,13 @@ class _CommentTile extends StatelessWidget {
                   children: [
                     ReportButton(onReport: onReport),
                     if (canDelete)
-                      TextButton(
+                      IconButton(
                         onPressed: onDelete,
-                        style: TextButton.styleFrom(
-                          foregroundColor: context.colors.inkSoft,
-                          padding: EdgeInsets.zero,
-                          minimumSize: const Size(0, 0),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.only(left: 12),
-                          child: Text('Supprimer', style: TextStyle(fontSize: 13, decoration: TextDecoration.underline)),
-                        ),
+                        icon: const Icon(Icons.delete_outline, size: 18),
+                        tooltip: 'Supprimer',
+                        color: context.colors.inkSoft,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       ),
                   ],
                 ),

@@ -197,15 +197,17 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
-                      OutlinedButton(
+                      OutlinedButton.icon(
                         onPressed: () => _openEditDialog(context, profile),
-                        child: const Text('Modifier le profil'),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        label: const Text('Modifier le profil'),
                       ),
-                      const SizedBox(width: 12),
-                      TextButton(
+                      const Spacer(),
+                      IconButton(
                         onPressed: () =>
                             context.read<SessionController>().logout(),
-                        child: const Text('Se déconnecter'),
+                        icon: const Icon(Icons.logout),
+                        tooltip: 'Se déconnecter',
                       ),
                     ],
                   ),
@@ -505,13 +507,20 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                       color: context.colors.paperAlt,
                       borderRadius: BorderRadius.circular(ReverbRadius.sm),
                     ),
-                    child: Text(
-                      'Changer la bannière',
-                      style: TextStyle(
-                        color: context.colors.accentDeep,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.camera_alt_outlined, size: 14, color: context.colors.accentDeep),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Changer la bannière',
+                          style: TextStyle(
+                            color: context.colors.accentDeep,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -528,7 +537,11 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                         size: 64,
                       ),
                 const SizedBox(width: 12),
-                TextButton(onPressed: _pickAvatar, child: const Text('Changer la photo')),
+                TextButton.icon(
+                  onPressed: _pickAvatar,
+                  icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                  label: const Text('Changer la photo'),
+                ),
               ],
             ),
             const SizedBox(height: 16),

@@ -106,9 +106,10 @@ class _AmisScreenState extends State<AmisScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
+                  IconButton.filled(
                     onPressed: sending ? null : _sendRequest,
-                    child: const Text('Envoyer'),
+                    icon: const Icon(Icons.person_add_alt_1_outlined),
+                    tooltip: 'Envoyer',
                   ),
                 ],
               ),

@@ -98,9 +98,11 @@ class _PostCardState extends State<PostCard> {
               ),
               if (widget.canDelete) ...[
                 const Spacer(),
-                TextButton(
+                IconButton(
                   onPressed: deleting ? null : _delete,
-                  child: const Text('Supprimer'),
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  tooltip: 'Supprimer',
+                  color: context.colors.inkSoft,
                 ),
               ],
             ],
