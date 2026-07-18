@@ -1,4 +1,5 @@
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/models/friendship.dart';
 import 'package:mobile/models/public_user.dart';
 
 /// Double de test pour [ApiClient] : évite tout appel réseau réel (dio,
@@ -13,6 +14,11 @@ class FakeApiClient extends ApiClient {
   Future<void> Function(String concertId, int value)? onRateConcert;
   Future<void> Function(String concertId)? onMarkAttendance;
   Future<void> Function(String concertId)? onUnmarkAttendance;
+  Future<void> Function(String postId)? onLikePost;
+  Future<void> Function(String postId)? onUnlikePost;
+  Future<FriendshipSummary> Function(String pseudo)? onSendFriendRequest;
+  Future<void> Function(String id)? onAcceptFriendRequest;
+  Future<void> Function(String id)? onRemoveFriendship;
 
   @override
   Future<PublicUser?> me() => onMe!();
@@ -39,4 +45,20 @@ class FakeApiClient extends ApiClient {
 
   @override
   Future<void> unmarkAttendance(String id) => onUnmarkAttendance!(id);
+
+  @override
+  Future<void> likePost(String id) => onLikePost!(id);
+
+  @override
+  Future<void> unlikePost(String id) => onUnlikePost!(id);
+
+  @override
+  Future<FriendshipSummary> sendFriendRequest(String pseudo) =>
+      onSendFriendRequest!(pseudo);
+
+  @override
+  Future<void> acceptFriendRequest(String id) => onAcceptFriendRequest!(id);
+
+  @override
+  Future<void> removeFriendship(String id) => onRemoveFriendship!(id);
 }
