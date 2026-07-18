@@ -36,6 +36,13 @@ export interface ConversationSummary {
  * (`socket.io-client`, web), pour que les deux bouts restent en phase.
  */
 export interface ChatServerToClientEvents {
+  /**
+   * Émis une fois la connexion authentifiée (après vérification du cookie
+   * de session). Le client doit attendre cet évènement avant d'émettre
+   * `joinConversation` : sans lui, `joinConversation` pourrait arriver au
+   * serveur avant la fin de la vérification asynchrone du JWT.
+   */
+  ready: () => void;
   'message:new': (message: MessageSummary) => void;
 }
 

@@ -20,6 +20,7 @@ describe('ChatGateway', () => {
     data: {} as { user?: typeof user },
     join: jest.fn(),
     disconnect: jest.fn(),
+    emit: jest.fn(),
   });
 
   beforeEach(() => {
@@ -54,6 +55,7 @@ describe('ChatGateway', () => {
         expect.objectContaining({ id: user.id, pseudo: user.pseudo }),
       );
       expect(client.disconnect).not.toHaveBeenCalled();
+      expect(client.emit).toHaveBeenCalledWith('ready');
     });
 
     it('déconnecte le socket si aucun cookie de session n’est présent', async () => {

@@ -98,6 +98,10 @@ export class ChatGateway implements OnGatewayConnection {
       }
 
       client.data.user = toPublicUser(user);
+      // Le client doit attendre cet évènement avant d'émettre `joinConversation` :
+      // sans lui, un envoi immédiat après connexion pourrait arriver avant la
+      // fin de cette vérification asynchrone (JWT + lookup utilisateur).
+      client.emit('ready');
     } catch {
       client.disconnect(true);
     }

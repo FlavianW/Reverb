@@ -24,7 +24,12 @@
 
 	onMount(() => {
 		socket = createChatSocket();
-		socket.emit('joinConversation', { conversationId });
+		// `ready` confirme que l'authentification du socket (vérification du
+		// cookie de session) est terminée côté serveur : émettre avant risquerait
+		// que `joinConversation` arrive trop tôt et soit silencieusement ignoré.
+		socket.on('ready', () => {
+			socket?.emit('joinConversation', { conversationId });
+		});
 		socket.on('message:new', (message) => {
 			if (message.conversationId !== conversationId) return;
 			items = [...items, message];
