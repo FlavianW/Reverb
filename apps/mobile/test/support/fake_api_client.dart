@@ -12,6 +12,7 @@ class FakeApiClient extends ApiClient {
   Future<PublicUser> Function(String email, String password, String pseudo)?
   onRegister;
   Future<void> Function()? onLogout;
+  Future<PublicUser> Function(String idToken)? onLoginWithGoogleIdToken;
   Future<void> Function(String concertId, int value)? onRateConcert;
   Future<void> Function(String concertId)? onMarkAttendance;
   Future<void> Function(String concertId)? onUnmarkAttendance;
@@ -39,6 +40,10 @@ class FakeApiClient extends ApiClient {
 
   @override
   Future<void> logout() => onLogout!();
+
+  @override
+  Future<PublicUser> loginWithGoogleIdToken(String idToken) =>
+      onLoginWithGoogleIdToken!(idToken);
 
   @override
   Future<void> rateConcert(String id, int value) => onRateConcert!(id, value);

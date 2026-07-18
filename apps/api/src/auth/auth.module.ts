@@ -7,6 +7,7 @@ import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { GoogleStrategy } from './google.strategy';
+import { GoogleTokenVerifierService } from './google-token-verifier.service';
 import { JwtStrategy } from './jwt.strategy';
 import { PasswordService } from './password.service';
 
@@ -33,6 +34,12 @@ import { PasswordService } from './password.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [GoogleStrategy, JwtStrategy, AuthService, PasswordService],
+  providers: [
+    GoogleStrategy,
+    JwtStrategy,
+    AuthService,
+    PasswordService,
+    GoogleTokenVerifierService,
+  ],
 })
 export class AuthModule {}
