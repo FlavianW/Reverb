@@ -5,6 +5,8 @@ class Concert {
   final String venueName;
   final String city;
   final DateTime date;
+  final double? latitude;
+  final double? longitude;
   final String createdById;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -15,6 +17,8 @@ class Concert {
     required this.venueName,
     required this.city,
     required this.date,
+    required this.latitude,
+    required this.longitude,
     required this.createdById,
     required this.createdAt,
     required this.updatedAt,
@@ -26,10 +30,49 @@ class Concert {
     venueName: json['venueName'] as String,
     city: json['city'] as String,
     date: DateTime.parse(json['date'] as String),
+    latitude: (json['latitude'] as num?)?.toDouble(),
+    longitude: (json['longitude'] as num?)?.toDouble(),
     createdById: json['createdById'] as String,
     createdAt: DateTime.parse(json['createdAt'] as String),
     updatedAt: DateTime.parse(json['updatedAt'] as String),
   );
+}
+
+/// Concert à proximité (US-9.1), avec sa distance au point de recherche.
+/// Miroir de `NearbyConcert` dans `packages/shared/src/types/concert.ts`.
+class NearbyConcert extends Concert {
+  final double distanceKm;
+
+  const NearbyConcert({
+    required super.id,
+    required super.artistName,
+    required super.venueName,
+    required super.city,
+    required super.date,
+    required super.latitude,
+    required super.longitude,
+    required super.createdById,
+    required super.createdAt,
+    required super.updatedAt,
+    required this.distanceKm,
+  });
+
+  factory NearbyConcert.fromJson(Map<String, dynamic> json) {
+    final concert = Concert.fromJson(json);
+    return NearbyConcert(
+      id: concert.id,
+      artistName: concert.artistName,
+      venueName: concert.venueName,
+      city: concert.city,
+      date: concert.date,
+      latitude: concert.latitude,
+      longitude: concert.longitude,
+      createdById: concert.createdById,
+      createdAt: concert.createdAt,
+      updatedAt: concert.updatedAt,
+      distanceKm: (json['distanceKm'] as num).toDouble(),
+    );
+  }
 }
 
 /// Setlist récupérée depuis Setlist.fm (US-2.1). `null` = indisponible.

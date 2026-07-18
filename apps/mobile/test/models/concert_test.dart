@@ -17,6 +17,47 @@ void main() {
 
       expect(concert.artistName, 'Radiohead');
       expect(concert.date, DateTime.parse('2024-05-10T20:00:00.000Z'));
+      expect(concert.latitude, isNull);
+      expect(concert.longitude, isNull);
+    });
+
+    test('parse les coordonnées quand elles sont connues', () {
+      final concert = Concert.fromJson({
+        'id': 'c1',
+        'artistName': 'Radiohead',
+        'venueName': 'Zénith',
+        'city': 'Paris',
+        'date': '2024-05-10T20:00:00.000Z',
+        'latitude': 48.8566,
+        'longitude': 2.3522,
+        'createdById': 'u1',
+        'createdAt': '2024-05-01T10:00:00.000Z',
+        'updatedAt': '2024-05-02T10:00:00.000Z',
+      });
+
+      expect(concert.latitude, 48.8566);
+      expect(concert.longitude, 2.3522);
+    });
+  });
+
+  group('NearbyConcert.fromJson', () {
+    test('parse la distance en plus des champs du concert', () {
+      final concert = NearbyConcert.fromJson({
+        'id': 'c1',
+        'artistName': 'Radiohead',
+        'venueName': 'Zénith',
+        'city': 'Paris',
+        'date': '2024-05-10T20:00:00.000Z',
+        'latitude': 48.8566,
+        'longitude': 2.3522,
+        'createdById': 'u1',
+        'createdAt': '2024-05-01T10:00:00.000Z',
+        'updatedAt': '2024-05-02T10:00:00.000Z',
+        'distanceKm': 2,
+      });
+
+      expect(concert.artistName, 'Radiohead');
+      expect(concert.distanceKm, 2.0);
     });
   });
 
