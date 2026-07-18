@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { api, ApiError } from '$lib/api/client';
 	import Button from '$lib/components/ui/Button.svelte';
 	import type { ViewerFriendshipStatus } from '@reverb/shared';
@@ -52,6 +53,19 @@
 			pending = false;
 		}
 	}
+
+	async function message() {
+		pending = true;
+		error = null;
+		try {
+			const conversation = await api.startConversation(pseudo);
+			await goto(`/messages/${conversation.id}`);
+		} catch (e) {
+			error = e instanceof ApiError ? e.message : 'Une erreur est survenue.';
+		} finally {
+			pending = false;
+		}
+	}
 </script>
 
 {#if status !== 'SELF'}
@@ -66,6 +80,7 @@
 			<Button variant="secondary" disabled={pending} onclick={accept}>Accepter</Button>
 			<Button variant="ghost" disabled={pending} onclick={remove}>Refuser</Button>
 		{:else if status === 'FRIENDS'}
+			<Button variant="secondary" disabled={pending} onclick={message}>Envoyer un message</Button>
 			<Button variant="ghost" disabled={pending} onclick={remove}>Ami·e · Retirer</Button>
 		{/if}
 		{#if error}
