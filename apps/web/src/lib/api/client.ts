@@ -3,10 +3,13 @@ import type {
 	Comment,
 	Concert,
 	ConcertPage,
+	ConversationSummary,
 	FriendshipOverview,
 	FriendshipStatusWithUser,
 	FriendshipSummary,
 	LoginRequest,
+	MessagePage,
+	MessageSummary,
 	NearbyConcert,
 	PhotoSummary,
 	PostPage,
@@ -118,5 +121,21 @@ export const api = {
 	},
 	deletePost: (id: string) => request<void>(`/posts/${id}`, { method: 'DELETE' }),
 	likePost: (id: string) => request<void>(`/posts/${id}/like`, { method: 'PUT' }),
-	unlikePost: (id: string) => request<void>(`/posts/${id}/like`, { method: 'DELETE' })
+	unlikePost: (id: string) => request<void>(`/posts/${id}/like`, { method: 'DELETE' }),
+
+	startConversation: (pseudo: string) =>
+		request<ConversationSummary>(`/conversations/${pseudo}`, { method: 'POST' }),
+	getConversations: () => request<ConversationSummary[]>('/conversations'),
+	getUnreadCount: () => request<{ count: number }>('/conversations/unread-count'),
+	getMessages: (conversationId: string, cursor?: string) =>
+		request<MessagePage>(
+			`/conversations/${conversationId}/messages${cursor ? `?cursor=${cursor}` : ''}`
+		),
+	sendMessage: (conversationId: string, content: string) =>
+		request<MessageSummary>(`/conversations/${conversationId}/messages`, {
+			method: 'POST',
+			body: JSON.stringify({ content })
+		}),
+	markConversationRead: (conversationId: string) =>
+		request<void>(`/conversations/${conversationId}/read`, { method: 'PUT' })
 };
