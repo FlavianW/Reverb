@@ -300,12 +300,14 @@ describe('ConcertService', () => {
       expect(setlistFmService.searchConcerts).not.toHaveBeenCalled();
     });
 
-    it('importe les concerts trouvés sur Setlist.fm sous l’utilisateur courant', async () => {
+    it('importe les concerts trouvés sur Setlist.fm sous l’utilisateur courant, avec leurs coordonnées', async () => {
       const match = {
         artistName: 'Radiohead',
         venueName: 'The O2 Arena',
         city: 'London',
         date: new Date('2025-11-24'),
+        latitude: 51.75,
+        longitude: -0.3333333,
       };
       setlistFmService.searchConcerts.mockResolvedValueOnce([match]);
       prisma.concert.findFirst.mockResolvedValueOnce(null);
@@ -314,7 +316,14 @@ describe('ConcertService', () => {
       await service.search('radiohead', 'user-1');
 
       expect(setlistFmService.searchConcerts).toHaveBeenCalledWith('radiohead');
-      expect(prisma.concert.findFirst).toHaveBeenCalledWith({ where: match });
+      expect(prisma.concert.findFirst).toHaveBeenCalledWith({
+        where: {
+          artistName: 'Radiohead',
+          venueName: 'The O2 Arena',
+          city: 'London',
+          date: new Date('2025-11-24'),
+        },
+      });
       expect(prisma.concert.create).toHaveBeenCalledWith({
         data: { ...match, createdById: 'user-1' },
       });
@@ -326,6 +335,8 @@ describe('ConcertService', () => {
         venueName: 'The O2 Arena',
         city: 'London',
         date: new Date('2025-11-24'),
+        latitude: 51.75,
+        longitude: -0.3333333,
       };
       setlistFmService.searchConcerts.mockResolvedValueOnce([match]);
       prisma.concert.findFirst.mockResolvedValueOnce({

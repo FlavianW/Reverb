@@ -16,18 +16,27 @@ interface SetlistFmSearchResponse {
   }>;
 }
 
-/** Concert tel qu'identifié par Setlist.fm, prêt à être importé dans Reverb (US-3.1). */
+/**
+ * Concert tel qu'identifié par Setlist.fm, prêt à être importé dans Reverb (US-3.1).
+ * `latitude`/`longitude` (US-9.1) sont à précision ville, `null` si Setlist.fm
+ * ne les fournit pas pour cette entrée.
+ */
 export interface SetlistFmConcertMatch {
   artistName: string;
   venueName: string;
   city: string;
   date: Date;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 interface SetlistFmConcertSearchResponse {
   setlist?: Array<{
     artist?: { name?: string };
-    venue?: { name?: string; city?: { name?: string } };
+    venue?: {
+      name?: string;
+      city?: { name?: string; coords?: { lat?: number; long?: number } };
+    };
     eventDate?: string;
   }>;
 }
@@ -163,11 +172,14 @@ function parseConcertMatches(
     }
     seen.add(key);
 
+    const coords = entry.venue?.city?.coords;
     matches.push({
       artistName,
       venueName,
       city,
       date: parseSetlistFmDate(eventDate),
+      latitude: coords?.lat ?? null,
+      longitude: coords?.long ?? null,
     });
   }
 

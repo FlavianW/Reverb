@@ -88,13 +88,19 @@ describe('SetlistFmService', () => {
   });
 
   describe('searchConcerts', () => {
-    it('renvoie les concerts trouvés pour cet artiste', async () => {
+    it('renvoie les concerts trouvés pour cet artiste, avec leurs coordonnées', async () => {
       fetchMock.mockResolvedValueOnce(
         jsonResponse(200, {
           setlist: [
             {
               artist: { name: 'Radiohead' },
-              venue: { name: 'The O2 Arena', city: { name: 'London' } },
+              venue: {
+                name: 'The O2 Arena',
+                city: {
+                  name: 'London',
+                  coords: { lat: 51.75, long: -0.3333333 },
+                },
+              },
               eventDate: '24-11-2025',
             },
           ],
@@ -109,10 +115,31 @@ describe('SetlistFmService', () => {
           venueName: 'The O2 Arena',
           city: 'London',
           date: new Date(Date.UTC(2025, 10, 24)),
+          latitude: 51.75,
+          longitude: -0.3333333,
         },
       ]);
       const requestedUrl = fetchMock.mock.calls[0][0] as URL;
       expect(requestedUrl.searchParams.get('artistName')).toBe('radiohead');
+    });
+
+    it('renvoie latitude/longitude à null quand Setlist.fm ne fournit pas de coordonnées', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, {
+          setlist: [
+            {
+              artist: { name: 'Radiohead' },
+              venue: { name: 'The O2 Arena', city: { name: 'London' } },
+              eventDate: '24-11-2025',
+            },
+          ],
+        }),
+      );
+
+      const result = await service.searchConcerts('radiohead');
+
+      expect(result[0].latitude).toBeNull();
+      expect(result[0].longitude).toBeNull();
     });
 
     it('dédoublonne les entrées identiques (même artiste/salle/ville/date)', async () => {
