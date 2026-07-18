@@ -20,7 +20,9 @@
 		style:background-image={profile.bannerUrl ? `url(${profile.bannerUrl})` : undefined}
 	></div>
 	<div class="info">
-		<Avatar src={profile.avatarUrl} name={profile.pseudo} size={96} />
+		<div class="avatar-ring">
+			<Avatar src={profile.avatarUrl} name={profile.pseudo} size={136} />
+		</div>
 		<div class="identity">
 			<h1>{profile.pseudo}</h1>
 			{#if profile.bio}
@@ -59,7 +61,7 @@
 
 <style>
 	.cover {
-		height: 140px;
+		height: 280px;
 		background-color: var(--accent);
 		background-image: linear-gradient(160deg, var(--accent-deep), var(--accent));
 		background-size: cover;
@@ -73,7 +75,15 @@
 		display: flex;
 		align-items: flex-end;
 		gap: 1.5rem;
-		transform: translateY(-48px);
+		transform: translateY(-68px);
+	}
+
+	.avatar-ring {
+		flex-shrink: 0;
+		padding: 5px;
+		border-radius: 50%;
+		background: var(--paper);
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
 	}
 
 	.identity {
