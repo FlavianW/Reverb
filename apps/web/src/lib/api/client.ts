@@ -1,5 +1,6 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 import type {
+	ArtistSuggestion,
 	Comment,
 	Concert,
 	ConcertPage,
@@ -103,6 +104,9 @@ export const api = {
 		body.append('banner', file);
 		return request<PublicUser>('/users/me/banner', { method: 'POST', body });
 	},
+
+	searchArtists: (q: string) =>
+		request<ArtistSuggestion[]>(`/artists/search?q=${encodeURIComponent(q)}`),
 
 	getFriendshipOverview: () => request<FriendshipOverview>('/friendships/me'),
 	getFriendshipStatus: (pseudo: string) =>

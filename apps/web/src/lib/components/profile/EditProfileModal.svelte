@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { api, ApiError } from '$lib/api/client';
+	import ArtistAutocomplete from '$lib/components/ui/ArtistAutocomplete.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
@@ -121,7 +122,7 @@
 
 		<FormField id="edit-pseudo-{uid}" label="Pseudo" bind:value={pseudo} required />
 		<FormField id="edit-bio-{uid}" label="Bio" bind:value={bio} multiline />
-		<FormField
+		<ArtistAutocomplete
 			id="edit-favorite-artist-{uid}"
 			label="Artiste favori"
 			bind:value={favoriteArtist}
