@@ -14,11 +14,18 @@
 </script>
 
 <header class="profile-header">
-	<div class="cover" aria-hidden="true"></div>
+	<div
+		class="cover"
+		aria-hidden="true"
+		style:background-image={profile.bannerUrl ? `url(${profile.bannerUrl})` : undefined}
+	></div>
 	<div class="info">
 		<Avatar src={profile.avatarUrl} name={profile.pseudo} size={96} />
 		<div class="identity">
 			<h1>{profile.pseudo}</h1>
+			{#if profile.favoriteArtist}
+				<p class="favorite-artist">Artiste favori : {profile.favoriteArtist}</p>
+			{/if}
 			{#if profile.bio}
 				<p class="bio">{profile.bio}</p>
 			{/if}
@@ -38,7 +45,16 @@
 <style>
 	.cover {
 		height: 140px;
-		background: linear-gradient(160deg, var(--accent-deep), var(--accent));
+		background-color: var(--accent);
+		background-image: linear-gradient(160deg, var(--accent-deep), var(--accent));
+		background-size: cover;
+		background-position: center;
+	}
+
+	.favorite-artist {
+		color: var(--ink-soft);
+		font-size: 0.8125rem;
+		margin: 0 0 0.25rem;
 	}
 
 	.info {
