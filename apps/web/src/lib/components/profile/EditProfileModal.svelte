@@ -17,16 +17,22 @@
 	let dialogEl: HTMLDialogElement | undefined = $state();
 	let pseudo = $state(user.pseudo);
 	let bio = $state(user.bio ?? '');
+	let favoriteArtist = $state(user.favoriteArtist ?? '');
 	let avatarFile = $state<File | null>(null);
 	let avatarPreview = $state<string | null>(user.avatarUrl);
+	let bannerFile = $state<File | null>(null);
+	let bannerPreview = $state<string | null>(user.bannerUrl);
 	let submitting = $state(false);
 	let error = $state('');
 
 	function openDialog() {
 		pseudo = user.pseudo;
 		bio = user.bio ?? '';
+		favoriteArtist = user.favoriteArtist ?? '';
 		avatarFile = null;
 		avatarPreview = user.avatarUrl;
+		bannerFile = null;
+		bannerPreview = user.bannerUrl;
 		error = '';
 		dialogEl?.showModal();
 	}
@@ -45,6 +51,16 @@
 		avatarPreview = URL.createObjectURL(file);
 	}
 
+	function onBannerChange(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) {
+			return;
+		}
+		bannerFile = file;
+		bannerPreview = URL.createObjectURL(file);
+	}
+
 	async function onSubmit(event: SubmitEvent) {
 		event.preventDefault();
 		submitting = true;
@@ -53,7 +69,10 @@
 			if (avatarFile) {
 				await api.uploadAvatar(avatarFile);
 			}
-			const updated = await api.updateProfile({ pseudo, bio });
+			if (bannerFile) {
+				await api.uploadBanner(bannerFile);
+			}
+			const updated = await api.updateProfile({ pseudo, bio, favoriteArtist });
 			dialogEl?.close();
 			await goto(`/profil/${updated.pseudo}`, { invalidateAll: true });
 		} catch (e) {
@@ -69,6 +88,22 @@
 <dialog bind:this={dialogEl} aria-labelledby="edit-profile-heading-{uid}">
 	<form onsubmit={onSubmit}>
 		<h2 id="edit-profile-heading-{uid}">Modifier le profil</h2>
+
+		<div
+			class="banner-field"
+			style:background-image={bannerPreview ? `url(${bannerPreview})` : undefined}
+		>
+			<label class="banner-upload" for="banner-upload-{uid}">
+				Changer la bannière
+				<input
+					id="banner-upload-{uid}"
+					type="file"
+					accept="image/*"
+					class="sr-only"
+					onchange={onBannerChange}
+				/>
+			</label>
+		</div>
 
 		<div class="avatar-field">
 			<Avatar src={avatarPreview} name={pseudo} size={64} />
@@ -86,6 +121,11 @@
 
 		<FormField id="edit-pseudo-{uid}" label="Pseudo" bind:value={pseudo} required />
 		<FormField id="edit-bio-{uid}" label="Bio" bind:value={bio} multiline />
+		<FormField
+			id="edit-favorite-artist-{uid}"
+			label="Artiste favori"
+			bind:value={favoriteArtist}
+		/>
 
 		{#if error}
 			<p class="error" role="alert">{error}</p>
@@ -116,6 +156,29 @@
 	h2 {
 		font-size: 1.125rem;
 		margin: 0 0 1.25rem;
+	}
+
+	.banner-field {
+		height: 90px;
+		border-radius: var(--radius-sm);
+		margin-bottom: 1rem;
+		background-color: var(--accent-soft);
+		background-size: cover;
+		background-position: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.banner-upload {
+		font-size: 0.875rem;
+		color: var(--accent-deep);
+		font-weight: 600;
+		cursor: pointer;
+		text-decoration: underline;
+		padding: 0.375rem 0.75rem;
+		border-radius: var(--radius-sm);
+		background: var(--paper-alt);
 	}
 
 	.avatar-field {
