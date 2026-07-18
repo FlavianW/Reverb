@@ -36,12 +36,17 @@ model User {
 
 /// Fiche concert (artiste, lieu, date). La setlist n'est pas stockée ici :
 /// elle est récupérée en direct depuis Setlist.fm quand le concert est passé (US-2.1).
+/// `latitude`/`longitude` (précision ville, US-9.1) sont nullables : soit issues
+/// de Setlist.fm à l'import, soit d'un géocodage par ville à la création manuelle,
+/// soit absentes si les deux échouent — le concert reste valide sans coordonnées.
 model Concert {
   id          String              @id @default(uuid())
   artistName  String
   venueName   String
   city        String
   date        DateTime
+  latitude    Float?
+  longitude   Float?
   createdById String
   createdBy   User                @relation(fields: [createdById], references: [id])
   createdAt   DateTime            @default(now())
