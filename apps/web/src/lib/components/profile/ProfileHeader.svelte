@@ -27,17 +27,6 @@
 				<p class="bio">{profile.bio}</p>
 			{/if}
 		</div>
-		{#if profile.favoriteArtist}
-			<div class="favorite-artist">
-				{#if profile.favoriteArtistImageUrl}
-					<img src={profile.favoriteArtistImageUrl} alt={profile.favoriteArtist} />
-				{/if}
-				<div class="favorite-artist-text">
-					<p class="label">Artiste favori</p>
-					<p class="name">{profile.favoriteArtist}</p>
-				</div>
-			</div>
-		{/if}
 		{#if editableAs}
 			<EditProfileModal user={editableAs} />
 		{:else if friendshipStatus}
@@ -48,6 +37,24 @@
 			/>
 		{/if}
 	</div>
+
+	{#if profile.favoriteArtist}
+		<div class="favorite-artist-wrap">
+			<div class="favorite-artist">
+				{#if profile.favoriteArtistImageUrl}
+					<img src={profile.favoriteArtistImageUrl} alt={profile.favoriteArtist} />
+				{:else}
+					<div class="favorite-artist-placeholder" aria-hidden="true">
+						{profile.favoriteArtist.charAt(0).toUpperCase()}
+					</div>
+				{/if}
+				<div class="favorite-artist-text">
+					<p class="label">Artiste favori</p>
+					<p class="name">{profile.favoriteArtist}</p>
+				</div>
+			</div>
+		</div>
+	{/if}
 </header>
 
 <style>
@@ -74,37 +81,58 @@
 		padding-bottom: 0.5rem;
 	}
 
+	.favorite-artist-wrap {
+		max-width: 1200px;
+		margin: 1.5rem auto 2rem;
+		padding: 0 3rem;
+	}
+
 	.favorite-artist {
 		display: flex;
 		align-items: center;
-		gap: 0.625rem;
-		padding: 0.5rem 0.875rem 0.5rem 0.5rem;
+		gap: 1.5rem;
+		padding: 1.25rem 1.75rem;
 		border: 1px solid var(--line);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		background: var(--paper-alt);
-		margin-bottom: 0.5rem;
 	}
 
-	.favorite-artist img {
-		width: 44px;
-		height: 44px;
+	.favorite-artist img,
+	.favorite-artist-placeholder {
+		width: 110px;
+		height: 110px;
 		border-radius: 50%;
-		object-fit: cover;
 		flex-shrink: 0;
 	}
 
+	.favorite-artist img {
+		object-fit: cover;
+	}
+
+	.favorite-artist-placeholder {
+		background: var(--accent-soft);
+		color: var(--accent-deep);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-family: var(--font-serif);
+		font-size: 2.5rem;
+		font-weight: 500;
+	}
+
 	.favorite-artist-text .label {
-		font-size: 0.6875rem;
-		letter-spacing: 0.04em;
+		font-size: 0.8125rem;
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--ink-soft);
-		margin: 0;
+		margin: 0 0 0.25rem;
 	}
 
 	.favorite-artist-text .name {
 		font-family: var(--font-serif);
 		font-style: italic;
-		font-size: 0.9375rem;
+		font-weight: 500;
+		font-size: 2.25rem;
 		margin: 0;
 	}
 
@@ -128,6 +156,25 @@
 			flex-direction: column;
 			align-items: flex-start;
 			padding: 0 1.25rem;
+		}
+
+		.favorite-artist-wrap {
+			padding: 0 1.25rem;
+		}
+
+		.favorite-artist {
+			gap: 1rem;
+			padding: 1rem;
+		}
+
+		.favorite-artist img,
+		.favorite-artist-placeholder {
+			width: 72px;
+			height: 72px;
+		}
+
+		.favorite-artist-text .name {
+			font-size: 1.5rem;
 		}
 	}
 </style>
