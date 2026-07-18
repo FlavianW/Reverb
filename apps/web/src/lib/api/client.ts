@@ -7,6 +7,7 @@ import type {
 	FriendshipStatusWithUser,
 	FriendshipSummary,
 	LoginRequest,
+	NearbyConcert,
 	PhotoSummary,
 	PostPage,
 	PostSummary,
@@ -56,6 +57,10 @@ export const api = {
 
 	searchConcerts: (q?: string) =>
 		request<Concert[]>(`/concerts/search${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+	getNearbyConcerts: (lat: number, lng: number, radiusKm?: number) =>
+		request<NearbyConcert[]>(
+			`/concerts/nearby?lat=${lat}&lng=${lng}${radiusKm ? `&radiusKm=${radiusKm}` : ''}`
+		),
 	getConcert: (id: string) => request<ConcertPage>(`/concerts/${id}`),
 	getAttendance: (id: string) => request<{ attending: boolean }>(`/concerts/${id}/attendance`),
 	markAttendance: (id: string) => request<void>(`/concerts/${id}/attendance`, { method: 'PUT' }),
