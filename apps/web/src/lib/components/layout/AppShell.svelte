@@ -6,10 +6,11 @@
 
 	interface Props {
 		user: PublicUser;
+		unreadMessageCount: number;
 		children: Snippet;
 	}
 
-	let { user, children }: Props = $props();
+	let { user, unreadMessageCount, children }: Props = $props();
 </script>
 
 <div class="shell">
@@ -21,6 +22,14 @@
 				<NavLink href="/fil">Fil</NavLink>
 				<NavLink href="/recherche">Recherche</NavLink>
 				<NavLink href="/carte">Carte</NavLink>
+				<NavLink href="/messages">
+					<span class="nav-item">
+						Messages
+						{#if unreadMessageCount > 0}
+							<span class="badge">{unreadMessageCount}</span>
+						{/if}
+					</span>
+				</NavLink>
 				<NavLink href="/amis">Amis</NavLink>
 				<NavLink href="/profil/{user.pseudo}">Profil</NavLink>
 			</nav>
@@ -68,6 +77,26 @@
 		display: flex;
 		gap: 2.25rem;
 		flex: 1;
+	}
+
+	.nav-item {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.125rem;
+		height: 1.125rem;
+		padding: 0 0.3125rem;
+		border-radius: 999px;
+		background: var(--accent);
+		color: var(--paper-alt);
+		font-size: 0.6875rem;
+		font-weight: 700;
 	}
 
 	@media (max-width: 640px) {
