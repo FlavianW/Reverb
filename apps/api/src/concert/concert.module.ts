@@ -11,6 +11,7 @@ import { PhotoController } from './photo/photo.controller';
 import { PhotoService } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { ReportService } from './report/report.service';
+import { GeocodingService } from './geocoding.service';
 import { SetlistFmService } from './setlistfm.service';
 
 @Module({
@@ -19,6 +20,7 @@ import { SetlistFmService } from './setlistfm.service';
   providers: [
     ConcertService,
     SetlistFmService,
+    GeocodingService,
     ConcertAttendanceService,
     ConcertRatingService,
     CommentService,
