@@ -1,0 +1,77 @@
+name: Mobile Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    name: APK Android (release)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.6"
+          channel: stable
+          cache: true
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Récupération des dépendances
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Build APK release
+        working-directory: apps/mobile
+        run: flutter build apk --release
+
+      - name: Publier l'APK sur la release GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+
+  ios:
+    name: App iOS (non signée, best-effort)
+    runs-on: macos-latest
+    # Sans compte développeur Apple, aucun certificat de signature n'est
+    # disponible : le build produit une .app non signée, installable
+    # uniquement sur simulateur. On tente quand même, sans bloquer la
+    # release Android si cette étape échoue.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.6"
+          channel: stable
+
+      - name: Récupération des dépendances
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Build iOS sans signature
+        working-directory: apps/mobile
+        run: flutter build ios --release --no-codesign
+
+      - name: Compresser l'app iOS
+        working-directory: apps/mobile/build/ios/iphoneos
+        run: zip -r Runner.app.zip Runner.app
+
+      - name: Publier l'app iOS sur la release GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apps/mobile/build/ios/iphoneos/Runner.app.zip

@@ -63,3 +63,42 @@ jobs:
 
       - name: Build
         run: pnpm --filter web build
+
+  mobile:
+    name: Mobile (analyse, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.6"
+          channel: stable
+          cache: true
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Récupération des dépendances
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Analyse statique
+        # --no-fatal-infos : les infos de style (ex. lints de dépréciation Flutter
+        # récents) ne doivent pas faire échouer la CI, seules les erreurs/warnings comptent.
+        working-directory: apps/mobile
+        run: flutter analyze --no-fatal-infos
+
+      - name: Tests unitaires et widgets
+        working-directory: apps/mobile
+        run: flutter test
+
+      - name: Build (APK debug)
+        working-directory: apps/mobile
+        run: flutter build apk --debug
