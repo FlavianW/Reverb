@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/theme.dart';
 import 'package:mobile/widgets/attendance_button.dart';
 
 import '../support/fake_api_client.dart';
@@ -14,6 +15,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: buildReverbLightTheme(),
         home: Scaffold(
           body: AttendanceButton(
             api: api,
@@ -39,6 +41,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: buildReverbLightTheme(),
         home: Scaffold(
           body: AttendanceButton(
             api: api,

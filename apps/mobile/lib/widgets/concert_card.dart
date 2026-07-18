@@ -31,16 +31,16 @@ class ConcertCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 '${concert.venueName}, ${concert.city}',
-                style: const TextStyle(
-                  color: ReverbColors.inkSoft,
+                style: TextStyle(
+                  color: context.colors.inkSoft,
                   fontSize: 14,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 formattedDate,
-                style: const TextStyle(
-                  color: ReverbColors.inkSoft,
+                style: TextStyle(
+                  color: context.colors.inkSoft,
                   fontSize: 13,
                 ),
               ),

@@ -50,9 +50,9 @@ class _PostCardState extends State<PostCard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: ReverbColors.line),
+        border: Border.all(color: context.colors.line),
         borderRadius: BorderRadius.circular(ReverbRadius.md),
-        color: ReverbColors.paperAlt,
+        color: context.colors.paperAlt,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,8 +76,8 @@ class _PostCardState extends State<PostCard> {
                   ),
                   Text(
                     formattedDate,
-                    style: const TextStyle(
-                      color: ReverbColors.inkSoft,
+                    style: TextStyle(
+                      color: context.colors.inkSoft,
                       fontSize: 12,
                     ),
                   ),
@@ -122,14 +122,14 @@ class _PostCardState extends State<PostCard> {
               const TextSpan(text: 'A noté '),
               TextSpan(
                 text: post.concert?.artistName ?? '',
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: ReverbColors.accentDeep,
+                  color: context.colors.accentDeep,
                 ),
               ),
               TextSpan(
                 text: ' $stars',
-                style: const TextStyle(color: ReverbColors.accent),
+                style: TextStyle(color: context.colors.accent),
               ),
             ],
           ),
@@ -141,9 +141,9 @@ class _PostCardState extends State<PostCard> {
               const TextSpan(text: 'A marqué sa présence à '),
               TextSpan(
                 text: post.concert?.artistName ?? '',
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: ReverbColors.accentDeep,
+                  color: context.colors.accentDeep,
                 ),
               ),
             ],
@@ -158,8 +158,8 @@ class _PostCardState extends State<PostCard> {
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
                   'À propos de ${post.concert!.artistName}',
-                  style: const TextStyle(
-                    color: ReverbColors.inkSoft,
+                  style: TextStyle(
+                    color: context.colors.inkSoft,
                     fontSize: 13,
                   ),
                 ),

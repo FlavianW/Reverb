@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/theme.dart';
 import 'package:mobile/widgets/avatar.dart';
 
 void main() {
@@ -7,7 +8,8 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
+        theme: buildReverbLightTheme(),
         home: Scaffold(body: ReverbAvatar(src: null, name: 'Alice')),
       ),
     );
@@ -17,7 +19,7 @@ void main() {
 
   testWidgets('un pseudo vide retombe sur "?"', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: ReverbAvatar(src: null, name: '  '))),
+      MaterialApp(theme: buildReverbLightTheme(), home: Scaffold(body: ReverbAvatar(src: null, name: '  '))),
     );
 
     expect(find.text('?'), findsOneWidget);

@@ -43,9 +43,9 @@ class _FriendCardState extends State<FriendCard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: ReverbColors.line),
+        border: Border.all(color: context.colors.line),
         borderRadius: BorderRadius.circular(ReverbRadius.md),
-        color: ReverbColors.paperAlt,
+        color: context.colors.paperAlt,
       ),
       child: Row(
         children: [
@@ -96,9 +96,9 @@ class _FriendCardState extends State<FriendCard> {
         ];
       case FriendCardKind.sent:
         return [
-          const Text(
+          Text(
             'Demande envoyée',
-            style: TextStyle(color: ReverbColors.inkSoft, fontSize: 13),
+            style: TextStyle(color: context.colors.inkSoft, fontSize: 13),
           ),
           const SizedBox(width: 8),
           TextButton(

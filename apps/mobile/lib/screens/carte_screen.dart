@@ -8,6 +8,7 @@ import '../core/api_client.dart';
 import '../core/theme.dart';
 import '../models/concert.dart';
 import '../widgets/concert_card.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'concert_screen.dart';
 
 enum _Status { locating, ready, denied, error }
@@ -97,29 +98,32 @@ class _CarteScreenState extends State<CarteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Carte')),
+      appBar: AppBar(
+        title: const Text('Carte'),
+        actions: const [ThemeToggleButton()],
+      ),
       body: switch (_status) {
-        _Status.locating => const Center(
+        _Status.locating => Center(
           child: Text(
             'Localisation en cours…',
-            style: TextStyle(color: ReverbColors.inkSoft),
+            style: TextStyle(color: context.colors.inkSoft),
           ),
         ),
-        _Status.denied => const Center(
+        _Status.denied => Center(
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Text(
               "Impossible d'accéder à votre position. Activez la géolocalisation "
               'dans les réglages pour voir les concerts à proximité.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: ReverbColors.inkSoft),
+              style: TextStyle(color: context.colors.inkSoft),
             ),
           ),
         ),
-        _Status.error => const Center(
+        _Status.error => Center(
           child: Text(
             'Une erreur est survenue. Réessayez plus tard.',
-            style: TextStyle(color: ReverbColors.accentDeep),
+            style: TextStyle(color: context.colors.accentDeep),
           ),
         ),
         _Status.ready => _buildMap(_position!),
@@ -138,7 +142,7 @@ class _CarteScreenState extends State<CarteScreen> {
               _concerts.length > 1
                   ? '${_concerts.length} concerts à proximité'
                   : '${_concerts.length} concert à proximité',
-              style: const TextStyle(color: ReverbColors.inkSoft, fontSize: 13),
+              style: TextStyle(color: context.colors.inkSoft, fontSize: 13),
             ),
           ),
         ),
@@ -156,9 +160,9 @@ class _CarteScreenState extends State<CarteScreen> {
                     point: position,
                     width: 40,
                     height: 40,
-                    child: const Icon(
+                    child: Icon(
                       Icons.my_location,
-                      color: ReverbColors.accent,
+                      color: context.colors.accent,
                       size: 28,
                     ),
                   ),
@@ -170,9 +174,9 @@ class _CarteScreenState extends State<CarteScreen> {
                         height: 40,
                         child: GestureDetector(
                           onTap: () => _showConcert(concert),
-                          child: const Icon(
+                          child: Icon(
                             Icons.location_pin,
-                            color: ReverbColors.accentDeep,
+                            color: context.colors.accentDeep,
                             size: 36,
                           ),
                         ),

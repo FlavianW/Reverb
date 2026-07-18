@@ -46,6 +46,8 @@ dependencies:
   geolocator: ^14.0.3
   google_sign_in: ^7.2.0
   flutter_svg: ^2.2.1
+  shared_preferences: ^2.5.3
+  image_cropper: ^12.2.1
 
 dev_dependencies:
   flutter_test:

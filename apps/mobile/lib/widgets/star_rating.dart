@@ -58,7 +58,7 @@ class _StarRatingState extends State<StarRating> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(summaryLabel, style: const TextStyle(color: ReverbColors.inkSoft, fontSize: 13)),
+        Text(summaryLabel, style: TextStyle(color: context.colors.inkSoft, fontSize: 13)),
         const SizedBox(height: 8),
         Semantics(
           label: 'Votre note',
@@ -69,7 +69,7 @@ class _StarRatingState extends State<StarRating> {
                 onPressed: submitting ? null : () => _rate(star),
                 icon: Icon(
                   star <= selected ? Icons.star : Icons.star_border,
-                  color: star <= selected ? ReverbColors.accent : ReverbColors.line,
+                  color: star <= selected ? context.colors.accent : context.colors.line,
                 ),
                 tooltip: '$star étoile${star > 1 ? 's' : ''}',
               );
@@ -79,14 +79,14 @@ class _StarRatingState extends State<StarRating> {
         if (error != null)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(error!, style: const TextStyle(color: ReverbColors.accentDeep, fontSize: 13)),
+            child: Text(error!, style: TextStyle(color: context.colors.accentDeep, fontSize: 13)),
           ),
         if (submitted)
-          const Padding(
-            padding: EdgeInsets.only(top: 4),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
             child: Text(
               'Merci, votre note a été enregistrée.',
-              style: TextStyle(color: ReverbColors.inkSoft, fontSize: 13),
+              style: TextStyle(color: context.colors.inkSoft, fontSize: 13),
             ),
           ),
       ],

@@ -27,17 +27,17 @@ class ReverbAvatar extends StatelessWidget {
     if (src != null && src!.isNotEmpty) {
       return CircleAvatar(
         radius: size / 2,
-        backgroundColor: ReverbColors.accentSoft,
+        backgroundColor: context.colors.accentSoft,
         backgroundImage: NetworkImage(src!),
       );
     }
     return CircleAvatar(
       radius: size / 2,
-      backgroundColor: ReverbColors.accentSoft,
+      backgroundColor: context.colors.accentSoft,
       child: Text(
         _initials,
         style: TextStyle(
-          color: ReverbColors.accentDeep,
+          color: context.colors.accentDeep,
           fontWeight: FontWeight.w700,
           fontSize: size * 0.4,
         ),

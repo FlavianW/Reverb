@@ -126,8 +126,8 @@ class _FriendButtonState extends State<FriendButton> {
           padding: const EdgeInsets.only(top: 4),
           child: Text(
             error!,
-            style: const TextStyle(
-              color: ReverbColors.accentDeep,
+            style: TextStyle(
+              color: context.colors.accentDeep,
               fontSize: 13,
             ),
           ),

@@ -129,8 +129,8 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                   const SizedBox(height: 8),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: ReverbColors.inkSoft,
+                    style: TextStyle(
+                      color: context.colors.inkSoft,
                       fontSize: 15,
                     ),
                   ),
@@ -167,8 +167,8 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                     const SizedBox(height: 12),
                     Text(
                       error!,
-                      style: const TextStyle(
-                        color: ReverbColors.accentDeep,
+                      style: TextStyle(
+                        color: context.colors.accentDeep,
                         fontSize: 14,
                       ),
                     ),
@@ -185,19 +185,19 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                   ),
                   const SizedBox(height: 16),
                   Row(
-                    children: const [
-                      Expanded(child: Divider(color: ReverbColors.line)),
+                    children: [
+                      Expanded(child: Divider(color: context.colors.line)),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
                           'ou',
                           style: TextStyle(
-                            color: ReverbColors.inkSoft,
+                            color: context.colors.inkSoft,
                             fontSize: 13,
                           ),
                         ),
                       ),
-                      Expanded(child: Divider(color: ReverbColors.line)),
+                      Expanded(child: Divider(color: context.colors.line)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -227,8 +227,8 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                           isSignup
                               ? 'Déjà un compte ?'
                               : 'Pas encore de compte ?',
-                          style: const TextStyle(
-                            color: ReverbColors.inkSoft,
+                          style: TextStyle(
+                            color: context.colors.inkSoft,
                             fontSize: 14,
                           ),
                         ),

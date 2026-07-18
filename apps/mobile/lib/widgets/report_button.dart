@@ -43,7 +43,7 @@ class _ReportButtonState extends State<ReportButton> {
     return TextButton(
       onPressed: reported ? null : _openDialog,
       style: TextButton.styleFrom(
-        foregroundColor: ReverbColors.inkSoft,
+        foregroundColor: context.colors.inkSoft,
         padding: EdgeInsets.zero,
         minimumSize: const Size(0, 0),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -75,7 +75,7 @@ class _ReportDialogState extends State<_ReportDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Motif', style: TextStyle(color: ReverbColors.inkSoft, fontSize: 13)),
+          Text('Motif', style: TextStyle(color: context.colors.inkSoft, fontSize: 13)),
           ...ReportReason.values.map(
             (r) => RadioListTile<ReportReason>(
               value: r,

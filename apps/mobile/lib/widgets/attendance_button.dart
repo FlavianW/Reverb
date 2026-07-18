@@ -49,9 +49,9 @@ class _AttendanceButtonState extends State<AttendanceButton> {
       style: attending
           ? null
           : ElevatedButton.styleFrom(
-              backgroundColor: ReverbColors.paperAlt,
-              foregroundColor: ReverbColors.ink,
-              side: const BorderSide(color: ReverbColors.line),
+              backgroundColor: context.colors.paperAlt,
+              foregroundColor: context.colors.ink,
+              side: BorderSide(color: context.colors.line),
             ),
       child: const Text("J'y étais"),
     );

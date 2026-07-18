@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/theme.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/models/concert.dart';
 import 'package:mobile/widgets/star_rating.dart';
@@ -21,6 +22,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: buildReverbLightTheme(),
         home: Scaffold(
           body: StarRating(
             api: api,
@@ -50,6 +52,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: buildReverbLightTheme(),
         home: Scaffold(
           body: StarRating(
             api: api,
