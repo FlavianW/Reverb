@@ -11,21 +11,23 @@ datasource db {
 /// inscription email/mot de passe classique. `googleId` et `passwordHash`
 /// sont mutuellement facultatifs : chaque compte a l'un des deux (jamais aucun).
 model User {
-  id           String              @id @default(uuid())
-  email        String              @unique
-  googleId     String?             @unique
-  passwordHash String?
-  pseudo       String              @unique
-  avatarUrl    String?
-  bio          String?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  concerts     Concert[]
-  attendances  ConcertAttendance[]
-  ratings      ConcertRating[]
-  comments     Comment[]
-  photos       Photo[]
-  reports      Report[]
+  id                     String              @id @default(uuid())
+  email                  String              @unique
+  googleId               String?             @unique
+  passwordHash           String?
+  pseudo                 String              @unique
+  avatarUrl              String?
+  bio                    String?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  concerts               Concert[]
+  attendances            ConcertAttendance[]
+  ratings                ConcertRating[]
+  comments               Comment[]
+  photos                 Photo[]
+  reports                Report[]
+  sentFriendRequests     Friendship[]        @relation("FriendshipRequester")
+  receivedFriendRequests Friendship[]        @relation("FriendshipAddressee")
 
   @@map("users")
 }
@@ -131,4 +133,26 @@ model Report {
   @@unique([reporterId, commentId])
   @@unique([reporterId, photoId])
   @@map("reports")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
+/// Relation d'amitié à validation mutuelle (US-7.1) : une seule ligne par paire
+/// ordonnée (requester, addressee). Si une demande inverse PENDING existe déjà,
+/// le service l'accepte au lieu de créer un doublon symétrique.
+model Friendship {
+  id          String           @id @default(uuid())
+  requesterId String
+  requester   User             @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User             @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@map("friendships")
 }
