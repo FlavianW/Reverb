@@ -1,9 +1,13 @@
 <script lang="ts">
 	import ConcertCard from '$lib/components/concert/ConcertCard.svelte';
+	import PostList from '$lib/components/post/PostList.svelte';
 	import ProfileHeader from '$lib/components/profile/ProfileHeader.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+
+	let postItems = $state(data.posts.items);
+	let postCursor = $state(data.posts.nextCursor);
 </script>
 
 <svelte:head>
@@ -27,6 +31,16 @@
 			{/each}
 		</div>
 	{/if}
+
+	<h2 class="section-label posts-label">Posts</h2>
+	<div class="posts-section">
+		<PostList
+			bind:items={postItems}
+			bind:cursor={postCursor}
+			currentUserPseudo={data.user.pseudo}
+			source={{ type: 'user', pseudo: data.profile.pseudo }}
+		/>
+	</div>
 </div>
 
 <style>
@@ -53,6 +67,14 @@
 
 	.empty {
 		color: var(--ink-soft);
+	}
+
+	.posts-label {
+		margin-top: 2.5rem;
+	}
+
+	.posts-section {
+		max-width: 640px;
 	}
 
 	@media (max-width: 640px) {
