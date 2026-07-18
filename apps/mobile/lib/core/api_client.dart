@@ -7,6 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/concert.dart';
+import '../models/friendship.dart';
+import '../models/post.dart';
 import '../models/public_profile.dart';
 import '../models/public_user.dart';
 import '../models/report_reason.dart';
@@ -223,4 +225,77 @@ class ApiClient {
       decode: (d) => PublicUser.fromJson(d as Map<String, dynamic>),
     );
   }
+
+  // Amis
+
+  Future<FriendshipOverview> getFriendshipOverview() => _request(
+    'GET',
+    '/friendships/me',
+    decode: (d) => FriendshipOverview.fromJson(d as Map<String, dynamic>),
+  );
+
+  Future<FriendshipStatusWithUser> getFriendshipStatus(String pseudo) =>
+      _request(
+        'GET',
+        '/friendships/status/$pseudo',
+        decode: (d) =>
+            FriendshipStatusWithUser.fromJson(d as Map<String, dynamic>),
+      );
+
+  Future<FriendshipSummary> sendFriendRequest(String pseudo) => _request(
+    'POST',
+    '/friendships/requests/$pseudo',
+    decode: (d) => FriendshipSummary.fromJson(d as Map<String, dynamic>),
+  );
+
+  Future<void> acceptFriendRequest(String id) =>
+      _request('PUT', '/friendships/$id/accept');
+
+  Future<void> removeFriendship(String id) =>
+      _request('DELETE', '/friendships/$id');
+
+  // Fil d'actualité
+
+  Future<PostPage> getFeed([String? cursor]) => _request(
+    'GET',
+    '/posts/feed',
+    query: cursor != null ? {'cursor': cursor} : null,
+    decode: (d) => PostPage.fromJson(d as Map<String, dynamic>),
+  );
+
+  Future<PostPage> getUserPosts(String pseudo, [String? cursor]) => _request(
+    'GET',
+    '/users/$pseudo/posts',
+    query: cursor != null ? {'cursor': cursor} : null,
+    decode: (d) => PostPage.fromJson(d as Map<String, dynamic>),
+  );
+
+  /// Post explicite (US-8.2) : `content`/`concertId` facultatifs, mais l'un
+  /// des deux ou une photo doit être fourni (validé côté API).
+  Future<PostSummary> createPost({
+    String? content,
+    String? concertId,
+    List<File> photos = const [],
+  }) async {
+    final formData = FormData.fromMap({
+      if (content != null) 'content': content,
+      if (concertId != null) 'concertId': concertId,
+      if (photos.isNotEmpty)
+        'photos': await Future.wait(
+          photos.map((file) => MultipartFile.fromFile(file.path)),
+        ),
+    });
+    return _request(
+      'POST',
+      '/posts',
+      data: formData,
+      decode: (d) => PostSummary.fromJson(d as Map<String, dynamic>),
+    );
+  }
+
+  Future<void> deletePost(String id) => _request('DELETE', '/posts/$id');
+
+  Future<void> likePost(String id) => _request('PUT', '/posts/$id/like');
+
+  Future<void> unlikePost(String id) => _request('DELETE', '/posts/$id/like');
 }
