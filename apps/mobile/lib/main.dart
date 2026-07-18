@@ -53,6 +53,18 @@ class _AuthGate extends StatelessWidget {
         return const RootShell();
       case SessionStatus.anonymous:
         return const ConnexionScreen();
+      case SessionStatus.error:
+        return const Scaffold(
+          body: Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'Erreur réseau, veuillez redémarrer l\'application.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        );
     }
   }
 }
