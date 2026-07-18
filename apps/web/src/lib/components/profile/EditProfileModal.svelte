@@ -5,7 +5,10 @@
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
+	import ImageCropModal from '$lib/components/ui/ImageCropModal.svelte';
 	import type { PublicUser } from '@reverb/shared';
+
+	type CropTarget = { kind: 'avatar' | 'banner'; file: File };
 
 	interface Props {
 		user: PublicUser;
@@ -23,6 +26,7 @@
 	let avatarPreview = $state<string | null>(user.avatarUrl);
 	let bannerFile = $state<File | null>(null);
 	let bannerPreview = $state<string | null>(user.bannerUrl);
+	let cropTarget = $state<CropTarget | null>(null);
 	let submitting = $state(false);
 	let error = $state('');
 
@@ -45,21 +49,38 @@
 	function onAvatarChange(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
+		input.value = '';
 		if (!file) {
 			return;
 		}
-		avatarFile = file;
-		avatarPreview = URL.createObjectURL(file);
+		cropTarget = { kind: 'avatar', file };
 	}
 
 	function onBannerChange(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
+		input.value = '';
 		if (!file) {
 			return;
 		}
-		bannerFile = file;
-		bannerPreview = URL.createObjectURL(file);
+		cropTarget = { kind: 'banner', file };
+	}
+
+	function onCropConfirm(blob: Blob) {
+		if (!cropTarget) return;
+		const cropped = new File([blob], `${cropTarget.kind}.jpg`, { type: 'image/jpeg' });
+		if (cropTarget.kind === 'avatar') {
+			avatarFile = cropped;
+			avatarPreview = URL.createObjectURL(cropped);
+		} else {
+			bannerFile = cropped;
+			bannerPreview = URL.createObjectURL(cropped);
+		}
+		cropTarget = null;
+	}
+
+	function onCropCancel() {
+		cropTarget = null;
 	}
 
 	async function onSubmit(event: SubmitEvent) {
@@ -138,6 +159,31 @@
 		</div>
 	</form>
 </dialog>
+
+{#if cropTarget}
+	{#if cropTarget.kind === 'avatar'}
+		<ImageCropModal
+			file={cropTarget.file}
+			title="Recadrer la photo de profil"
+			aspectRatio={1}
+			outputWidth={480}
+			outputHeight={480}
+			circular
+			onConfirm={onCropConfirm}
+			onCancel={onCropCancel}
+		/>
+	{:else}
+		<ImageCropModal
+			file={cropTarget.file}
+			title="Recadrer la bannière"
+			aspectRatio={3}
+			outputWidth={1500}
+			outputHeight={500}
+			onConfirm={onCropConfirm}
+			onCancel={onCropCancel}
+		/>
+	{/if}
+{/if}
 
 <style>
 	dialog {
