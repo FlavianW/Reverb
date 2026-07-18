@@ -7,9 +7,13 @@ import 'package:provider/provider.dart';
 import '../core/api_client.dart';
 import '../core/session.dart';
 import '../core/theme.dart';
+import '../models/friendship.dart';
+import '../models/post.dart';
 import '../models/public_profile.dart';
 import '../widgets/avatar.dart';
 import '../widgets/concert_card.dart';
+import '../widgets/friend_button.dart';
+import '../widgets/post_card.dart';
 import 'concert_screen.dart';
 
 /// Miroir de `apps/web/src/routes/profil/[pseudo]/+page.svelte` : édition
@@ -26,12 +30,15 @@ class ProfilScreen extends StatefulWidget {
 }
 
 class _ProfilScreenState extends State<ProfilScreen> {
-  late Future<PublicProfile> _future;
+  late Future<(PublicProfile, FriendshipStatusWithUser?)> _future;
+  List<PostSummary> _postItems = [];
+  String? _postCursor;
+  bool _loadingMorePosts = false;
 
   @override
   void initState() {
     super.initState();
-    _future = context.read<ApiClient>().getProfile(widget.pseudo);
+    _future = _load();
   }
 
   @override
@@ -45,10 +52,51 @@ class _ProfilScreenState extends State<ProfilScreen> {
     }
   }
 
+  Future<(PublicProfile, FriendshipStatusWithUser?)> _load() async {
+    final api = context.read<ApiClient>();
+    final isOwnProfile =
+        context.read<SessionController>().user?.pseudo == widget.pseudo;
+    final profile = await api.getProfile(widget.pseudo);
+    final friendshipStatus = isOwnProfile
+        ? null
+        : await api.getFriendshipStatus(widget.pseudo);
+    final posts = await api.getUserPosts(widget.pseudo);
+    _postItems = posts.items;
+    _postCursor = posts.nextCursor;
+    return (profile, friendshipStatus);
+  }
+
   void _reload() {
     setState(() {
-      _future = context.read<ApiClient>().getProfile(widget.pseudo);
+      _future = _load();
     });
+  }
+
+  Future<void> _loadMorePosts() async {
+    final cursor = _postCursor;
+    if (cursor == null) return;
+    setState(() => _loadingMorePosts = true);
+    try {
+      final page = await context.read<ApiClient>().getUserPosts(
+        widget.pseudo,
+        cursor,
+      );
+      if (!mounted) return;
+      setState(() {
+        _postItems = [..._postItems, ...page.items];
+        _postCursor = page.nextCursor;
+      });
+    } finally {
+      if (mounted) setState(() => _loadingMorePosts = false);
+    }
+  }
+
+  Future<void> _deletePost(String id) async {
+    await context.read<ApiClient>().deletePost(id);
+    if (!mounted) return;
+    setState(
+      () => _postItems = _postItems.where((post) => post.id != id).toList(),
+    );
   }
 
   @override
@@ -57,7 +105,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profil')),
-      body: FutureBuilder<PublicProfile>(
+      body: FutureBuilder<(PublicProfile, FriendshipStatusWithUser?)>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -69,7 +117,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                 : 'Une erreur est survenue.';
             return Center(child: Text(message));
           }
-          final profile = snapshot.data!;
+          final (profile, friendshipStatus) = snapshot.data!;
           final editable = session.user?.pseudo == profile.pseudo;
 
           return ListView(
@@ -126,6 +174,16 @@ class _ProfilScreenState extends State<ProfilScreen> {
                       ),
                     ],
                   ),
+                )
+              else if (friendshipStatus != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: FriendButton(
+                    api: context.read<ApiClient>(),
+                    pseudo: profile.pseudo,
+                    initialStatus: friendshipStatus.status,
+                    initialFriendshipId: friendshipStatus.friendshipId,
+                  ),
                 ),
               const SizedBox(height: 16),
               const Padding(
@@ -157,6 +215,47 @@ class _ProfilScreenState extends State<ProfilScreen> {
                         .toList(),
                   ),
                 ),
+              const SizedBox(height: 24),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text('Posts', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _postItems.isEmpty
+                    ? const Text(
+                        "Aucun post pour l'instant.",
+                        style: TextStyle(color: ReverbColors.inkSoft),
+                      )
+                    : Column(
+                        children: [
+                          ..._postItems.map(
+                            (post) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: PostCard(
+                                api: context.read<ApiClient>(),
+                                post: post,
+                                canDelete:
+                                    post.type == PostType.photo &&
+                                    post.author.pseudo == session.user?.pseudo,
+                                onDelete: () => _deletePost(post.id),
+                              ),
+                            ),
+                          ),
+                          if (_postCursor != null)
+                            Center(
+                              child: OutlinedButton(
+                                onPressed: _loadingMorePosts ? null : _loadMorePosts,
+                                child: Text(
+                                  _loadingMorePosts ? 'Chargement…' : 'Charger plus',
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+              ),
+              const SizedBox(height: 16),
             ],
           );
         },
