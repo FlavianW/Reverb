@@ -136,6 +136,19 @@ class ApiClient {
         .toList(),
   );
 
+  Future<List<NearbyConcert>> getNearbyConcerts(
+    double lat,
+    double lng, [
+    int? radiusKm,
+  ]) => _request(
+    'GET',
+    '/concerts/nearby',
+    query: {'lat': lat, 'lng': lng, if (radiusKm != null) 'radiusKm': radiusKm},
+    decode: (d) => (d as List<dynamic>)
+        .map((e) => NearbyConcert.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
+
   Future<ConcertPage> getConcert(String id) => _request(
     'GET',
     '/concerts/$id',

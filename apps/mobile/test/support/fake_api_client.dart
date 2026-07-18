@@ -1,4 +1,5 @@
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/models/concert.dart';
 import 'package:mobile/models/friendship.dart';
 import 'package:mobile/models/public_user.dart';
 
@@ -14,6 +15,8 @@ class FakeApiClient extends ApiClient {
   Future<void> Function(String concertId, int value)? onRateConcert;
   Future<void> Function(String concertId)? onMarkAttendance;
   Future<void> Function(String concertId)? onUnmarkAttendance;
+  Future<List<NearbyConcert>> Function(double lat, double lng, int? radiusKm)?
+  onGetNearbyConcerts;
   Future<void> Function(String postId)? onLikePost;
   Future<void> Function(String postId)? onUnlikePost;
   Future<FriendshipSummary> Function(String pseudo)? onSendFriendRequest;
@@ -45,6 +48,13 @@ class FakeApiClient extends ApiClient {
 
   @override
   Future<void> unmarkAttendance(String id) => onUnmarkAttendance!(id);
+
+  @override
+  Future<List<NearbyConcert>> getNearbyConcerts(
+    double lat,
+    double lng, [
+    int? radiusKm,
+  ]) => onGetNearbyConcerts!(lat, lng, radiusKm);
 
   @override
   Future<void> likePost(String id) => onLikePost!(id);
