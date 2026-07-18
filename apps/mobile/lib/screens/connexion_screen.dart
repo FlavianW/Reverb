@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
@@ -202,9 +203,14 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton(
+                    child: OutlinedButton.icon(
                       onPressed: busy ? null : _submitGoogle,
-                      child: Text(
+                      icon: SvgPicture.asset(
+                        'assets/google_logo.svg',
+                        width: 18,
+                        height: 18,
+                      ),
+                      label: Text(
                         googleSubmitting
                             ? 'Connexion…'
                             : 'Continuer avec Google',
