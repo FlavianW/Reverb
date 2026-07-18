@@ -28,7 +28,11 @@
 	</div>
 
 	{#if data.concerts.length === 0}
-		<p class="empty">Aucun concert ne correspond à cette recherche.</p>
+		<p class="empty">
+			{data.q
+				? 'Aucun concert ne correspond à cette recherche.'
+				: 'Recherchez un artiste ou une salle pour commencer.'}
+		</p>
 	{:else}
 		<div class="grid">
 			{#each data.concerts as concert (concert.id)}
