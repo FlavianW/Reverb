@@ -1,0 +1,80 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/session.dart';
+import 'package:mobile/models/public_user.dart';
+
+import '../support/fake_api_client.dart';
+
+const _user = PublicUser(
+  id: 'u1',
+  pseudo: 'alice',
+  email: 'alice@example.com',
+  avatarUrl: null,
+  bio: null,
+);
+
+void main() {
+  group('SessionController.refresh', () {
+    test('un utilisateur renvoyé par /auth/me passe la session en authenticated', () async {
+      final api = FakeApiClient()..onMe = () async => _user;
+      final session = SessionController(api);
+
+      await session.refresh();
+
+      expect(session.isAuthenticated, isTrue);
+      expect(session.user, _user);
+    });
+
+    test('null (401) passe la session en anonymous', () async {
+      final api = FakeApiClient()..onMe = () async => null;
+      final session = SessionController(api);
+
+      await session.refresh();
+
+      expect(session.isAuthenticated, isFalse);
+      expect(session.status, SessionStatus.anonymous);
+    });
+  });
+
+  test('login authentifie et notifie les auditeurs', () async {
+    final api = FakeApiClient()..onLogin = (email, password) async => _user;
+    final session = SessionController(api);
+    var notified = false;
+    session.addListener(() => notified = true);
+
+    await session.login(email: _user.email, password: 'secret');
+
+    expect(session.isAuthenticated, isTrue);
+    expect(notified, isTrue);
+  });
+
+  test('logout efface l\'utilisateur et repasse en anonymous', () async {
+    final api = FakeApiClient();
+    api.onMe = () async => _user;
+    api.onLogout = () async {};
+    final session = SessionController(api);
+    await session.refresh();
+
+    await session.logout();
+
+    expect(session.user, isNull);
+    expect(session.status, SessionStatus.anonymous);
+  });
+
+  test('updateUser reflète le profil sans aller-retour réseau', () async {
+    final api = FakeApiClient()..onMe = () async => _user;
+    final session = SessionController(api);
+    await session.refresh();
+
+    const updated = PublicUser(
+      id: 'u1',
+      pseudo: 'alice2',
+      email: 'alice@example.com',
+      avatarUrl: null,
+      bio: 'Nouvelle bio',
+    );
+    session.updateUser(updated);
+
+    expect(session.user!.pseudo, 'alice2');
+    expect(session.user!.bio, 'Nouvelle bio');
+  });
+}
