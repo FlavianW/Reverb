@@ -23,13 +23,21 @@
 		<Avatar src={profile.avatarUrl} name={profile.pseudo} size={96} />
 		<div class="identity">
 			<h1>{profile.pseudo}</h1>
-			{#if profile.favoriteArtist}
-				<p class="favorite-artist">Artiste favori : {profile.favoriteArtist}</p>
-			{/if}
 			{#if profile.bio}
 				<p class="bio">{profile.bio}</p>
 			{/if}
 		</div>
+		{#if profile.favoriteArtist}
+			<div class="favorite-artist">
+				{#if profile.favoriteArtistImageUrl}
+					<img src={profile.favoriteArtistImageUrl} alt={profile.favoriteArtist} />
+				{/if}
+				<div class="favorite-artist-text">
+					<p class="label">Artiste favori</p>
+					<p class="name">{profile.favoriteArtist}</p>
+				</div>
+			</div>
+		{/if}
 		{#if editableAs}
 			<EditProfileModal user={editableAs} />
 		{:else if friendshipStatus}
@@ -51,12 +59,6 @@
 		background-position: center;
 	}
 
-	.favorite-artist {
-		color: var(--ink-soft);
-		font-size: 0.8125rem;
-		margin: 0 0 0.25rem;
-	}
-
 	.info {
 		max-width: 1200px;
 		margin: 0 auto;
@@ -70,6 +72,40 @@
 	.identity {
 		flex: 1;
 		padding-bottom: 0.5rem;
+	}
+
+	.favorite-artist {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		padding: 0.5rem 0.875rem 0.5rem 0.5rem;
+		border: 1px solid var(--line);
+		border-radius: var(--radius-md);
+		background: var(--paper-alt);
+		margin-bottom: 0.5rem;
+	}
+
+	.favorite-artist img {
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		object-fit: cover;
+		flex-shrink: 0;
+	}
+
+	.favorite-artist-text .label {
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--ink-soft);
+		margin: 0;
+	}
+
+	.favorite-artist-text .name {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-size: 0.9375rem;
+		margin: 0;
 	}
 
 	h1 {
