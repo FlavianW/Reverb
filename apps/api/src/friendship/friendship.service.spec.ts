@@ -281,4 +281,38 @@ describe('FriendshipService', () => {
       expect(result).toEqual({ status: 'PENDING_SENT', friendshipId: 'f1' });
     });
   });
+
+  describe('areFriends', () => {
+    it('renvoie true si les comptes sont amis, quel que soit le sens', async () => {
+      prisma.friendship.findFirst.mockResolvedValueOnce({
+        id: 'f1',
+        requesterId: alice.id,
+        addresseeId: bob.id,
+        status: 'ACCEPTED',
+      });
+
+      const result = await service.areFriends(bob.id, alice.id);
+
+      expect(result).toBe(true);
+      expect(prisma.friendship.findFirst).toHaveBeenCalledWith({
+        where: {
+          status: 'ACCEPTED',
+          OR: [
+            { requesterId: bob.id, addresseeId: alice.id },
+            { requesterId: alice.id, addresseeId: bob.id },
+          ],
+        },
+      });
+    });
+
+    it("renvoie false si la relation n'est pas ACCEPTED (ou n'existe pas)", async () => {
+      // Le filtre status: 'ACCEPTED' de la requête exclut déjà une relation
+      // PENDING : le mock renvoie null dans les deux cas (absence ou pending).
+      prisma.friendship.findFirst.mockResolvedValueOnce(null);
+
+      const result = await service.areFriends(alice.id, bob.id);
+
+      expect(result).toBe(false);
+    });
+  });
 });

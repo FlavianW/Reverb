@@ -186,6 +186,20 @@ export class FriendshipService {
     };
   }
 
+  /** Vrai si les deux comptes sont amis (statut ACCEPTED), quel que soit le sens (US-10.1). */
+  async areFriends(userIdA: string, userIdB: string): Promise<boolean> {
+    const friendship = await this.prisma.friendship.findFirst({
+      where: {
+        status: 'ACCEPTED',
+        OR: [
+          { requesterId: userIdA, addresseeId: userIdB },
+          { requesterId: userIdB, addresseeId: userIdA },
+        ],
+      },
+    });
+    return friendship !== null;
+  }
+
   private toSummary(
     friendship: FriendshipWithUsers,
     viewerId: string,
