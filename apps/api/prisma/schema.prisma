@@ -28,6 +28,8 @@ model User {
   reports                Report[]
   sentFriendRequests     Friendship[]        @relation("FriendshipRequester")
   receivedFriendRequests Friendship[]        @relation("FriendshipAddressee")
+  posts                  Post[]
+  likes                  Like[]
 
   @@map("users")
 }
@@ -48,6 +50,7 @@ model Concert {
   ratings     ConcertRating[]
   comments    Comment[]
   photos      Photo[]
+  posts       Post[]
 
   @@map("concerts")
 }
@@ -155,4 +158,59 @@ model Friendship {
 
   @@unique([requesterId, addresseeId])
   @@map("friendships")
+}
+
+enum PostType {
+  RATING
+  ATTENDANCE
+  PHOTO
+}
+
+/// Élément du fil d'actualité (US-8.x), généré automatiquement à la première
+/// notation (RATING) et à la première attendance (ATTENDANCE) d'un concert,
+/// ou créé explicitement (PHOTO, photos + texte). `concertId` est toujours
+/// renseigné pour RATING/ATTENDANCE et facultatif pour PHOTO. `ratingValue`
+/// est dénormalisé au moment de la création : le post reste immuable même si
+/// la note est modifiée ensuite.
+model Post {
+  id          String      @id @default(uuid())
+  type        PostType
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  concertId   String?
+  concert     Concert?    @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  content     String?
+  ratingValue Int?
+  createdAt   DateTime    @default(now())
+  photos      PostPhoto[]
+  likes       Like[]
+
+  @@index([createdAt, id])
+  @@map("posts")
+}
+
+/// Photo attachée à un post explicite (US-8.2), même convention que `Photo`
+/// (clé S3 + URL résolue) mais rattachée à un post plutôt qu'à un concert.
+model PostPhoto {
+  id        String   @id @default(uuid())
+  key       String
+  url       String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("post_photos")
+}
+
+/// « J'aime » d'un utilisateur sur un post (US-8.3), une fois par personne.
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@map("likes")
 }

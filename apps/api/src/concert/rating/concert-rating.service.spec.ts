@@ -1,23 +1,34 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { PostService } from '../../post/post.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConcertRatingService } from './concert-rating.service';
 
 describe('ConcertRatingService', () => {
   let service: ConcertRatingService;
-  let prisma: { concertRating: { upsert: jest.Mock; aggregate: jest.Mock } };
+  let prisma: {
+    $transaction: jest.Mock;
+    concertRating: { aggregate: jest.Mock };
+  };
+  let tx: { concertRating: { findUnique: jest.Mock; upsert: jest.Mock } };
+  let postService: { createRatingPost: jest.Mock };
 
   beforeEach(async () => {
-    prisma = {
-      concertRating: {
-        upsert: jest.fn(),
-        aggregate: jest.fn(),
-      },
+    tx = {
+      concertRating: { findUnique: jest.fn(), upsert: jest.fn() },
     };
+    prisma = {
+      $transaction: jest.fn((callback: (tx: unknown) => Promise<unknown>) =>
+        callback(tx),
+      ),
+      concertRating: { aggregate: jest.fn() },
+    };
+    postService = { createRatingPost: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConcertRatingService,
         { provide: PrismaService, useValue: prisma },
+        { provide: PostService, useValue: postService },
       ],
     }).compile();
 
@@ -26,15 +37,38 @@ describe('ConcertRatingService', () => {
 
   describe('rate', () => {
     it("crée ou remplace la note de l'utilisateur pour ce concert (une seule note par personne)", async () => {
+      tx.concertRating.findUnique.mockResolvedValueOnce({ id: 'existing' });
+
       await service.rate('concert-1', 'user-1', 4);
 
-      expect(prisma.concertRating.upsert).toHaveBeenCalledWith({
+      expect(tx.concertRating.upsert).toHaveBeenCalledWith({
         where: {
           userId_concertId: { userId: 'user-1', concertId: 'concert-1' },
         },
         create: { userId: 'user-1', concertId: 'concert-1', value: 4 },
         update: { value: 4 },
       });
+    });
+
+    it('génère un post dans le fil à la toute première notation', async () => {
+      tx.concertRating.findUnique.mockResolvedValueOnce(null);
+
+      await service.rate('concert-1', 'user-1', 4);
+
+      expect(postService.createRatingPost).toHaveBeenCalledWith(
+        tx,
+        'concert-1',
+        'user-1',
+        4,
+      );
+    });
+
+    it("ne génère pas de nouveau post lors d'une re-notation", async () => {
+      tx.concertRating.findUnique.mockResolvedValueOnce({ id: 'existing' });
+
+      await service.rate('concert-1', 'user-1', 2);
+
+      expect(postService.createRatingPost).not.toHaveBeenCalled();
     });
   });
 

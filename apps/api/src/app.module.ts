@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConcertModule } from './concert/concert.module';
 import { FriendshipModule } from './friendship/friendship.module';
 import { HealthController } from './health/health.controller';
+import { PostModule } from './post/post.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -13,6 +14,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuthModule,
     ConcertModule,
     FriendshipModule,
+    PostModule,
   ],
   controllers: [HealthController],
   providers: [],

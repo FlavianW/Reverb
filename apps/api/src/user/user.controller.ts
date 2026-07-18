@@ -7,15 +7,18 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { PublicUser } from '@reverb/shared';
+import type { PostPage, PublicUser } from '@reverb/shared';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { buildImageFileValidator } from '../media/image-upload.validator';
+import { ListPostsDto } from '../post/dto/list-posts.dto';
+import { PostService } from '../post/post.service';
 import { AvatarService } from './avatar/avatar.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import type { PublicProfile } from './user.service';
@@ -26,6 +29,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly avatarService: AvatarService,
+    private readonly postService: PostService,
   ) {}
 
   /** Profil public d'un utilisateur : bio, avatar et concerts assistés (US-4.1, US-4.2). */
@@ -47,6 +51,27 @@ export class UserController {
       avatarUrl: user.avatarUrl,
       attendedConcerts,
     };
+  }
+
+  /** Posts d'un utilisateur, affichés publiquement sur son profil (US-8.4). */
+  @Get(':pseudo/posts')
+  @UseGuards(JwtAuthGuard)
+  async getPosts(
+    @Param('pseudo') pseudo: string,
+    @Query() query: ListPostsDto,
+    @CurrentUser() viewer: PublicUser,
+  ): Promise<PostPage> {
+    const user = await this.userService.findByPseudo(pseudo);
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable.');
+    }
+
+    return this.postService.getByAuthorId(
+      user.id,
+      viewer.id,
+      query.cursor,
+      query.take,
+    );
   }
 
   /** Met à jour le profil de l'utilisateur connecté (US-4.1). */
