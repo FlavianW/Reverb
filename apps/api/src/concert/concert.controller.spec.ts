@@ -15,6 +15,7 @@ describe('ConcertController', () => {
     create: jest.Mock;
     exists: jest.Mock;
     search: jest.Mock;
+    findNearby: jest.Mock;
   };
   let attendanceService: {
     markAttended: jest.Mock;
@@ -38,6 +39,7 @@ describe('ConcertController', () => {
       create: jest.fn(),
       exists: jest.fn(),
       search: jest.fn(),
+      findNearby: jest.fn(),
     };
     attendanceService = {
       markAttended: jest.fn(),
@@ -95,6 +97,26 @@ describe('ConcertController', () => {
         currentUser.id,
       );
       expect(result).toBe(recents);
+    });
+  });
+
+  describe('findNearby', () => {
+    it('délègue au service avec lat/lng/radiusKm et renvoie ses résultats', async () => {
+      const results = [{ id: 'concert-1', distanceKm: 2.5 }];
+      concertService.findNearby.mockResolvedValueOnce(results);
+
+      const result = await controller.findNearby({
+        lat: 48.8566,
+        lng: 2.3522,
+        radiusKm: 25,
+      });
+
+      expect(concertService.findNearby).toHaveBeenCalledWith(
+        48.8566,
+        2.3522,
+        25,
+      );
+      expect(result).toBe(results);
     });
   });
 

@@ -21,10 +21,11 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { buildImageFileValidator } from '../media/image-upload.validator';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
-import { ConcertPage, ConcertService } from './concert.service';
+import { ConcertPage, ConcertService, NearbyConcert } from './concert.service';
 import { CommentService } from './comment/comment.service';
 import { CreateCommentDto } from './comment/dto/create-comment.dto';
 import { CreateConcertDto } from './dto/create-concert.dto';
+import { NearbyConcertsDto } from './dto/nearby-concerts.dto';
 import { SearchConcertsDto } from './dto/search-concerts.dto';
 import { PhotoService, PhotoSummary } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
@@ -70,6 +71,17 @@ export class ConcertController {
     @CurrentUser() user: PublicUser,
   ): Promise<Concert[]> {
     return this.concertService.search(dto.q, user.id);
+  }
+
+  /**
+   * Concerts avec coordonnées connues à proximité d'un point (US-9.1), triés
+   * du plus proche au plus lointain. Déclarée avant `:id` pour que « nearby »
+   * ne soit pas intercepté comme un identifiant. Pas d'effet de bord par
+   * utilisateur (contrairement à `search`) : pas de guard, comme `:id`.
+   */
+  @Get('nearby')
+  findNearby(@Query() dto: NearbyConcertsDto): Promise<NearbyConcert[]> {
+    return this.concertService.findNearby(dto.lat, dto.lng, dto.radiusKm);
   }
 
   /**

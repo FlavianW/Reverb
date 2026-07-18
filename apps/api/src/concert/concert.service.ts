@@ -15,6 +15,33 @@ export interface CreateConcertInput {
   date: Date;
 }
 
+/** Concert à proximité (US-9.1), avec sa distance calculée au point de recherche. */
+export interface NearbyConcert extends Concert {
+  distanceKm: number;
+}
+
+const EARTH_RADIUS_KM = 6371;
+
+/**
+ * Distance à vol d'oiseau entre deux points GPS (formule de Haversine).
+ * Calcul en mémoire plutôt que via PostGIS : largement suffisant au nombre
+ * de concerts attendu pour ce MVP, ne scale pas à des millions de lignes.
+ */
+export function haversineDistanceKm(
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number },
+): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(to.lat - from.lat);
+  const dLng = toRad(to.lng - from.lng);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(from.lat)) *
+      Math.cos(toRad(to.lat)) *
+      Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a));
+}
+
 /** Page concert exposée au client : les infos de base + setlist, notation, commentaires et photos. */
 export interface ConcertPage extends Concert {
   setlist: SetlistFmResult | null;
@@ -119,6 +146,32 @@ export class ConcertService {
         await this.prisma.concert.create({ data: { ...match, createdById } });
       }
     }
+  }
+
+  /**
+   * Concerts avec coordonnées connues situés dans un rayon donné (US-9.1),
+   * triés du plus proche au plus lointain. Ignore les concerts sans
+   * coordonnées (Setlist.fm et le géocodage ont tous deux échoué).
+   */
+  async findNearby(
+    lat: number,
+    lng: number,
+    radiusKm = 50,
+  ): Promise<NearbyConcert[]> {
+    const concerts = await this.prisma.concert.findMany({
+      where: { latitude: { not: null }, longitude: { not: null } },
+    });
+
+    return concerts
+      .map((concert) => ({
+        ...concert,
+        distanceKm: haversineDistanceKm(
+          { lat, lng },
+          { lat: concert.latitude!, lng: concert.longitude! },
+        ),
+      }))
+      .filter((concert) => concert.distanceKm <= radiusKm)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
   }
 
   async findPageById(id: string): Promise<ConcertPage | null> {

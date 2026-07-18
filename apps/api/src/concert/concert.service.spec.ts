@@ -383,4 +383,58 @@ describe('ConcertService', () => {
       expect(prisma.concert.create).not.toHaveBeenCalled();
     });
   });
+
+  describe('findNearby', () => {
+    const parisConcert = {
+      ...baseConcert,
+      id: 'concert-paris',
+      date: new Date('2026-06-15'),
+      latitude: 48.8566,
+      longitude: 2.3522,
+    };
+    const lyonConcert = {
+      ...baseConcert,
+      id: 'concert-lyon',
+      date: new Date('2026-07-01'),
+      latitude: 45.764,
+      longitude: 4.8357,
+    };
+
+    it('ignore les concerts sans coordonnées connues', async () => {
+      prisma.concert.findMany.mockResolvedValueOnce([parisConcert]);
+
+      await service.findNearby(48.8566, 2.3522);
+
+      expect(prisma.concert.findMany).toHaveBeenCalledWith({
+        where: { latitude: { not: null }, longitude: { not: null } },
+      });
+    });
+
+    it('trie les concerts par distance croissante au point donné', async () => {
+      prisma.concert.findMany.mockResolvedValueOnce([
+        lyonConcert,
+        parisConcert,
+      ]);
+
+      const result = await service.findNearby(48.8566, 2.3522, 1000);
+
+      expect(result.map((c) => c.id)).toEqual([
+        'concert-paris',
+        'concert-lyon',
+      ]);
+      expect(result[0].distanceKm).toBeCloseTo(0, 1);
+      expect(result[1].distanceKm).toBeGreaterThan(300);
+    });
+
+    it('filtre les concerts hors du rayon demandé', async () => {
+      prisma.concert.findMany.mockResolvedValueOnce([
+        lyonConcert,
+        parisConcert,
+      ]);
+
+      const result = await service.findNearby(48.8566, 2.3522, 50);
+
+      expect(result.map((c) => c.id)).toEqual(['concert-paris']);
+    });
+  });
 });
