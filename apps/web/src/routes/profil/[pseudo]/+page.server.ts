@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import { apiFetch, ApiError } from '$lib/server/api';
-import type { PublicProfile } from '@reverb/shared';
+import type { FriendshipStatusWithUser, PublicProfile } from '@reverb/shared';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -20,9 +20,15 @@ export const load: PageServerLoad = async (event) => {
 		throw e;
 	}
 
+	const isOwnProfile = event.locals.user.pseudo === pseudo;
+	const friendshipStatus = isOwnProfile
+		? null
+		: await apiFetch<FriendshipStatusWithUser>(event, `/friendships/status/${pseudo}`);
+
 	return {
 		profile,
-		isOwnProfile: event.locals.user.pseudo === pseudo,
+		isOwnProfile,
+		friendshipStatus,
 		user: event.locals.user
 	};
 };

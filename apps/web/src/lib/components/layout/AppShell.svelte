@@ -19,6 +19,7 @@
 			<nav aria-label="Navigation principale">
 				<NavLink href="/">Accueil</NavLink>
 				<NavLink href="/recherche">Recherche</NavLink>
+				<NavLink href="/amis">Amis</NavLink>
 				<NavLink href="/profil/{user.pseudo}">Profil</NavLink>
 			</nav>
 			<UserMenu {user} />

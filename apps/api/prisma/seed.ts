@@ -17,6 +17,34 @@ async function main() {
     },
   });
 
+  // Deuxième compte de démo, déjà ami avec `demo`, pour explorer le fil
+  // d'actualité en local sans étape manuelle d'ajout d'ami.
+  const demoUser2 = await prisma.user.upsert({
+    where: { email: 'demo2@reverb.fr' },
+    update: {},
+    create: {
+      email: 'demo2@reverb.fr',
+      pseudo: 'demo2',
+      passwordHash,
+      bio: 'Deuxième compte de démonstration.',
+    },
+  });
+
+  await prisma.friendship.upsert({
+    where: {
+      requesterId_addresseeId: {
+        requesterId: demoUser.id,
+        addresseeId: demoUser2.id,
+      },
+    },
+    update: { status: 'ACCEPTED' },
+    create: {
+      requesterId: demoUser.id,
+      addresseeId: demoUser2.id,
+      status: 'ACCEPTED',
+    },
+  });
+
   await prisma.concert.upsert({
     where: { id: '00000000-0000-0000-0000-000000000001' },
     update: {},
