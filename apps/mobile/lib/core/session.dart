@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/public_user.dart';
 import 'api_client.dart';
 
-enum SessionStatus { unknown, authenticated, anonymous }
+enum SessionStatus { unknown, authenticated, anonymous, error }
 
 /// État de session partagé par l'app (utilisateur connecté ou non), calqué
 /// sur `hooks.server.ts` côté web : `me()` interroge `/auth/me`, un 401
@@ -19,11 +19,18 @@ class SessionController extends ChangeNotifier {
   bool get isAuthenticated => status == SessionStatus.authenticated;
 
   Future<void> refresh() async {
-    final result = await api.me();
-    user = result;
-    status = result != null
-        ? SessionStatus.authenticated
-        : SessionStatus.anonymous;
+    try {
+      final result = await api.me();
+      user = result;
+      status = result != null
+          ? SessionStatus.authenticated
+          : SessionStatus.anonymous;
+    } catch (_) {
+      // Panne réseau au démarrage (API injoignable) : ni authentifié ni
+      // anonyme, sinon `_AuthGate` afficherait indéfiniment le login sans
+      // jamais réessayer `refresh()`.
+      status = SessionStatus.error;
+    }
     notifyListeners();
   }
 

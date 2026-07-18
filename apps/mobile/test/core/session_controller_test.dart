@@ -33,6 +33,16 @@ void main() {
       expect(session.isAuthenticated, isFalse);
       expect(session.status, SessionStatus.anonymous);
     });
+
+    test('une erreur réseau passe la session en error plutôt que de rester bloquée', () async {
+      final api = FakeApiClient()
+        ..onMe = () async => throw Exception('Connection refused');
+      final session = SessionController(api);
+
+      await session.refresh();
+
+      expect(session.status, SessionStatus.error);
+    });
   });
 
   test('login authentifie et notifie les auditeurs', () async {
