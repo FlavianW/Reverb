@@ -18,6 +18,7 @@
 			<a href="/" class="logo">Reverb</a>
 			<nav aria-label="Navigation principale">
 				<NavLink href="/">Accueil</NavLink>
+				<NavLink href="/fil">Fil</NavLink>
 				<NavLink href="/recherche">Recherche</NavLink>
 				<NavLink href="/amis">Amis</NavLink>
 				<NavLink href="/profil/{user.pseudo}">Profil</NavLink>
