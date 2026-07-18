@@ -21,5 +21,7 @@ export interface PublicProfile {
   avatarUrl: string | null;
   bannerUrl: string | null;
   favoriteArtist: string | null;
+  /** Photo de `favoriteArtist` via Last.fm, `null` si non renseigné ou introuvable. */
+  favoriteArtistImageUrl: string | null;
   attendedConcerts: Concert[];
 }

@@ -1,6 +1,7 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { Concert, Prisma, User } from '@prisma/client';
 import type { PublicUser } from '@reverb/shared';
+import { LastFmService } from '../artist/lastfm.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Code Prisma d'une violation de contrainte unique (ex. email/pseudo déjà pris). */
@@ -37,6 +38,7 @@ export interface PublicProfile {
   avatarUrl: string | null;
   bannerUrl: string | null;
   favoriteArtist: string | null;
+  favoriteArtistImageUrl: string | null;
   attendedConcerts: Concert[];
 }
 
@@ -46,7 +48,10 @@ export interface PublicProfile {
  */
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly lastFmService: LastFmService,
+  ) {}
 
   findByGoogleId(googleId: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { googleId } });
@@ -108,6 +113,36 @@ export class UserService {
       );
     }
     return error;
+  }
+
+  /**
+   * Profil public d'un utilisateur (US-4.1, US-4.2), avec la photo de son
+   * artiste favori récupérée en direct via Last.fm (jamais stockée, comme la
+   * setlist d'un concert) : `null` si non renseigné ou si Last.fm ne
+   * fournit pas d'image pour cet artiste.
+   */
+  async getPublicProfile(pseudo: string): Promise<PublicProfile | null> {
+    const user = await this.findByPseudo(pseudo);
+    if (!user) {
+      return null;
+    }
+
+    const [attendedConcerts, favoriteArtistImageUrl] = await Promise.all([
+      this.findAttendedConcerts(user.id),
+      user.favoriteArtist
+        ? this.lastFmService.getArtistImage(user.favoriteArtist)
+        : Promise.resolve(null),
+    ]);
+
+    return {
+      pseudo: user.pseudo,
+      bio: user.bio,
+      avatarUrl: user.avatarUrl,
+      bannerUrl: user.bannerUrl,
+      favoriteArtist: user.favoriteArtist,
+      favoriteArtistImageUrl,
+      attendedConcerts,
+    };
   }
 
   /** Concerts marqués « J'y étais » par cet utilisateur, du plus récent au plus ancien (US-4.2). */

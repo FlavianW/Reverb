@@ -39,22 +39,11 @@ export class UserController {
   async getPublicProfile(
     @Param('pseudo') pseudo: string,
   ): Promise<PublicProfile> {
-    const user = await this.userService.findByPseudo(pseudo);
-    if (!user) {
+    const profile = await this.userService.getPublicProfile(pseudo);
+    if (!profile) {
       throw new NotFoundException('Utilisateur introuvable.');
     }
-
-    const attendedConcerts = await this.userService.findAttendedConcerts(
-      user.id,
-    );
-    return {
-      pseudo: user.pseudo,
-      bio: user.bio,
-      avatarUrl: user.avatarUrl,
-      bannerUrl: user.bannerUrl,
-      favoriteArtist: user.favoriteArtist,
-      attendedConcerts,
-    };
+    return profile;
   }
 
   /** Posts d'un utilisateur, affichés publiquement sur son profil (US-8.4). */

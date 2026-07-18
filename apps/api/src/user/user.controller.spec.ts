@@ -14,6 +14,7 @@ describe('UserController', () => {
     findByPseudo: jest.Mock;
     findAttendedConcerts: jest.Mock;
     updateProfile: jest.Mock;
+    getPublicProfile: jest.Mock;
   };
   let avatarService: { uploadForUser: jest.Mock };
   let bannerService: { uploadForUser: jest.Mock };
@@ -33,6 +34,7 @@ describe('UserController', () => {
       findByPseudo: jest.fn(),
       findAttendedConcerts: jest.fn(),
       updateProfile: jest.fn(),
+      getPublicProfile: jest.fn(),
     };
     avatarService = { uploadForUser: jest.fn() };
     bannerService = { uploadForUser: jest.fn() };
@@ -53,39 +55,30 @@ describe('UserController', () => {
 
   describe('getPublicProfile', () => {
     it("lève une 404 si l'utilisateur n'existe pas", async () => {
-      userService.findByPseudo.mockResolvedValueOnce(null);
+      userService.getPublicProfile.mockResolvedValueOnce(null);
 
       await expect(controller.getPublicProfile('inconnu')).rejects.toThrow(
         NotFoundException,
       );
-      expect(userService.findAttendedConcerts).not.toHaveBeenCalled();
     });
 
-    it('renvoie le profil public sans email ni id, avec les concerts assistés', async () => {
-      const user = {
-        id: 'user-1',
+    it('renvoie le profil public résolu par le service', async () => {
+      const attendedConcerts = [{ id: 'concert-1', artistName: 'Muse' }];
+      const profile = {
         pseudo: 'ana-etoile',
-        email: 'ana@example.com',
         bio: 'Fan de rock.',
         avatarUrl: 'https://example.com/avatar.png',
         bannerUrl: 'https://example.com/banner.png',
         favoriteArtist: 'Muse',
-      } as User;
-      userService.findByPseudo.mockResolvedValueOnce(user);
-      const attendedConcerts = [{ id: 'concert-1', artistName: 'Muse' }];
-      userService.findAttendedConcerts.mockResolvedValueOnce(attendedConcerts);
+        favoriteArtistImageUrl: 'https://example.com/muse.jpg',
+        attendedConcerts,
+      };
+      userService.getPublicProfile.mockResolvedValueOnce(profile);
 
       const result = await controller.getPublicProfile('ana-etoile');
 
-      expect(userService.findAttendedConcerts).toHaveBeenCalledWith('user-1');
-      expect(result).toEqual({
-        pseudo: 'ana-etoile',
-        bio: 'Fan de rock.',
-        avatarUrl: 'https://example.com/avatar.png',
-        bannerUrl: 'https://example.com/banner.png',
-        favoriteArtist: 'Muse',
-        attendedConcerts,
-      });
+      expect(userService.getPublicProfile).toHaveBeenCalledWith('ana-etoile');
+      expect(result).toBe(profile);
     });
   });
 
