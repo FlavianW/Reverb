@@ -2,6 +2,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
 import type { PublicUser } from '@reverb/shared';
+import { PostService } from '../post/post.service';
 import { AvatarService } from './avatar/avatar.service';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
@@ -14,6 +15,7 @@ describe('UserController', () => {
     updateProfile: jest.Mock;
   };
   let avatarService: { uploadForUser: jest.Mock };
+  let postService: { getByAuthorId: jest.Mock };
 
   const currentUser: PublicUser = {
     id: 'user-1',
@@ -29,12 +31,14 @@ describe('UserController', () => {
       updateProfile: jest.fn(),
     };
     avatarService = { uploadForUser: jest.fn() };
+    postService = { getByAuthorId: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
       providers: [
         { provide: UserService, useValue: userService },
         { provide: AvatarService, useValue: avatarService },
+        { provide: PostService, useValue: postService },
       ],
     }).compile();
 
@@ -122,6 +126,37 @@ describe('UserController', () => {
         avatarUrl: null,
         bio: 'Fan de rock.',
       });
+    });
+  });
+
+  describe('getPosts', () => {
+    it("lève une 404 si l'utilisateur n'existe pas", async () => {
+      userService.findByPseudo.mockResolvedValueOnce(null);
+
+      await expect(
+        controller.getPosts('inconnu', {}, currentUser),
+      ).rejects.toThrow(NotFoundException);
+      expect(postService.getByAuthorId).not.toHaveBeenCalled();
+    });
+
+    it("délègue à PostService avec l'id de l'auteur et du visiteur", async () => {
+      userService.findByPseudo.mockResolvedValueOnce({ id: 'author-1' });
+      const page = { items: [], nextCursor: null };
+      postService.getByAuthorId.mockResolvedValueOnce(page);
+
+      const result = await controller.getPosts(
+        'ana-etoile',
+        { cursor: 'c1', take: 10 },
+        currentUser,
+      );
+
+      expect(postService.getByAuthorId).toHaveBeenCalledWith(
+        'author-1',
+        'user-1',
+        'c1',
+        10,
+      );
+      expect(result).toBe(page);
     });
   });
 
