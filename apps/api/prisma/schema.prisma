@@ -30,6 +30,9 @@ model User {
   receivedFriendRequests Friendship[]        @relation("FriendshipAddressee")
   posts                  Post[]
   likes                  Like[]
+  conversationsAsUserA   Conversation[]      @relation("ConversationUserA")
+  conversationsAsUserB   Conversation[]      @relation("ConversationUserB")
+  messages               Message[]
 
   @@map("users")
 }
@@ -218,4 +221,40 @@ model Like {
 
   @@unique([userId, postId])
   @@map("likes")
+}
+
+/// Conversation privée 1-à-1 entre deux amis (US-10.x). Paire canonique
+/// (plus petit id en A) pour que @@unique garantisse une seule ligne par
+/// paire sans clause OR. lastReadAtUserA/B porte le suivi de lecture par
+/// participant (US-10.3) — une table à part serait une complexité inutile
+/// pour seulement deux participants possibles.
+model Conversation {
+  id              String    @id @default(uuid())
+  userAId         String
+  userA           User      @relation("ConversationUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId         String
+  userB           User      @relation("ConversationUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  lastMessageAt   DateTime?
+  lastReadAtUserA DateTime?
+  lastReadAtUserB DateTime?
+  createdAt       DateTime  @default(now())
+  messages        Message[]
+
+  @@unique([userAId, userBId])
+  @@map("conversations")
+}
+
+/// Message texte échangé dans une conversation (US-10.1). Diffusé en temps
+/// réel via Socket.IO puis persisté ; pas de pièce jointe en v1.
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt, id])
+  @@map("messages")
 }
