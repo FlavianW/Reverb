@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommentService } from './comment/comment.service';
 import { ConcertService } from './concert.service';
+import { GeocodingService } from './geocoding.service';
 import { PhotoService } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { SetlistFmService } from './setlistfm.service';
@@ -17,6 +18,7 @@ describe('ConcertService', () => {
     };
   };
   let setlistFmService: { findSetlist: jest.Mock; searchConcerts: jest.Mock };
+  let geocodingService: { geocodeCity: jest.Mock };
   let ratingService: { getSummary: jest.Mock };
   let commentService: { findByConcert: jest.Mock };
   let photoService: { findByConcert: jest.Mock };
@@ -44,6 +46,7 @@ describe('ConcertService', () => {
       },
     };
     setlistFmService = { findSetlist: jest.fn(), searchConcerts: jest.fn() };
+    geocodingService = { geocodeCity: jest.fn().mockResolvedValue(null) };
     ratingService = { getSummary: jest.fn().mockResolvedValue(emptyRating) };
     commentService = { findByConcert: jest.fn().mockResolvedValue(noComments) };
     photoService = { findByConcert: jest.fn().mockResolvedValue(noPhotos) };
@@ -53,6 +56,7 @@ describe('ConcertService', () => {
         ConcertService,
         { provide: PrismaService, useValue: prisma },
         { provide: SetlistFmService, useValue: setlistFmService },
+        { provide: GeocodingService, useValue: geocodingService },
         { provide: ConcertRatingService, useValue: ratingService },
         { provide: CommentService, useValue: commentService },
         { provide: PhotoService, useValue: photoService },
@@ -63,11 +67,15 @@ describe('ConcertService', () => {
   });
 
   describe('create', () => {
-    it("associe le concert créé à l'utilisateur connecté", async () => {
+    it('géocode la ville et associe le concert créé à l’utilisateur connecté', async () => {
       const created = {
         ...baseConcert,
         date: new Date('2024-06-15'),
       };
+      geocodingService.geocodeCity.mockResolvedValueOnce({
+        latitude: 48.8566,
+        longitude: 2.3522,
+      });
       prisma.concert.create.mockResolvedValueOnce(created);
 
       const result = await service.create(
@@ -80,16 +88,41 @@ describe('ConcertService', () => {
         'user-1',
       );
 
+      expect(geocodingService.geocodeCity).toHaveBeenCalledWith('Paris');
       expect(prisma.concert.create).toHaveBeenCalledWith({
         data: {
           artistName: 'Muse',
           venueName: 'AccorHotels Arena',
           city: 'Paris',
           date: new Date('2024-06-15'),
+          latitude: 48.8566,
+          longitude: 2.3522,
           createdById: 'user-1',
         },
       });
       expect(result).toBe(created);
+    });
+
+    it('crée le concert avec des coordonnées nulles si le géocodage échoue', async () => {
+      geocodingService.geocodeCity.mockResolvedValueOnce(null);
+      prisma.concert.create.mockResolvedValueOnce(baseConcert);
+
+      await service.create(
+        {
+          artistName: 'Muse',
+          venueName: 'AccorHotels Arena',
+          city: 'Ville inconnue',
+          date: new Date('2024-06-15'),
+        },
+        'user-1',
+      );
+
+      expect(prisma.concert.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          latitude: null,
+          longitude: null,
+        }),
+      });
     });
   });
 

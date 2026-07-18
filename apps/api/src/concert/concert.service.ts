@@ -3,6 +3,7 @@ import { Concert } from '@prisma/client';
 import type { ConcertRatingSummary } from '@reverb/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommentService, CommentSummary } from './comment/comment.service';
+import { GeocodingService } from './geocoding.service';
 import { PhotoService, PhotoSummary } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { SetlistFmResult, SetlistFmService } from './setlistfm.service';
@@ -32,14 +33,29 @@ export class ConcertService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly setlistFmService: SetlistFmService,
+    private readonly geocodingService: GeocodingService,
     private readonly ratingService: ConcertRatingService,
     private readonly commentService: CommentService,
     private readonly photoService: PhotoService,
   ) {}
 
-  create(input: CreateConcertInput, createdById: string): Promise<Concert> {
+  /**
+   * Crée un concert saisi manuellement (sans passer par l'import Setlist.fm).
+   * La ville est géocodée pour que le concert apparaisse sur la carte de
+   * proximité (US-9.1) ; un échec de géocodage n'empêche jamais la création.
+   */
+  async create(
+    input: CreateConcertInput,
+    createdById: string,
+  ): Promise<Concert> {
+    const coords = await this.geocodingService.geocodeCity(input.city);
     return this.prisma.concert.create({
-      data: { ...input, createdById },
+      data: {
+        ...input,
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
+        createdById,
+      },
     });
   }
 
