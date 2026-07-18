@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Reverb a besoin d'accéder à vos photos pour illustrer un concert ou changer votre avatar.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Reverb a besoin de votre position pour afficher les concerts à proximité sur la carte.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
