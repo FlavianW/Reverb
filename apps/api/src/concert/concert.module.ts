@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { MediaModule } from '../media/media.module';
+import { PostModule } from '../post/post.module';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
 import { CommentController } from './comment/comment.controller';
 import { CommentService } from './comment/comment.service';
@@ -13,7 +14,7 @@ import { ReportService } from './report/report.service';
 import { SetlistFmService } from './setlistfm.service';
 
 @Module({
-  imports: [AuthModule, MediaModule],
+  imports: [AuthModule, MediaModule, PostModule],
   controllers: [ConcertController, CommentController, PhotoController],
   providers: [
     ConcertService,
