@@ -90,11 +90,14 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
     } on GoogleSignInException catch (e) {
       // L'utilisateur a simplement annulé : pas d'erreur à afficher.
       if (e.code != GoogleSignInExceptionCode.canceled) {
-        setState(() => error = 'La connexion Google a échoué.');
+        debugPrint('GoogleSignInException: code=${e.code} description=${e.description} details=${e.details}');
+        setState(() => error = 'La connexion Google a échoué (${e.code}).');
       }
     } on ApiException catch (e) {
+      debugPrint('ApiException lors de la connexion Google : ${e.status} ${e.message}');
       setState(() => error = e.message);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Erreur inattendue lors de la connexion Google : $e');
       setState(() => error = 'Une erreur est survenue. Veuillez réessayer.');
     } finally {
       if (mounted) setState(() => googleSubmitting = false);
