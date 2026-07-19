@@ -21,7 +21,12 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { buildImageFileValidator } from '../media/image-upload.validator';
 import { ConcertAttendanceService } from './attendance/concert-attendance.service';
-import { ConcertPage, ConcertService, NearbyConcert } from './concert.service';
+import {
+  ConcertPage,
+  ConcertSearchResult,
+  ConcertService,
+  NearbyConcert,
+} from './concert.service';
 import { CommentService } from './comment/comment.service';
 import { CreateCommentDto } from './comment/dto/create-comment.dto';
 import { CreateConcertDto } from './dto/create-concert.dto';
@@ -61,15 +66,16 @@ export class ConcertController {
   /**
    * Recherche des concerts par artiste ou par salle (US-3.1). Déclarée avant
    * `:id` pour que « search » ne soit pas intercepté comme un identifiant.
-   * Authentifiée car une requête non vide importe aussi les concerts trouvés
-   * sur Setlist.fm sous l'utilisateur courant (voir `ConcertService#search`).
+   * Authentifiée car elle importe des concerts sous l'utilisateur courant :
+   * ceux trouvés sur Setlist.fm pour une requête non vide, les concerts
+   * récents en France sinon (voir `ConcertService#search`).
    */
   @Get('search')
   @UseGuards(JwtAuthGuard)
   search(
     @Query() dto: SearchConcertsDto,
     @CurrentUser() user: PublicUser,
-  ): Promise<Concert[]> {
+  ): Promise<ConcertSearchResult[]> {
     return this.concertService.search(dto.q, user.id);
   }
 

@@ -18,7 +18,11 @@ describe('ConcertService', () => {
       findFirst: jest.Mock;
     };
   };
-  let setlistFmService: { findSetlist: jest.Mock; searchConcerts: jest.Mock };
+  let setlistFmService: {
+    findSetlist: jest.Mock;
+    searchConcerts: jest.Mock;
+    findRecentConcerts: jest.Mock;
+  };
   let geocodingService: { geocodeCity: jest.Mock };
   let ratingService: { getSummary: jest.Mock };
   let commentService: { findByConcert: jest.Mock };
@@ -47,7 +51,11 @@ describe('ConcertService', () => {
         findFirst: jest.fn(),
       },
     };
-    setlistFmService = { findSetlist: jest.fn(), searchConcerts: jest.fn() };
+    setlistFmService = {
+      findSetlist: jest.fn(),
+      searchConcerts: jest.fn(),
+      findRecentConcerts: jest.fn().mockResolvedValue([]),
+    };
     geocodingService = { geocodeCity: jest.fn().mockResolvedValue(null) };
     ratingService = { getSummary: jest.fn().mockResolvedValue(emptyRating) };
     commentService = { findByConcert: jest.fn().mockResolvedValue(noComments) };
@@ -304,9 +312,28 @@ describe('ConcertService', () => {
           ],
         },
         orderBy: { date: 'desc' },
-        take: 20,
+        take: 36,
       });
-      expect(result).toBe(matches);
+      expect(result).toEqual([{ ...baseConcert, artistImageUrl: null }]);
+    });
+
+    it("joint la photo de l'artiste à chaque résultat, résolue une seule fois par artiste", async () => {
+      prisma.concert.findMany.mockResolvedValueOnce([
+        baseConcert,
+        { ...baseConcert, id: 'concert-2', venueName: 'Le Zénith' },
+      ]);
+      lastFmService.getArtistImage.mockResolvedValueOnce(
+        'https://lastfm.freetls.fastly.net/i/u/ar0/muse.jpg',
+      );
+
+      const result = await service.search('muse');
+
+      expect(lastFmService.getArtistImage).toHaveBeenCalledTimes(1);
+      expect(lastFmService.getArtistImage).toHaveBeenCalledWith('Muse');
+      expect(result.map((c) => c.artistImageUrl)).toEqual([
+        'https://lastfm.freetls.fastly.net/i/u/ar0/muse.jpg',
+        'https://lastfm.freetls.fastly.net/i/u/ar0/muse.jpg',
+      ]);
     });
 
     it("renvoie une liste vide s'il n'y a aucune correspondance", async () => {
@@ -326,9 +353,9 @@ describe('ConcertService', () => {
       expect(prisma.concert.findMany).toHaveBeenCalledWith({
         where: undefined,
         orderBy: { date: 'desc' },
-        take: 20,
+        take: 36,
       });
-      expect(result).toBe(recents);
+      expect(result).toEqual([{ ...baseConcert, artistImageUrl: null }]);
     });
 
     it('avec une requête vide ou uniquement des espaces, se comporte comme sans requête', async () => {
@@ -339,7 +366,7 @@ describe('ConcertService', () => {
       expect(prisma.concert.findMany).toHaveBeenCalledWith({
         where: undefined,
         orderBy: { date: 'desc' },
-        take: 20,
+        take: 36,
       });
     });
 
@@ -349,14 +376,37 @@ describe('ConcertService', () => {
       await service.search('muse');
 
       expect(setlistFmService.searchConcerts).not.toHaveBeenCalled();
+      expect(setlistFmService.findRecentConcerts).not.toHaveBeenCalled();
     });
 
-    it("n'interroge pas Setlist.fm pour une requête vide, même avec un utilisateur", async () => {
+    it('sans requête avec un utilisateur, importe les concerts récents en France (découverte)', async () => {
+      const match = {
+        artistName: 'Justice',
+        venueName: 'Le Zénith',
+        city: 'Paris',
+        date: new Date('2026-07-18'),
+        latitude: 48.8566,
+        longitude: 2.3522,
+      };
+      setlistFmService.findRecentConcerts.mockResolvedValueOnce([match]);
+      prisma.concert.findFirst.mockResolvedValueOnce(null);
       prisma.concert.findMany.mockResolvedValueOnce([]);
 
       await service.search(undefined, 'user-1');
 
-      expect(setlistFmService.searchConcerts).not.toHaveBeenCalled();
+      expect(setlistFmService.findRecentConcerts).toHaveBeenCalledWith('FR');
+      expect(prisma.concert.create).toHaveBeenCalledWith({
+        data: { ...match, createdById: 'user-1' },
+      });
+    });
+
+    it("throttle l'import découverte : pas de second appel Setlist.fm dans l'heure", async () => {
+      prisma.concert.findMany.mockResolvedValue([]);
+
+      await service.search(undefined, 'user-1');
+      await service.search(undefined, 'user-1');
+
+      expect(setlistFmService.findRecentConcerts).toHaveBeenCalledTimes(1);
     });
 
     it('importe les concerts trouvés sur Setlist.fm sous l’utilisateur courant, avec leurs coordonnées', async () => {

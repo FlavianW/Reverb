@@ -40,3 +40,11 @@ export interface ConcertPage extends Concert {
 export interface NearbyConcert extends Concert {
   distanceKm: number;
 }
+
+/**
+ * Résultat de la recherche de concerts (US-3.1) : le concert et la photo de
+ * son artiste (Last.fm, mise en cache côté API), `null` si indisponible.
+ */
+export interface ConcertSearchResult extends Concert {
+  artistImageUrl: string | null;
+}
