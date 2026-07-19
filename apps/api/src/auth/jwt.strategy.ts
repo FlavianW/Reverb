@@ -8,6 +8,11 @@ import { UserService, toPublicUser } from '../user/user.service';
 import { SessionTokenPayload } from './auth.service';
 import { SESSION_COOKIE_NAME } from './session-cookie';
 
+/**
+ * Valide le JWT de session lu dans le cookie httpOnly — et non dans l'en-tête
+ * `Authorization` : le jeton n'est jamais exposé au JavaScript client
+ * (protection XSS), c'est le navigateur qui le transmet automatiquement.
+ */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(

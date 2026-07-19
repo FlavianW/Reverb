@@ -4,6 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy } from 'passport-google-oauth20';
 import { GoogleProfile } from '../user/user.service';
 
+/** Flux OAuth Google côté web (US-1.1) : redirection navigateur + callback. */
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(configService: ConfigService) {
@@ -21,8 +22,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
    * son absence fait échouer l'authentification avec un message clair.
    */
   validate(
-    accessToken: string,
-    refreshToken: string,
+    _accessToken: string,
+    _refreshToken: string,
     profile: Profile,
   ): GoogleProfile {
     const email = profile.emails?.[0]?.value;
