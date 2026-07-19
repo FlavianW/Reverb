@@ -12,12 +12,9 @@ export function getStoredTheme(): Theme | null {
 	return isTheme(value) ? value : null;
 }
 
-/** Thème effectivement affiché : la préférence stockée, sinon celle du système. */
+/** Thème effectivement affiché : la préférence stockée, sinon le sombre (défaut Reverb). */
 export function currentTheme(): Theme {
-	return (
-		getStoredTheme() ??
-		(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-	);
+	return getStoredTheme() ?? 'dark';
 }
 
 /** Bascule et persiste le thème, appliqué immédiatement sur `<html>`. */

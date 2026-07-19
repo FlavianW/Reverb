@@ -5,17 +5,18 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
 		<script>
-			// Applique le thème choisi avant le premier rendu : sans ce script
-			// synchrone, un choix explicite contraire à la préférence système
-			// (ex. thème clair forcé sur un système en dark mode) provoquerait un
-			// flash du mauvais thème le temps que le JS de l'app s'exécute.
+			// Applique le thème avant le premier rendu : sans ce script synchrone,
+			// un thème différent de celui du CSS initial provoquerait un flash le
+			// temps que le JS de l'app s'exécute. Le sombre est le thème par
+			// défaut de Reverb (identité "salle de concert") ; le clair est un
+			// choix explicite de l'utilisateur.
 			(function () {
 				try {
 					var stored = localStorage.getItem('reverb-theme');
-					if (stored === 'light' || stored === 'dark') {
-						document.documentElement.dataset.theme = stored;
-					}
-				} catch (e) {}
+					document.documentElement.dataset.theme = stored === 'light' ? 'light' : 'dark';
+				} catch (e) {
+					document.documentElement.dataset.theme = 'dark';
+				}
 			})();
 		</script>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
