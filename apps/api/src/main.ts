@@ -5,6 +5,13 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
+/**
+ * Point d'entrée de l'API. Concentre les protections transverses (OWASP) :
+ * en-têtes durcis via helmet, validation stricte des entrées (`whitelist` +
+ * `forbidNonWhitelisted` rejettent tout champ hors DTO), et CORS restreint
+ * aux origines listées dans `CORS_ORIGIN` — `credentials: true` est requis
+ * pour que le navigateur transmette le cookie de session httpOnly.
+ */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
