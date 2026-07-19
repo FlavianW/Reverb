@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { PublicUser } from '@reverb/shared';
 	import NavLink from './NavLink.svelte';
+	import ThemeToggle from './ThemeToggle.svelte';
 	import UserMenu from './UserMenu.svelte';
 
 	interface Props {
@@ -33,7 +34,10 @@
 				<NavLink href="/amis">Amis</NavLink>
 				<NavLink href="/profil/{user.pseudo}">Profil</NavLink>
 			</nav>
-			<UserMenu {user} />
+			<div class="actions">
+				<ThemeToggle />
+				<UserMenu {user} />
+			</div>
 		</div>
 	</header>
 	<main>
@@ -77,6 +81,12 @@
 		display: flex;
 		gap: 2.25rem;
 		flex: 1;
+	}
+
+	.actions {
+		display: flex;
+		align-items: center;
+		gap: 0.875rem;
 	}
 
 	.nav-item {

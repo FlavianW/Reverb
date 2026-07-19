@@ -9,7 +9,8 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const q = event.url.searchParams.get('q') ?? '';
-	const query = q ? `?q=${encodeURIComponent(q)}` : '';
-	const concerts = await apiFetch<Concert[]>(event, `/concerts/search${query}`);
+	const concerts = q
+		? await apiFetch<Concert[]>(event, `/concerts/search?q=${encodeURIComponent(q)}`)
+		: [];
 	return { concerts, q };
 };

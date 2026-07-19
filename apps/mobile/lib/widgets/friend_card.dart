@@ -43,9 +43,9 @@ class _FriendCardState extends State<FriendCard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: ReverbColors.line),
+        border: Border.all(color: context.colors.line),
         borderRadius: BorderRadius.circular(ReverbRadius.md),
-        color: ReverbColors.paperAlt,
+        color: context.colors.paperAlt,
       ),
       child: Row(
         children: [
@@ -77,33 +77,37 @@ class _FriendCardState extends State<FriendCard> {
     switch (widget.kind) {
       case FriendCardKind.friend:
         return [
-          TextButton(
+          TextButton.icon(
             onPressed: () => _handle(widget.onRemove),
-            child: const Text('Retirer'),
+            icon: const Icon(Icons.person_remove_outlined, size: 16),
+            label: const Text('Retirer'),
           ),
         ];
       case FriendCardKind.received:
         return [
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () => _handle(widget.onAccept!),
-            child: const Text('Accepter'),
+            icon: const Icon(Icons.check, size: 16),
+            label: const Text('Accepter'),
           ),
           const SizedBox(width: 8),
-          TextButton(
+          TextButton.icon(
             onPressed: () => _handle(widget.onRemove),
-            child: const Text('Refuser'),
+            icon: const Icon(Icons.close, size: 16),
+            label: const Text('Refuser'),
           ),
         ];
       case FriendCardKind.sent:
         return [
-          const Text(
+          Text(
             'Demande envoyée',
-            style: TextStyle(color: ReverbColors.inkSoft, fontSize: 13),
+            style: TextStyle(color: context.colors.inkSoft, fontSize: 13),
           ),
           const SizedBox(width: 8),
-          TextButton(
+          TextButton.icon(
             onPressed: () => _handle(widget.onRemove),
-            child: const Text('Annuler'),
+            icon: const Icon(Icons.close, size: 16),
+            label: const Text('Annuler'),
           ),
         ];
     }

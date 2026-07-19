@@ -103,6 +103,7 @@ void main() {
       'rating': {'average': null, 'count': 0},
       'comments': <Object?>[],
       'photos': <Object?>[],
+      'artistImageUrl': null,
     };
 
     test('setlist null = setlist indisponible', () {

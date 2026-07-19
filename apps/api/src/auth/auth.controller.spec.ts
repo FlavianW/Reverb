@@ -319,7 +319,9 @@ describe('AuthController', () => {
         pseudo: 'ana-etoile',
         email: googleProfile.email,
         avatarUrl: googleProfile.avatarUrl ?? null,
+        bannerUrl: null,
         bio: null,
+        favoriteArtist: null,
       };
 
       expect(controller.me(publicUser)).toBe(publicUser);

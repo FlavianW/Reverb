@@ -87,31 +87,36 @@ class _FriendButtonState extends State<FriendButton> {
     }
 
     final Widget button = switch (status) {
-      ViewerFriendshipStatus.none => OutlinedButton(
+      ViewerFriendshipStatus.none => OutlinedButton.icon(
         onPressed: pending ? null : _sendRequest,
-        child: const Text('Ajouter en ami'),
+        icon: const Icon(Icons.person_add_alt_outlined, size: 18),
+        label: const Text('Ajouter en ami'),
       ),
-      ViewerFriendshipStatus.pendingSent => TextButton(
+      ViewerFriendshipStatus.pendingSent => TextButton.icon(
         onPressed: pending ? null : _remove,
-        child: const Text('Demande envoyée'),
+        icon: const Icon(Icons.close, size: 16),
+        label: const Text('Demande envoyée'),
       ),
       ViewerFriendshipStatus.pendingReceived => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          OutlinedButton(
+          OutlinedButton.icon(
             onPressed: pending ? null : _accept,
-            child: const Text('Accepter'),
+            icon: const Icon(Icons.check, size: 18),
+            label: const Text('Accepter'),
           ),
           const SizedBox(width: 8),
-          TextButton(
+          TextButton.icon(
             onPressed: pending ? null : _remove,
-            child: const Text('Refuser'),
+            icon: const Icon(Icons.close, size: 18),
+            label: const Text('Refuser'),
           ),
         ],
       ),
-      ViewerFriendshipStatus.friends => TextButton(
+      ViewerFriendshipStatus.friends => TextButton.icon(
         onPressed: pending ? null : _remove,
-        child: const Text('Ami·e · Retirer'),
+        icon: const Icon(Icons.person_remove_outlined, size: 18),
+        label: const Text('Ami·e'),
       ),
       ViewerFriendshipStatus.self => const SizedBox.shrink(),
     };
@@ -126,8 +131,8 @@ class _FriendButtonState extends State<FriendButton> {
           padding: const EdgeInsets.only(top: 4),
           child: Text(
             error!,
-            style: const TextStyle(
-              color: ReverbColors.accentDeep,
+            style: TextStyle(
+              color: context.colors.accentDeep,
               fontSize: 13,
             ),
           ),

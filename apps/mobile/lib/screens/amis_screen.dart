@@ -5,6 +5,7 @@ import '../core/api_client.dart';
 import '../core/theme.dart';
 import '../models/friendship.dart';
 import '../widgets/friend_card.dart';
+import '../widgets/theme_toggle_button.dart';
 
 /// Miroir de `apps/web/src/routes/amis/+page.svelte`.
 class AmisScreen extends StatefulWidget {
@@ -73,7 +74,10 @@ class _AmisScreenState extends State<AmisScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Amis')),
+      appBar: AppBar(
+        title: const Text('Amis'),
+        actions: const [ThemeToggleButton()],
+      ),
       body: FutureBuilder<FriendshipOverview>(
         future: _future,
         builder: (context, snapshot) {
@@ -102,9 +106,10 @@ class _AmisScreenState extends State<AmisScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
+                  IconButton.filled(
                     onPressed: sending ? null : _sendRequest,
-                    child: const Text('Envoyer'),
+                    icon: const Icon(Icons.person_add_alt_1_outlined),
+                    tooltip: 'Envoyer',
                   ),
                 ],
               ),
@@ -113,8 +118,8 @@ class _AmisScreenState extends State<AmisScreen> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     error!,
-                    style: const TextStyle(
-                      color: ReverbColors.accentDeep,
+                    style: TextStyle(
+                      color: context.colors.accentDeep,
                       fontSize: 13,
                     ),
                   ),
@@ -154,9 +159,9 @@ class _AmisScreenState extends State<AmisScreen> {
               _SectionTitle('Mes amis'),
               const SizedBox(height: 8),
               if (overview.friends.isEmpty)
-                const Text(
+                Text(
                   "Aucun ami pour l'instant.",
-                  style: TextStyle(color: ReverbColors.inkSoft),
+                  style: TextStyle(color: context.colors.inkSoft),
                 )
               else
                 ...overview.friends.map(

@@ -31,7 +31,9 @@ describe('ConcertController', () => {
     pseudo: 'ana-etoile',
     email: 'ana@example.com',
     avatarUrl: null,
+    bannerUrl: null,
     bio: null,
+    favoriteArtist: null,
   };
   beforeEach(async () => {
     concertService = {

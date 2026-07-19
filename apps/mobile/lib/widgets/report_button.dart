@@ -40,15 +40,16 @@ class _ReportButtonState extends State<ReportButton> {
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
+    return TextButton.icon(
       onPressed: reported ? null : _openDialog,
       style: TextButton.styleFrom(
-        foregroundColor: ReverbColors.inkSoft,
+        foregroundColor: context.colors.inkSoft,
         padding: EdgeInsets.zero,
         minimumSize: const Size(0, 0),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      child: Text(
+      icon: Icon(reported ? Icons.flag : Icons.flag_outlined, size: 14),
+      label: Text(
         reported ? 'Signalé' : 'Signaler',
         style: TextStyle(
           fontSize: 13,
@@ -75,7 +76,7 @@ class _ReportDialogState extends State<_ReportDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Motif', style: TextStyle(color: ReverbColors.inkSoft, fontSize: 13)),
+          Text('Motif', style: TextStyle(color: context.colors.inkSoft, fontSize: 13)),
           ...ReportReason.values.map(
             (r) => RadioListTile<ReportReason>(
               value: r,

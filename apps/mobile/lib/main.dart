@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'core/api_client.dart';
 import 'core/session.dart';
 import 'core/theme.dart';
+import 'core/theme_controller.dart';
 import 'screens/connexion_screen.dart';
 import 'screens/root_shell.dart';
 
@@ -25,12 +26,19 @@ class ReverbApp extends StatelessWidget {
         ChangeNotifierProvider<SessionController>(
           create: (context) => SessionController(context.read<ApiClient>())..refresh(),
         ),
+        ChangeNotifierProvider<ThemeController>(
+          create: (_) => ThemeController()..load(),
+        ),
       ],
-      child: MaterialApp(
-        title: 'Reverb',
-        debugShowCheckedModeBanner: false,
-        theme: buildReverbTheme(),
-        home: const _AuthGate(),
+      child: Consumer<ThemeController>(
+        builder: (context, themeController, _) => MaterialApp(
+          title: 'Reverb',
+          debugShowCheckedModeBanner: false,
+          theme: buildReverbLightTheme(),
+          darkTheme: buildReverbDarkTheme(),
+          themeMode: themeController.mode,
+          home: const _AuthGate(),
+        ),
       ),
     );
   }

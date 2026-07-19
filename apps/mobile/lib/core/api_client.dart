@@ -6,6 +6,7 @@ import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../models/artist.dart';
 import '../models/concert.dart';
 import '../models/friendship.dart';
 import '../models/post.dart';
@@ -225,10 +226,18 @@ class ApiClient {
     decode: (d) => PublicProfile.fromJson(d as Map<String, dynamic>),
   );
 
-  Future<PublicUser> updateProfile({String? pseudo, String? bio}) => _request(
+  Future<PublicUser> updateProfile({
+    String? pseudo,
+    String? bio,
+    String? favoriteArtist,
+  }) => _request(
     'PATCH',
     '/users/me',
-    data: {if (pseudo != null) 'pseudo': pseudo, if (bio != null) 'bio': bio},
+    data: {
+      if (pseudo != null) 'pseudo': pseudo,
+      if (bio != null) 'bio': bio,
+      if (favoriteArtist != null) 'favoriteArtist': favoriteArtist,
+    },
     decode: (d) => PublicUser.fromJson(d as Map<String, dynamic>),
   );
 
@@ -243,6 +252,29 @@ class ApiClient {
       decode: (d) => PublicUser.fromJson(d as Map<String, dynamic>),
     );
   }
+
+  Future<PublicUser> uploadBanner(File file) async {
+    final formData = FormData.fromMap({
+      'banner': await MultipartFile.fromFile(file.path),
+    });
+    return _request(
+      'POST',
+      '/users/me/banner',
+      data: formData,
+      decode: (d) => PublicUser.fromJson(d as Map<String, dynamic>),
+    );
+  }
+
+  // Artistes
+
+  Future<List<ArtistSuggestion>> searchArtists(String q) => _request(
+    'GET',
+    '/artists/search',
+    query: {'q': q},
+    decode: (d) => (d as List<dynamic>)
+        .map((e) => ArtistSuggestion.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 
   // Amis
 

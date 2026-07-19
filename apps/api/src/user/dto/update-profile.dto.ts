@@ -29,4 +29,13 @@ export class UpdateProfileDto implements UpdateProfileRequest {
   @IsOptional()
   @IsUrl()
   avatarUrl?: string;
+
+  /** Même restriction que la bio : pas de balises (protection XSS). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @Matches(/^[^<>]*$/, {
+    message: "L'artiste favori ne peut pas contenir de balises.",
+  })
+  favoriteArtist?: string;
 }

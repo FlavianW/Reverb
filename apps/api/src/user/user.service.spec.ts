@@ -1,6 +1,7 @@
 import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma, User } from '@prisma/client';
+import { LastFmService } from '../artist/lastfm.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { GoogleProfile, UserService, toPublicUser } from './user.service';
 
@@ -16,6 +17,7 @@ describe('UserService', () => {
     user: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
     concertAttendance: { findMany: jest.Mock };
   };
+  let lastFmService: { getArtistImage: jest.Mock };
 
   const googleProfile: GoogleProfile = {
     googleId: 'google-123',
@@ -35,9 +37,14 @@ describe('UserService', () => {
         findMany: jest.fn(),
       },
     };
+    lastFmService = { getArtistImage: jest.fn().mockResolvedValue(null) };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UserService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        UserService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: LastFmService, useValue: lastFmService },
+      ],
     }).compile();
 
     service = module.get(UserService);
@@ -158,6 +165,60 @@ describe('UserService', () => {
     });
   });
 
+  describe('getPublicProfile', () => {
+    const user = {
+      id: 'user-1',
+      pseudo: 'ana-etoile',
+      bio: 'Fan de rock.',
+      avatarUrl: null,
+      bannerUrl: null,
+      favoriteArtist: 'Muse',
+    } as User;
+
+    it("renvoie null si l'utilisateur n'existe pas", async () => {
+      prisma.user.findUnique.mockResolvedValueOnce(null);
+
+      const result = await service.getPublicProfile('inconnu');
+
+      expect(result).toBeNull();
+      expect(lastFmService.getArtistImage).not.toHaveBeenCalled();
+    });
+
+    it("n'appelle pas Last.fm si aucun artiste favori n'est renseigné", async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({
+        ...user,
+        favoriteArtist: null,
+      });
+      prisma.concertAttendance.findMany.mockResolvedValueOnce([]);
+
+      const result = await service.getPublicProfile('ana-etoile');
+
+      expect(lastFmService.getArtistImage).not.toHaveBeenCalled();
+      expect(result?.favoriteArtistImageUrl).toBeNull();
+    });
+
+    it("inclut la photo de l'artiste favori renvoyée par Last.fm", async () => {
+      prisma.user.findUnique.mockResolvedValueOnce(user);
+      prisma.concertAttendance.findMany.mockResolvedValueOnce([]);
+      lastFmService.getArtistImage.mockResolvedValueOnce(
+        'https://example.com/muse.jpg',
+      );
+
+      const result = await service.getPublicProfile('ana-etoile');
+
+      expect(lastFmService.getArtistImage).toHaveBeenCalledWith('Muse');
+      expect(result).toEqual({
+        pseudo: 'ana-etoile',
+        bio: 'Fan de rock.',
+        avatarUrl: null,
+        bannerUrl: null,
+        favoriteArtist: 'Muse',
+        favoriteArtistImageUrl: 'https://example.com/muse.jpg',
+        attendedConcerts: [],
+      });
+    });
+  });
+
   describe('findAttendedConcerts', () => {
     it('renvoie les concerts assistés du plus récent au plus ancien', async () => {
       const concert = { id: 'concert-1', artistName: 'Muse' };
@@ -183,7 +244,9 @@ describe('UserService', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: 'https://example.com/avatar.png',
+        bannerUrl: 'https://example.com/banner.png',
         bio: 'Fan de rock depuis toujours.',
+        favoriteArtist: 'Muse',
         googleId: 'google-123',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -194,7 +257,9 @@ describe('UserService', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: 'https://example.com/avatar.png',
+        bannerUrl: 'https://example.com/banner.png',
         bio: 'Fan de rock depuis toujours.',
+        favoriteArtist: 'Muse',
       });
     });
   });

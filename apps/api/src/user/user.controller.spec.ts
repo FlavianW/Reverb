@@ -4,6 +4,7 @@ import { User } from '@prisma/client';
 import type { PublicUser } from '@reverb/shared';
 import { PostService } from '../post/post.service';
 import { AvatarService } from './avatar/avatar.service';
+import { BannerService } from './banner/banner.service';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
@@ -13,8 +14,10 @@ describe('UserController', () => {
     findByPseudo: jest.Mock;
     findAttendedConcerts: jest.Mock;
     updateProfile: jest.Mock;
+    getPublicProfile: jest.Mock;
   };
   let avatarService: { uploadForUser: jest.Mock };
+  let bannerService: { uploadForUser: jest.Mock };
   let postService: { getByAuthorId: jest.Mock };
 
   const currentUser: PublicUser = {
@@ -22,15 +25,19 @@ describe('UserController', () => {
     pseudo: 'ana-etoile',
     email: 'ana@example.com',
     avatarUrl: null,
+    bannerUrl: null,
     bio: null,
+    favoriteArtist: null,
   };
   beforeEach(async () => {
     userService = {
       findByPseudo: jest.fn(),
       findAttendedConcerts: jest.fn(),
       updateProfile: jest.fn(),
+      getPublicProfile: jest.fn(),
     };
     avatarService = { uploadForUser: jest.fn() };
+    bannerService = { uploadForUser: jest.fn() };
     postService = { getByAuthorId: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -38,6 +45,7 @@ describe('UserController', () => {
       providers: [
         { provide: UserService, useValue: userService },
         { provide: AvatarService, useValue: avatarService },
+        { provide: BannerService, useValue: bannerService },
         { provide: PostService, useValue: postService },
       ],
     }).compile();
@@ -47,35 +55,30 @@ describe('UserController', () => {
 
   describe('getPublicProfile', () => {
     it("lève une 404 si l'utilisateur n'existe pas", async () => {
-      userService.findByPseudo.mockResolvedValueOnce(null);
+      userService.getPublicProfile.mockResolvedValueOnce(null);
 
       await expect(controller.getPublicProfile('inconnu')).rejects.toThrow(
         NotFoundException,
       );
-      expect(userService.findAttendedConcerts).not.toHaveBeenCalled();
     });
 
-    it('renvoie le profil public sans email ni id, avec les concerts assistés', async () => {
-      const user = {
-        id: 'user-1',
+    it('renvoie le profil public résolu par le service', async () => {
+      const attendedConcerts = [{ id: 'concert-1', artistName: 'Muse' }];
+      const profile = {
         pseudo: 'ana-etoile',
-        email: 'ana@example.com',
         bio: 'Fan de rock.',
         avatarUrl: 'https://example.com/avatar.png',
-      } as User;
-      userService.findByPseudo.mockResolvedValueOnce(user);
-      const attendedConcerts = [{ id: 'concert-1', artistName: 'Muse' }];
-      userService.findAttendedConcerts.mockResolvedValueOnce(attendedConcerts);
+        bannerUrl: 'https://example.com/banner.png',
+        favoriteArtist: 'Muse',
+        favoriteArtistImageUrl: 'https://example.com/muse.jpg',
+        attendedConcerts,
+      };
+      userService.getPublicProfile.mockResolvedValueOnce(profile);
 
       const result = await controller.getPublicProfile('ana-etoile');
 
-      expect(userService.findAttendedConcerts).toHaveBeenCalledWith('user-1');
-      expect(result).toEqual({
-        pseudo: 'ana-etoile',
-        bio: 'Fan de rock.',
-        avatarUrl: 'https://example.com/avatar.png',
-        attendedConcerts,
-      });
+      expect(userService.getPublicProfile).toHaveBeenCalledWith('ana-etoile');
+      expect(result).toBe(profile);
     });
   });
 
@@ -107,7 +110,9 @@ describe('UserController', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: null,
+        bannerUrl: null,
         bio: 'Fan de rock.',
+        favoriteArtist: null,
       } as User;
       userService.updateProfile.mockResolvedValueOnce(updated);
 
@@ -124,7 +129,9 @@ describe('UserController', () => {
         pseudo: 'ana-etoile',
         email: 'ana@example.com',
         avatarUrl: null,
+        bannerUrl: null,
         bio: 'Fan de rock.',
+        favoriteArtist: null,
       });
     });
   });
@@ -172,6 +179,22 @@ describe('UserController', () => {
       const result = await controller.uploadMyAvatar(file, currentUser);
 
       expect(avatarService.uploadForUser).toHaveBeenCalledWith('user-1', file);
+      expect(result).toBe(updated);
+    });
+  });
+
+  describe('uploadMyBanner', () => {
+    it("délègue l'upload au service avec l'id de l'utilisateur connecté", async () => {
+      const file = { buffer: Buffer.from('img') } as Express.Multer.File;
+      const updated: PublicUser = {
+        ...currentUser,
+        bannerUrl: 'https://example.com/banner.jpg',
+      };
+      bannerService.uploadForUser.mockResolvedValueOnce(updated);
+
+      const result = await controller.uploadMyBanner(file, currentUser);
+
+      expect(bannerService.uploadForUser).toHaveBeenCalledWith('user-1', file);
       expect(result).toBe(updated);
     });
   });

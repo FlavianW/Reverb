@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { LastFmService } from '../artist/lastfm.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommentService } from './comment/comment.service';
 import { ConcertService } from './concert.service';
@@ -22,6 +23,7 @@ describe('ConcertService', () => {
   let ratingService: { getSummary: jest.Mock };
   let commentService: { findByConcert: jest.Mock };
   let photoService: { findByConcert: jest.Mock };
+  let lastFmService: { getArtistImage: jest.Mock };
 
   const baseConcert = {
     id: 'concert-1',
@@ -50,6 +52,7 @@ describe('ConcertService', () => {
     ratingService = { getSummary: jest.fn().mockResolvedValue(emptyRating) };
     commentService = { findByConcert: jest.fn().mockResolvedValue(noComments) };
     photoService = { findByConcert: jest.fn().mockResolvedValue(noPhotos) };
+    lastFmService = { getArtistImage: jest.fn().mockResolvedValue(null) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -60,6 +63,7 @@ describe('ConcertService', () => {
         { provide: ConcertRatingService, useValue: ratingService },
         { provide: CommentService, useValue: commentService },
         { provide: PhotoService, useValue: photoService },
+        { provide: LastFmService, useValue: lastFmService },
       ],
     }).compile();
 
@@ -152,6 +156,7 @@ describe('ConcertService', () => {
         rating: emptyRating,
         comments: noComments,
         photos: noPhotos,
+        artistImageUrl: null,
       });
     });
 
@@ -176,6 +181,7 @@ describe('ConcertService', () => {
         rating: emptyRating,
         comments: noComments,
         photos: noPhotos,
+        artistImageUrl: null,
       });
     });
 
@@ -195,6 +201,7 @@ describe('ConcertService', () => {
         rating: emptyRating,
         comments: noComments,
         photos: noPhotos,
+        artistImageUrl: null,
       });
     });
 
@@ -260,6 +267,25 @@ describe('ConcertService', () => {
 
       expect(photoService.findByConcert).toHaveBeenCalledWith('concert-1');
       expect(result?.photos).toBe(photos);
+    });
+
+    it("inclut la photo de l'artiste renvoyée par Last.fm", async () => {
+      const pastConcert = {
+        ...baseConcert,
+        date: new Date('2020-01-01'),
+      };
+      prisma.concert.findUnique.mockResolvedValueOnce(pastConcert);
+      setlistFmService.findSetlist.mockResolvedValueOnce(null);
+      lastFmService.getArtistImage.mockResolvedValueOnce(
+        'https://lastfm.freetls.fastly.net/i/u/300x300/muse.jpg',
+      );
+
+      const result = await service.findPageById('concert-1');
+
+      expect(lastFmService.getArtistImage).toHaveBeenCalledWith('Muse');
+      expect(result?.artistImageUrl).toBe(
+        'https://lastfm.freetls.fastly.net/i/u/300x300/muse.jpg',
+      );
     });
   });
 

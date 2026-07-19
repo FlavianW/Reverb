@@ -5,6 +5,7 @@ import '../core/api_client.dart';
 import '../core/theme.dart';
 import '../models/concert.dart';
 import '../widgets/concert_card.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'concert_screen.dart';
 
 /// Accueil = recherche vide (fil des concerts les plus récents), comme
@@ -36,7 +37,10 @@ class _AccueilScreenState extends State<AccueilScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reverb')),
+      appBar: AppBar(
+        title: const Text('Reverb'),
+        actions: const [ThemeToggleButton()],
+      ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: FutureBuilder<List<Concert>>(
@@ -52,16 +56,16 @@ class _AccueilScreenState extends State<AccueilScreen> {
               return ListView(
                 children: [
                   const SizedBox(height: 80),
-                  Center(child: Text(message, style: const TextStyle(color: ReverbColors.accentDeep))),
+                  Center(child: Text(message, style: TextStyle(color: context.colors.accentDeep))),
                 ],
               );
             }
             final concerts = snapshot.data ?? [];
             if (concerts.isEmpty) {
               return ListView(
-                children: const [
-                  SizedBox(height: 80),
-                  Center(child: Text('Aucun concert pour le moment.', style: TextStyle(color: ReverbColors.inkSoft))),
+                children: [
+                  const SizedBox(height: 80),
+                  Center(child: Text('Aucun concert pour le moment.', style: TextStyle(color: context.colors.inkSoft))),
                 ],
               );
             }

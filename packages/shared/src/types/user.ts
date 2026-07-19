@@ -6,7 +6,9 @@ export interface PublicUser {
   pseudo: string;
   email: string;
   avatarUrl: string | null;
+  bannerUrl: string | null;
   bio: string | null;
+  favoriteArtist: string | null;
 }
 
 /**
@@ -17,5 +19,9 @@ export interface PublicProfile {
   pseudo: string;
   bio: string | null;
   avatarUrl: string | null;
+  bannerUrl: string | null;
+  favoriteArtist: string | null;
+  /** Photo de `favoriteArtist` via Last.fm, `null` si non renseigné ou introuvable. */
+  favoriteArtistImageUrl: string | null;
   attendedConcerts: Concert[];
 }

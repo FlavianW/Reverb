@@ -6,12 +6,18 @@ class PublicProfile {
   final String pseudo;
   final String? bio;
   final String? avatarUrl;
+  final String? bannerUrl;
+  final String? favoriteArtist;
+  final String? favoriteArtistImageUrl;
   final List<Concert> attendedConcerts;
 
   const PublicProfile({
     required this.pseudo,
     required this.bio,
     required this.avatarUrl,
+    required this.bannerUrl,
+    required this.favoriteArtist,
+    required this.favoriteArtistImageUrl,
     required this.attendedConcerts,
   });
 
@@ -19,6 +25,9 @@ class PublicProfile {
     pseudo: json['pseudo'] as String,
     bio: json['bio'] as String?,
     avatarUrl: json['avatarUrl'] as String?,
+    bannerUrl: json['bannerUrl'] as String?,
+    favoriteArtist: json['favoriteArtist'] as String?,
+    favoriteArtistImageUrl: json['favoriteArtistImageUrl'] as String?,
     attendedConcerts: (json['attendedConcerts'] as List<dynamic>)
         .map((e) => Concert.fromJson(e as Map<String, dynamic>))
         .toList(),

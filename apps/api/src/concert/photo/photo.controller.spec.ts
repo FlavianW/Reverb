@@ -15,7 +15,9 @@ describe('PhotoController', () => {
     pseudo: 'ana-etoile',
     email: 'ana@example.com',
     avatarUrl: null,
+    bannerUrl: null,
     bio: null,
+    favoriteArtist: null,
   };
   beforeEach(async () => {
     photoService = { delete: jest.fn() };

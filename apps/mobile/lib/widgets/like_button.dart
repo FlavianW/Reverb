@@ -57,7 +57,7 @@ class _LikeButtonState extends State<LikeButton> {
 
   @override
   Widget build(BuildContext context) {
-    final color = likedByMe ? ReverbColors.accentDeep : ReverbColors.inkSoft;
+    final color = likedByMe ? context.colors.accentDeep : context.colors.inkSoft;
     return TextButton.icon(
       onPressed: pending ? null : _toggle,
       icon: Icon(
@@ -67,7 +67,7 @@ class _LikeButtonState extends State<LikeButton> {
       ),
       label: Text('$likeCount', style: TextStyle(color: color)),
       style: TextButton.styleFrom(
-        foregroundColor: ReverbColors.inkSoft,
+        foregroundColor: context.colors.inkSoft,
         padding: const EdgeInsets.symmetric(horizontal: 4),
         minimumSize: const Size(0, 0),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,

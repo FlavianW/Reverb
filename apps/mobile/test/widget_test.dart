@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/theme.dart';
 import 'package:provider/provider.dart';
 
 import 'package:mobile/core/api_client.dart';
@@ -15,7 +16,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<SessionController>(
         create: (_) => SessionController(api),
-        child: const MaterialApp(home: ConnexionScreen()),
+        child: MaterialApp(theme: buildReverbLightTheme(), home: ConnexionScreen()),
       ),
     );
 

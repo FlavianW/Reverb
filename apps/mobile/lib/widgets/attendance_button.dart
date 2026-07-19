@@ -44,16 +44,17 @@ class _AttendanceButtonState extends State<AttendanceButton> {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return ElevatedButton.icon(
       onPressed: pending ? null : _toggle,
       style: attending
           ? null
           : ElevatedButton.styleFrom(
-              backgroundColor: ReverbColors.paperAlt,
-              foregroundColor: ReverbColors.ink,
-              side: const BorderSide(color: ReverbColors.line),
+              backgroundColor: context.colors.paperAlt,
+              foregroundColor: context.colors.ink,
+              side: BorderSide(color: context.colors.line),
             ),
-      child: const Text("J'y étais"),
+      icon: Icon(attending ? Icons.check_circle : Icons.check_circle_outline, size: 18),
+      label: const Text("J'y étais"),
     );
   }
 }

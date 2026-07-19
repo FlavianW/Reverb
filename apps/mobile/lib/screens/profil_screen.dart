@@ -5,15 +5,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../core/api_client.dart';
+import '../core/image_crop.dart';
 import '../core/session.dart';
 import '../core/theme.dart';
 import '../models/friendship.dart';
 import '../models/post.dart';
 import '../models/public_profile.dart';
+import '../widgets/artist_autocomplete_field.dart';
 import '../widgets/avatar.dart';
 import '../widgets/concert_card.dart';
 import '../widgets/friend_button.dart';
 import '../widgets/post_card.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'concert_screen.dart';
 
 /// Miroir de `apps/web/src/routes/profil/[pseudo]/+page.svelte` : édition
@@ -104,7 +107,10 @@ class _ProfilScreenState extends State<ProfilScreen> {
     final session = context.watch<SessionController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
+      appBar: AppBar(
+        title: const Text('Profil'),
+        actions: const [ThemeToggleButton()],
+      ),
       body: FutureBuilder<(PublicProfile, FriendshipStatusWithUser?)>(
         future: _future,
         builder: (context, snapshot) {
@@ -123,13 +129,19 @@ class _ProfilScreenState extends State<ProfilScreen> {
           return ListView(
             children: [
               Container(
-                height: 100,
-                decoration: const BoxDecoration(
+                height: 160,
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [ReverbColors.accentDeep, ReverbColors.accent],
+                    colors: [context.colors.accentDeep, context.colors.accent],
                   ),
+                  image: profile.bannerUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(profile.bannerUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
               ),
               Padding(
@@ -139,7 +151,21 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      ReverbAvatar(src: profile.avatarUrl, name: profile.pseudo, size: 88),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: context.colors.paper,
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black26, blurRadius: 8),
+                          ],
+                        ),
+                        child: ReverbAvatar(
+                          src: profile.avatarUrl,
+                          name: profile.pseudo,
+                          size: 96,
+                        ),
+                      ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Padding(
@@ -147,9 +173,17 @@ class _ProfilScreenState extends State<ProfilScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(profile.pseudo, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22)),
+                              Text(
+                                profile.pseudo,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleLarge?.copyWith(fontSize: 22),
+                              ),
                               if (profile.bio != null && profile.bio!.isNotEmpty)
-                                Text(profile.bio!, style: const TextStyle(color: ReverbColors.inkSoft)),
+                                Text(
+                                  profile.bio!,
+                                  style: TextStyle(color: context.colors.inkSoft),
+                                ),
                             ],
                           ),
                         ),
@@ -163,14 +197,17 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
-                      OutlinedButton(
+                      OutlinedButton.icon(
                         onPressed: () => _openEditDialog(context, profile),
-                        child: const Text('Modifier le profil'),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        label: const Text('Modifier le profil'),
                       ),
-                      const SizedBox(width: 12),
-                      TextButton(
-                        onPressed: () => context.read<SessionController>().logout(),
-                        child: const Text('Se déconnecter'),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () =>
+                            context.read<SessionController>().logout(),
+                        icon: const Icon(Icons.logout),
+                        tooltip: 'Se déconnecter',
                       ),
                     ],
                   ),
@@ -185,16 +222,32 @@ class _ProfilScreenState extends State<ProfilScreen> {
                     initialFriendshipId: friendshipStatus.friendshipId,
                   ),
                 ),
+              if (profile.favoriteArtist != null) ...[
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _FavoriteArtistCard(
+                    name: profile.favoriteArtist!,
+                    imageUrl: profile.favoriteArtistImageUrl,
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Concerts assistés', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: Text(
+                  'Concerts assistés',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
               const SizedBox(height: 8),
               if (profile.attendedConcerts.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('Aucun concert assisté pour l\'instant.', style: TextStyle(color: ReverbColors.inkSoft)),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Aucun concert assisté pour l\'instant.',
+                    style: TextStyle(color: context.colors.inkSoft),
+                  ),
                 )
               else
                 Padding(
@@ -207,7 +260,10 @@ class _ProfilScreenState extends State<ProfilScreen> {
                             child: ConcertCard(
                               concert: concert,
                               onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => ConcertScreen(concertId: concert.id)),
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ConcertScreen(concertId: concert.id),
+                                ),
                               ),
                             ),
                           ),
@@ -224,9 +280,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _postItems.isEmpty
-                    ? const Text(
+                    ? Text(
                         "Aucun post pour l'instant.",
-                        style: TextStyle(color: ReverbColors.inkSoft),
+                        style: TextStyle(color: context.colors.inkSoft),
                       )
                     : Column(
                         children: [
@@ -271,6 +327,72 @@ class _ProfilScreenState extends State<ProfilScreen> {
   }
 }
 
+/// Bandeau proéminent, miroir du bloc "artiste favori" de `ProfileHeader.svelte`.
+class _FavoriteArtistCard extends StatelessWidget {
+  final String name;
+  final String? imageUrl;
+
+  const _FavoriteArtistCard({required this.name, required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: context.colors.line),
+        borderRadius: BorderRadius.circular(ReverbRadius.lg),
+        color: context.colors.paperAlt,
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 32,
+            backgroundColor: context.colors.accentSoft,
+            backgroundImage: imageUrl != null ? NetworkImage(imageUrl!) : null,
+            child: imageUrl == null
+                ? Text(
+                    name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
+                    style: TextStyle(
+                      color: context.colors.accentDeep,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 22,
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ARTISTE FAVORI',
+                  style: TextStyle(
+                    color: context.colors.inkSoft,
+                    fontSize: 11,
+                    letterSpacing: 0.6,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: context.colors.ink,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EditProfileDialog extends StatefulWidget {
   final PublicProfile profile;
   final VoidCallback onSaved;
@@ -284,7 +406,9 @@ class _EditProfileDialog extends StatefulWidget {
 class _EditProfileDialogState extends State<_EditProfileDialog> {
   late final _pseudoController = TextEditingController(text: widget.profile.pseudo);
   late final _bioController = TextEditingController(text: widget.profile.bio ?? '');
+  late String _favoriteArtist = widget.profile.favoriteArtist ?? '';
   File? _avatarFile;
+  File? _bannerFile;
   bool submitting = false;
   String? error;
 
@@ -296,9 +420,43 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
   }
 
   Future<void> _pickAvatar() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
-    if (picked == null) return;
-    setState(() => _avatarFile = File(picked.path));
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
+      if (picked == null || !mounted) return;
+      final cropped = await cropImage(
+        context,
+        sourcePath: picked.path,
+        aspectRatioX: 1,
+        aspectRatioY: 1,
+      );
+      if (cropped == null || !mounted) return;
+      setState(() => _avatarFile = cropped);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Impossible de charger la photo : $e')));
+    }
+  }
+
+  Future<void> _pickBanner() async {
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
+      if (picked == null || !mounted) return;
+      final cropped = await cropImage(
+        context,
+        sourcePath: picked.path,
+        aspectRatioX: 3,
+        aspectRatioY: 1,
+      );
+      if (cropped == null || !mounted) return;
+      setState(() => _bannerFile = cropped);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Impossible de charger la bannière : $e')));
+    }
   }
 
   Future<void> _submit() async {
@@ -312,9 +470,13 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
       if (_avatarFile != null) {
         await api.uploadAvatar(_avatarFile!);
       }
+      if (_bannerFile != null) {
+        await api.uploadBanner(_bannerFile!);
+      }
       final updated = await api.updateProfile(
         pseudo: _pseudoController.text,
         bio: _bioController.text,
+        favoriteArtist: _favoriteArtist,
       );
       session.updateUser(updated);
       if (!mounted) return;
@@ -336,6 +498,49 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            GestureDetector(
+              onTap: _pickBanner,
+              child: Container(
+                height: 80,
+                decoration: BoxDecoration(
+                  color: context.colors.accentSoft,
+                  borderRadius: BorderRadius.circular(ReverbRadius.sm),
+                  image: _bannerFile != null
+                      ? DecorationImage(image: FileImage(_bannerFile!), fit: BoxFit.cover)
+                      : (widget.profile.bannerUrl != null
+                            ? DecorationImage(
+                                image: NetworkImage(widget.profile.bannerUrl!),
+                                fit: BoxFit.cover,
+                              )
+                            : null),
+                ),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: context.colors.paperAlt,
+                      borderRadius: BorderRadius.circular(ReverbRadius.sm),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.camera_alt_outlined, size: 14, color: context.colors.accentDeep),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Changer la bannière',
+                          style: TextStyle(
+                            color: context.colors.accentDeep,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
                 _avatarFile != null
@@ -346,7 +551,11 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                         size: 64,
                       ),
                 const SizedBox(width: 12),
-                TextButton(onPressed: _pickAvatar, child: const Text('Changer la photo')),
+                TextButton.icon(
+                  onPressed: _pickAvatar,
+                  icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                  label: const Text('Changer la photo'),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -360,9 +569,15 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
               decoration: const InputDecoration(labelText: 'Bio'),
               maxLines: 3,
             ),
+            const SizedBox(height: 12),
+            ArtistAutocompleteField(
+              label: 'Artiste favori',
+              initialValue: _favoriteArtist,
+              onChanged: (value) => _favoriteArtist = value,
+            ),
             if (error != null) ...[
               const SizedBox(height: 8),
-              Text(error!, style: const TextStyle(color: ReverbColors.accentDeep, fontSize: 13)),
+              Text(error!, style: TextStyle(color: context.colors.accentDeep, fontSize: 13)),
             ],
           ],
         ),

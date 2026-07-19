@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
@@ -89,11 +90,14 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
     } on GoogleSignInException catch (e) {
       // L'utilisateur a simplement annulé : pas d'erreur à afficher.
       if (e.code != GoogleSignInExceptionCode.canceled) {
-        setState(() => error = 'La connexion Google a échoué.');
+        debugPrint('GoogleSignInException: code=${e.code} description=${e.description} details=${e.details}');
+        setState(() => error = 'La connexion Google a échoué (${e.code}).');
       }
     } on ApiException catch (e) {
+      debugPrint('ApiException lors de la connexion Google : ${e.status} ${e.message}');
       setState(() => error = e.message);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Erreur inattendue lors de la connexion Google : $e');
       setState(() => error = 'Une erreur est survenue. Veuillez réessayer.');
     } finally {
       if (mounted) setState(() => googleSubmitting = false);
@@ -128,8 +132,8 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                   const SizedBox(height: 8),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      color: ReverbColors.inkSoft,
+                    style: TextStyle(
+                      color: context.colors.inkSoft,
                       fontSize: 15,
                     ),
                   ),
@@ -166,8 +170,8 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                     const SizedBox(height: 12),
                     Text(
                       error!,
-                      style: const TextStyle(
-                        color: ReverbColors.accentDeep,
+                      style: TextStyle(
+                        color: context.colors.accentDeep,
                         fontSize: 14,
                       ),
                     ),
@@ -184,27 +188,32 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                   ),
                   const SizedBox(height: 16),
                   Row(
-                    children: const [
-                      Expanded(child: Divider(color: ReverbColors.line)),
+                    children: [
+                      Expanded(child: Divider(color: context.colors.line)),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
                           'ou',
                           style: TextStyle(
-                            color: ReverbColors.inkSoft,
+                            color: context.colors.inkSoft,
                             fontSize: 13,
                           ),
                         ),
                       ),
-                      Expanded(child: Divider(color: ReverbColors.line)),
+                      Expanded(child: Divider(color: context.colors.line)),
                     ],
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton(
+                    child: OutlinedButton.icon(
                       onPressed: busy ? null : _submitGoogle,
-                      child: Text(
+                      icon: SvgPicture.asset(
+                        'assets/google_logo.svg',
+                        width: 18,
+                        height: 18,
+                      ),
+                      label: Text(
                         googleSubmitting
                             ? 'Connexion…'
                             : 'Continuer avec Google',
@@ -221,8 +230,8 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                           isSignup
                               ? 'Déjà un compte ?'
                               : 'Pas encore de compte ?',
-                          style: const TextStyle(
-                            color: ReverbColors.inkSoft,
+                          style: TextStyle(
+                            color: context.colors.inkSoft,
                             fontSize: 14,
                           ),
                         ),

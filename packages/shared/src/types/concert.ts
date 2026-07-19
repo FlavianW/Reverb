@@ -32,6 +32,8 @@ export interface ConcertPage extends Concert {
   rating: ConcertRatingSummary;
   comments: CommentSummary[];
   photos: PhotoSummary[];
+  /** Photo de l'artiste via Last.fm, `null` si introuvable. */
+  artistImageUrl: string | null;
 }
 
 /** Concert renvoyé par la recherche de proximité (US-9.1), trié par distance croissante. */

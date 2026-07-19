@@ -20,6 +20,7 @@ import { buildImageFileValidator } from '../media/image-upload.validator';
 import { ListPostsDto } from '../post/dto/list-posts.dto';
 import { PostService } from '../post/post.service';
 import { AvatarService } from './avatar/avatar.service';
+import { BannerService } from './banner/banner.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import type { PublicProfile } from './user.service';
 import { UserService, toPublicUser } from './user.service';
@@ -29,6 +30,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly avatarService: AvatarService,
+    private readonly bannerService: BannerService,
     private readonly postService: PostService,
   ) {}
 
@@ -37,20 +39,11 @@ export class UserController {
   async getPublicProfile(
     @Param('pseudo') pseudo: string,
   ): Promise<PublicProfile> {
-    const user = await this.userService.findByPseudo(pseudo);
-    if (!user) {
+    const profile = await this.userService.getPublicProfile(pseudo);
+    if (!profile) {
       throw new NotFoundException('Utilisateur introuvable.');
     }
-
-    const attendedConcerts = await this.userService.findAttendedConcerts(
-      user.id,
-    );
-    return {
-      pseudo: user.pseudo,
-      bio: user.bio,
-      avatarUrl: user.avatarUrl,
-      attendedConcerts,
-    };
+    return profile;
   }
 
   /** Posts d'un utilisateur, affichés publiquement sur son profil (US-8.4). */
@@ -101,5 +94,16 @@ export class UserController {
     @CurrentUser() user: PublicUser,
   ): Promise<PublicUser> {
     return this.avatarService.uploadForUser(user.id, file);
+  }
+
+  /** Change la bannière de l'utilisateur connecté (US-4.1). */
+  @Post('me/banner')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('banner'))
+  async uploadMyBanner(
+    @UploadedFile(buildImageFileValidator()) file: Express.Multer.File,
+    @CurrentUser() user: PublicUser,
+  ): Promise<PublicUser> {
+    return this.bannerService.uploadForUser(user.id, file);
   }
 }

@@ -10,6 +10,7 @@ import '../core/theme.dart';
 import '../models/concert.dart';
 import '../models/post.dart';
 import '../widgets/post_card.dart';
+import '../widgets/theme_toggle_button.dart';
 
 /// Miroir de `apps/web/src/routes/fil/+page.svelte`.
 class FilScreen extends StatefulWidget {
@@ -134,7 +135,10 @@ class _FilScreenState extends State<FilScreen> {
     final pseudo = context.watch<SessionController>().user?.pseudo;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Fil d'actualité")),
+      appBar: AppBar(
+        title: const Text("Fil d'actualité"),
+        actions: const [ThemeToggleButton()],
+      ),
       body: FutureBuilder<PostPage>(
         future: _future,
         builder: (context, snapshot) {
@@ -154,9 +158,9 @@ class _FilScreenState extends State<FilScreen> {
               _composeForm(),
               const SizedBox(height: 24),
               if (_items.isEmpty)
-                const Text(
+                Text(
                   "Aucun post pour l'instant.",
-                  style: TextStyle(color: ReverbColors.inkSoft),
+                  style: TextStyle(color: context.colors.inkSoft),
                 )
               else
                 ..._items.map(
@@ -195,9 +199,9 @@ class _FilScreenState extends State<FilScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: ReverbColors.line),
+        border: Border.all(color: context.colors.line),
         borderRadius: BorderRadius.circular(ReverbRadius.md),
-        color: ReverbColors.paperAlt,
+        color: context.colors.paperAlt,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,15 +218,16 @@ class _FilScreenState extends State<FilScreen> {
                 Expanded(
                   child: Text(
                     'À propos de ${_selectedConcert!.artistName}',
-                    style: const TextStyle(
-                      color: ReverbColors.inkSoft,
+                    style: TextStyle(
+                      color: context.colors.inkSoft,
                       fontSize: 13,
                     ),
                   ),
                 ),
-                TextButton(
+                IconButton(
                   onPressed: () => setState(() => _selectedConcert = null),
-                  child: const Text('Retirer'),
+                  icon: const Icon(Icons.close, size: 18),
+                  tooltip: 'Retirer',
                 ),
               ],
             )
@@ -264,8 +269,8 @@ class _FilScreenState extends State<FilScreen> {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 _composeError!,
-                style: const TextStyle(
-                  color: ReverbColors.accentDeep,
+                style: TextStyle(
+                  color: context.colors.accentDeep,
                   fontSize: 13,
                 ),
               ),
