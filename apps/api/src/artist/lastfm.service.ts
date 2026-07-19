@@ -24,6 +24,16 @@ const LASTFM_API_BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
 const LASTFM_SITE_BASE_URL = 'https://www.last.fm/music/';
 const DEFAULT_USER_AGENT = 'Reverb/1.0 (+https://github.com/FlavianW/Reverb)';
 
+/** Une photo d'artiste résolue (ou son absence avérée), avec sa date de péremption. */
+interface CachedArtistImage {
+  url: string | null;
+  expiresAt: number;
+}
+
+const IMAGE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+/** Borne le cache mémoire (une entrée ≈ une URL) — au-delà, la plus ancienne sort. */
+const IMAGE_CACHE_MAX_ENTRIES = 500;
+
 /**
  * L'API JSON (`artist.search`, `artist.getinfo`) ne sert plus de vraies
  * photos depuis que Last.fm a changé sa politique d'images (~2018) : le
@@ -56,6 +66,7 @@ const ARTIST_IMAGE_CDN_PATTERN =
 @Injectable()
 export class LastFmService {
   private readonly logger = new Logger(LastFmService.name);
+  private readonly imageCache = new Map<string, CachedArtistImage>();
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -107,8 +118,20 @@ export class LastFmService {
    * Photo d'un artiste (US-4.1, page concert) : balise `og:image` de sa page
    * publique Last.fm, `null` si l'artiste est introuvable ou si la page ne
    * fournit pas de vraie photo (repli générique filtré).
+   *
+   * Le résultat est mémorisé 24 h : chaque affichage de profil re-scrapait la
+   * page, et Last.fm rejette par intermittence les IP de datacenter trop
+   * insistantes (406 anti-bot observés en production). En cas d'échec du
+   * scraping, la dernière valeur connue est servie même périmée — une photo
+   * datée vaut mieux qu'une photo qui disparaît pendant une panne Last.fm.
    */
   async getArtistImage(artistName: string): Promise<string | null> {
+    const cacheKey = artistName.toLowerCase();
+    const cached = this.imageCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.url;
+    }
+
     const url = `${LASTFM_SITE_BASE_URL}${encodeURIComponent(artistName)}`;
 
     try {
@@ -124,17 +147,35 @@ export class LastFmService {
         this.logger.warn(
           `Last.fm a répondu ${response.status} pour la page de l'artiste "${artistName}"`,
         );
-        return null;
+        return cached ? cached.url : null;
       }
 
       const html = await response.text();
-      return extractOgImage(html);
+      const imageUrl = extractOgImage(html);
+      this.cacheImage(cacheKey, imageUrl);
+      return imageUrl;
     } catch (error) {
       this.logger.warn(
         `Échec de la récupération de la page Last.fm de "${artistName}" : ${(error as Error).message}`,
       );
-      return null;
+      return cached ? cached.url : null;
     }
+  }
+
+  private cacheImage(cacheKey: string, url: string | null): void {
+    if (
+      this.imageCache.size >= IMAGE_CACHE_MAX_ENTRIES &&
+      !this.imageCache.has(cacheKey)
+    ) {
+      const oldestKey = this.imageCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.imageCache.delete(oldestKey);
+      }
+    }
+    this.imageCache.set(cacheKey, {
+      url,
+      expiresAt: Date.now() + IMAGE_CACHE_TTL_MS,
+    });
   }
 }
 
