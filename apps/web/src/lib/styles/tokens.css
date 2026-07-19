@@ -1,12 +1,14 @@
+/* Le sombre est le thème par défaut de Reverb (identité « salle de concert ») :
+   il s'applique dès le CSS, y compris sans JavaScript. */
 :root {
-	--paper: #f7f4ee;
-	--paper-alt: #ffffff;
-	--ink: #1c1a17;
-	--ink-soft: #6b6259;
-	--line: #e4ddd0;
-	--accent: #c1502b;
-	--accent-soft: #f3ddcb;
-	--accent-deep: #8f3a1d;
+	--paper: #1b1815;
+	--paper-alt: #242019;
+	--ink: #f2ece2;
+	--ink-soft: #b3a99c;
+	--line: #3a332b;
+	--accent: #e2734a;
+	--accent-soft: #3d2517;
+	--accent-deep: #f0a67d;
 
 	--font-serif: 'Newsreader', serif;
 	--font-sans: 'Manrope', sans-serif;
@@ -16,29 +18,15 @@
 	--radius-lg: 14px;
 }
 
-/* Thème sombre : suit la préférence système par défaut, la classe `data-theme`
-   (posée par le bouton de bascule, voir `$lib/theme.ts`) l'emporte dans les
-   deux sens sur cette préférence. */
-@media (prefers-color-scheme: dark) {
-	:root:not([data-theme='light']) {
-		--paper: #1b1815;
-		--paper-alt: #242019;
-		--ink: #f2ece2;
-		--ink-soft: #b3a99c;
-		--line: #3a332b;
-		--accent: #e2734a;
-		--accent-soft: #3d2517;
-		--accent-deep: #f0a67d;
-	}
-}
-
-:root[data-theme='dark'] {
-	--paper: #1b1815;
-	--paper-alt: #242019;
-	--ink: #f2ece2;
-	--ink-soft: #b3a99c;
-	--line: #3a332b;
-	--accent: #e2734a;
-	--accent-soft: #3d2517;
-	--accent-deep: #f0a67d;
+/* Thème clair : choix explicite via la bascule (posé par `$lib/theme.ts` et le
+   script de `app.html`). */
+:root[data-theme='light'] {
+	--paper: #f7f4ee;
+	--paper-alt: #ffffff;
+	--ink: #1c1a17;
+	--ink-soft: #6b6259;
+	--line: #e4ddd0;
+	--accent: #c1502b;
+	--accent-soft: #f3ddcb;
+	--accent-deep: #8f3a1d;
 }

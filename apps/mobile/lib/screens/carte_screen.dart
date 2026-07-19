@@ -78,18 +78,41 @@ class _CarteScreenState extends State<CarteScreen> {
   void _showConcert(NearbyConcert concert) {
     showModalBottomSheet<void>(
       context: context,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: ConcertCard(
-          concert: concert,
-          onTap: () {
-            Navigator.of(context).pop();
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => ConcertScreen(concertId: concert.id),
+      backgroundColor: context.colors.paper,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(ReverbRadius.lg)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.near_me, size: 16, color: context.colors.accent),
+                  const SizedBox(width: 6),
+                  Text(
+                    'À ${concert.distanceKm.toStringAsFixed(concert.distanceKm < 10 ? 1 : 0)} km de toi',
+                    style: TextStyle(color: context.colors.inkSoft, fontSize: 13),
+                  ),
+                ],
               ),
-            );
-          },
+              const SizedBox(height: 10),
+              ConcertCard(
+                concert: concert,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ConcertScreen(concertId: concert.id),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -132,6 +155,11 @@ class _CarteScreenState extends State<CarteScreen> {
   }
 
   Widget _buildMap(LatLng position) {
+    // Tuiles CARTO assorties au thème : le fond de carte suit le mode
+    // sombre/clair de l'app au lieu du style OSM par défaut, toujours clair.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tileStyle = isDark ? 'dark_all' : 'light_all';
+
     return Column(
       children: [
         Padding(
@@ -140,53 +168,113 @@ class _CarteScreenState extends State<CarteScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               _concerts.length > 1
-                  ? '${_concerts.length} concerts à proximité'
-                  : '${_concerts.length} concert à proximité',
+                  ? '${_concerts.length} concerts à venir à proximité'
+                  : '${_concerts.length} concert à venir à proximité',
               style: TextStyle(color: context.colors.inkSoft, fontSize: 13),
             ),
           ),
         ),
         Expanded(
-          child: FlutterMap(
-            options: MapOptions(initialCenter: position, initialZoom: 11),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.reverb.mobile',
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: context.colors.line),
+                borderRadius: BorderRadius.circular(ReverbRadius.lg),
               ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: position,
-                    width: 40,
-                    height: 40,
-                    child: Icon(
-                      Icons.my_location,
-                      color: context.colors.accent,
-                      size: 28,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(ReverbRadius.lg - 1),
+                child: FlutterMap(
+                  options: MapOptions(initialCenter: position, initialZoom: 11),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://{s}.basemaps.cartocdn.com/$tileStyle/{z}/{x}/{y}.png',
+                      subdomains: const ['a', 'b', 'c', 'd'],
+                      userAgentPackageName: 'com.reverb.mobile',
                     ),
-                  ),
-                  for (final concert in _concerts)
-                    if (concert.latitude != null && concert.longitude != null)
-                      Marker(
-                        point: LatLng(concert.latitude!, concert.longitude!),
-                        width: 40,
-                        height: 40,
-                        child: GestureDetector(
-                          onTap: () => _showConcert(concert),
-                          child: Icon(
-                            Icons.location_pin,
-                            color: context.colors.accentDeep,
-                            size: 36,
-                          ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: position,
+                          width: 22,
+                          height: 22,
+                          child: _UserPositionMarker(),
                         ),
-                      ),
-                ],
+                        for (final concert in _concerts)
+                          if (concert.latitude != null &&
+                              concert.longitude != null)
+                            Marker(
+                              point: LatLng(
+                                concert.latitude!,
+                                concert.longitude!,
+                              ),
+                              width: 40,
+                              height: 40,
+                              child: _ConcertMarker(
+                                onTap: () => _showConcert(concert),
+                              ),
+                            ),
+                      ],
+                    ),
+                    const SimpleAttributionWidget(
+                      source: Text('© OpenStreetMap, © CARTO'),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Position de l'utilisateur : point accent cerclé de blanc, plus discret
+/// qu'une épingle pour ne pas concurrencer les marqueurs de concerts.
+class _UserPositionMarker extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colors.accent,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Marqueur de concert aux couleurs de Reverb : pastille accent avec une note
+/// de musique, à la place de l'épingle Material par défaut.
+class _ConcertMarker extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ConcertMarker({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.colors.accent,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black38,
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.music_note, color: Colors.white, size: 22),
+      ),
     );
   }
 }

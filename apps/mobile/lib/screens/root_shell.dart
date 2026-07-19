@@ -26,7 +26,10 @@ class _RootShellState extends State<RootShell> {
     final pseudo = context.watch<SessionController>().user!.pseudo;
 
     final screens = [
-      const AccueilScreen(),
+      AccueilScreen(
+        onOpenFil: () => setState(() => _index = 1),
+        onOpenCarte: () => setState(() => _index = 3),
+      ),
       const FilScreen(),
       const RechercheScreen(),
       const CarteScreen(),

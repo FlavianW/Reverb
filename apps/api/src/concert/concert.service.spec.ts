@@ -426,13 +426,17 @@ describe('ConcertService', () => {
       longitude: 4.8357,
     };
 
-    it('ignore les concerts sans coordonnées connues', async () => {
+    it('ignore les concerts passés et ceux sans coordonnées connues', async () => {
       prisma.concert.findMany.mockResolvedValueOnce([parisConcert]);
 
       await service.findNearby(48.8566, 2.3522);
 
       expect(prisma.concert.findMany).toHaveBeenCalledWith({
-        where: { latitude: { not: null }, longitude: { not: null } },
+        where: {
+          latitude: { not: null },
+          longitude: { not: null },
+          date: { gte: expect.any(Date) },
+        },
       });
     });
 

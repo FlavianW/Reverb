@@ -152,9 +152,10 @@ export class ConcertService {
   }
 
   /**
-   * Concerts avec coordonnées connues situés dans un rayon donné (US-9.1),
-   * triés du plus proche au plus lointain. Ignore les concerts sans
-   * coordonnées (Setlist.fm et le géocodage ont tous deux échoué).
+   * Concerts à venir avec coordonnées connues situés dans un rayon donné
+   * (US-9.1), triés du plus proche au plus lointain. Les concerts déjà passés
+   * sont exclus (aller à un concert terminé n'a pas de sens), de même que les
+   * concerts sans coordonnées (Setlist.fm et le géocodage ont tous deux échoué).
    */
   async findNearby(
     lat: number,
@@ -162,7 +163,11 @@ export class ConcertService {
     radiusKm = 50,
   ): Promise<NearbyConcert[]> {
     const concerts = await this.prisma.concert.findMany({
-      where: { latitude: { not: null }, longitude: { not: null } },
+      where: {
+        latitude: { not: null },
+        longitude: { not: null },
+        date: { gte: new Date() },
+      },
     });
 
     return concerts
