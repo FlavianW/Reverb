@@ -3,6 +3,20 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+
+	const now = Date.now();
+	// À venir en premier (le concert qu'on cherche est rarement un souvenir),
+	// du plus proche au plus lointain ; les passés du plus récent au plus ancien.
+	const upcoming = $derived(
+		data.concerts
+			.filter((concert) => new Date(concert.date).getTime() >= now)
+			.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+	);
+	const past = $derived(
+		data.concerts
+			.filter((concert) => new Date(concert.date).getTime() < now)
+			.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+	);
 </script>
 
 <svelte:head>
@@ -25,20 +39,50 @@
 			/>
 			<button type="submit">Rechercher</button>
 		</form>
+
+		{#if data.q}
+			<p class="result-summary" role="status">
+				{data.concerts.length === 0
+					? `Aucun concert pour « ${data.q} »`
+					: `${data.concerts.length} concert${data.concerts.length > 1 ? 's' : ''} pour « ${data.q} »`}
+			</p>
+		{:else}
+			<p class="result-summary">Les derniers concerts du catalogue — cherchez pour en importer d'autres.</p>
+		{/if}
 	</div>
 
 	{#if data.concerts.length === 0}
 		<p class="empty">
 			{data.q
-				? 'Aucun concert ne correspond à cette recherche.'
-				: 'Recherchez un artiste ou une salle pour commencer.'}
+				? 'Vérifiez l’orthographe de l’artiste ou essayez le nom de la salle.'
+				: 'Le catalogue est vide pour l’instant : recherchez un artiste pour l’alimenter.'}
 		</p>
 	{:else}
-		<div class="grid">
-			{#each data.concerts as concert (concert.id)}
-				<ConcertCard {concert} />
-			{/each}
-		</div>
+		{#if upcoming.length > 0}
+			<section aria-labelledby="upcoming-title">
+				<h2 class="section-label" id="upcoming-title">
+					À venir <span class="count">{upcoming.length}</span>
+				</h2>
+				<div class="grid">
+					{#each upcoming as concert (concert.id)}
+						<ConcertCard {concert} />
+					{/each}
+				</div>
+			</section>
+		{/if}
+
+		{#if past.length > 0}
+			<section aria-labelledby="past-title">
+				<h2 class="section-label" id="past-title">
+					Déjà joués <span class="count">{past.length}</span>
+				</h2>
+				<div class="grid">
+					{#each past as concert (concert.id)}
+						<ConcertCard {concert} />
+					{/each}
+				</div>
+			</section>
+		{/if}
 	{/if}
 </div>
 
@@ -51,7 +95,7 @@
 
 	.search-hero {
 		max-width: 720px;
-		margin: 0 auto 3.5rem;
+		margin: 0 auto 3rem;
 		text-align: center;
 	}
 
@@ -91,14 +135,43 @@
 		flex-shrink: 0;
 	}
 
+	.result-summary {
+		margin: 1.25rem 0 0;
+		color: var(--ink-soft);
+		font-size: 0.9375rem;
+	}
+
+	section + section {
+		margin-top: 3rem;
+	}
+
+	.section-label {
+		font-size: 0.8125rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--ink-soft);
+		font-weight: 400;
+		margin: 0 0 1.125rem;
+	}
+
+	.count {
+		display: inline-block;
+		margin-left: 0.375rem;
+		padding: 0.0625rem 0.5rem;
+		border-radius: 999px;
+		border: 1px solid var(--line);
+		font-size: 0.75rem;
+	}
+
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-		gap: 1rem;
+		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		gap: 1.25rem;
 	}
 
 	.empty {
 		color: var(--ink-soft);
+		text-align: center;
 	}
 
 	.sr-only {
