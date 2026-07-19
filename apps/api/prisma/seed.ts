@@ -12,10 +12,14 @@ const CONCERT_IDS = {
   radiohead: '00000000-0000-0000-0000-000000000002',
   justice: '00000000-0000-0000-0000-000000000003',
   fontaines: '00000000-0000-0000-0000-000000000004',
+  cure: '00000000-0000-0000-0000-000000000005',
+  air: '00000000-0000-0000-0000-000000000006',
 };
 
 const daysAgo = (days: number): Date =>
   new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+const daysFromNow = (days: number): Date => daysAgo(-days);
 
 /** Amitié acceptée entre deux comptes, quel que soit le sens d'une éventuelle demande existante. */
 async function ensureFriends(userAId: string, userBId: string): Promise<void> {
@@ -238,6 +242,39 @@ async function main() {
       latitude: 48.8942,
       longitude: 2.3932,
       createdById: nina.id,
+    },
+  });
+
+  // Concerts à venir : la carte et la section « Autour de toi » n'affichent
+  // que le futur, donc leurs dates sont recalculées à chaque seed pour ne
+  // jamais retomber dans le passé.
+  await prisma.concert.upsert({
+    where: { id: CONCERT_IDS.cure },
+    update: { date: daysFromNow(21) },
+    create: {
+      id: CONCERT_IDS.cure,
+      artistName: 'The Cure',
+      venueName: 'AccorHotels Arena',
+      city: 'Paris',
+      date: daysFromNow(21),
+      latitude: 48.8384,
+      longitude: 2.3781,
+      createdById: lea.id,
+    },
+  });
+
+  await prisma.concert.upsert({
+    where: { id: CONCERT_IDS.air },
+    update: { date: daysFromNow(35) },
+    create: {
+      id: CONCERT_IDS.air,
+      artistName: 'Air',
+      venueName: 'Théâtre antique de Fourvière',
+      city: 'Lyon',
+      date: daysFromNow(35),
+      latitude: 45.7601,
+      longitude: 4.8197,
+      createdById: marco.id,
     },
   });
 

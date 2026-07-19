@@ -228,7 +228,7 @@ class _AccueilScreenState extends State<AccueilScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _muted('Découvre les concerts qui ont eu lieu près de chez toi.'),
+            _muted('Découvre les concerts à venir près de chez toi.'),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: _locate,

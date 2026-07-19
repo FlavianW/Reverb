@@ -110,7 +110,7 @@
 		<aside class="side" aria-labelledby="nearby-heading">
 			<h2 id="nearby-heading" class="section-label">Autour de toi</h2>
 			{#if nearbyStatus === 'idle'}
-				<p class="muted">Découvre les concerts qui ont eu lieu près de chez toi.</p>
+				<p class="muted">Découvre les concerts à venir près de chez toi.</p>
 				<button type="button" class="locate" onclick={locate}>Me localiser</button>
 			{:else if nearbyStatus === 'locating'}
 				<p class="muted" aria-live="polite">Localisation en cours…</p>
