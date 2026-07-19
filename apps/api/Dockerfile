@@ -14,11 +14,18 @@ FROM base AS build
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
-RUN pnpm install --frozen-lockfile
+# --ignore-scripts : les postinstall du workspace (tsc de shared, prisma
+# generate de l'api) ont besoin de sources pas encore copiées à ce stade ;
+# ils sont relancés explicitement ci-dessous une fois les sources en place.
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY packages/shared packages/shared
 COPY apps/api apps/api
+RUN pnpm --filter api exec prisma generate
 RUN pnpm --filter shared build && pnpm --filter api build
-RUN pnpm --filter api deploy --prod /app
+RUN pnpm --filter api deploy --prod --ignore-scripts /app
+# Le node_modules recréé par `pnpm deploy` ne contient pas le client Prisma
+# généré : on le régénère en ciblant le schéma copié dans /app.
+RUN pnpm --filter api exec prisma generate --schema=/app/prisma/schema.prisma
  
 FROM base AS runtime
 ENV NODE_ENV=production
