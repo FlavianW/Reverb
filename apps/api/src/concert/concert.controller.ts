@@ -41,6 +41,7 @@ export class ConcertController {
     private readonly photoService: PhotoService,
   ) {}
 
+  /** Crée une page concert saisie manuellement (US-2.1), géocodée pour la carte (US-9.1). */
   @Post()
   @UseGuards(JwtAuthGuard)
   create(

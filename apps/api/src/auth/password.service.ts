@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { compare, hash } from 'bcryptjs';
 
+/** 12 tours : plus coûteux que le défaut bcrypt (10), latence encore imperceptible à la connexion. */
 const SALT_ROUNDS = 12;
 
 /** Encapsule le hachage bcrypt des mots de passe (US-1.1 bis, US-1.2 bis). */

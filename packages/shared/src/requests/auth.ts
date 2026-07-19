@@ -1,9 +1,15 @@
+/**
+ * Inscription par email/mot de passe (US-1.1). Les contraintes (mot de passe
+ * 8–72 caractères, pseudo alphanumérique ≤ 50) sont validées côté API dans
+ * `RegisterDto`.
+ */
 export interface RegisterRequest {
   email: string;
   password: string;
   pseudo: string;
 }
 
+/** Connexion par email/mot de passe (US-1.2). */
 export interface LoginRequest {
   email: string;
   password: string;

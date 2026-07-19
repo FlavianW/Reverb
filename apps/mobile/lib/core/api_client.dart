@@ -152,7 +152,7 @@ class ApiClient {
   ]) => _request(
     'GET',
     '/concerts/nearby',
-    query: {'lat': lat, 'lng': lng, if (radiusKm != null) 'radiusKm': radiusKm},
+    query: {'lat': lat, 'lng': lng, 'radiusKm': ?radiusKm},
     decode: (d) => (d as List<dynamic>)
         .map((e) => NearbyConcert.fromJson(e as Map<String, dynamic>))
         .toList(),
@@ -234,9 +234,9 @@ class ApiClient {
     'PATCH',
     '/users/me',
     data: {
-      if (pseudo != null) 'pseudo': pseudo,
-      if (bio != null) 'bio': bio,
-      if (favoriteArtist != null) 'favoriteArtist': favoriteArtist,
+      'pseudo': ?pseudo,
+      'bio': ?bio,
+      'favoriteArtist': ?favoriteArtist,
     },
     decode: (d) => PublicUser.fromJson(d as Map<String, dynamic>),
   );
@@ -328,8 +328,8 @@ class ApiClient {
     List<File> photos = const [],
   }) async {
     final formData = FormData.fromMap({
-      if (content != null) 'content': content,
-      if (concertId != null) 'concertId': concertId,
+      'content': ?content,
+      'concertId': ?concertId,
       if (photos.isNotEmpty)
         'photos': await Future.wait(
           photos.map((file) => MultipartFile.fromFile(file.path)),

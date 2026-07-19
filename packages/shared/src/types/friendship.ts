@@ -39,6 +39,7 @@ export const VIEWER_FRIENDSHIP_STATUSES = [
 
 export type ViewerFriendshipStatus = (typeof VIEWER_FRIENDSHIP_STATUSES)[number];
 
+/** Réponse de `GET /friendships/status/:pseudo` : `friendshipId` est `null` sauf si une relation existe. */
 export interface FriendshipStatusWithUser {
   status: ViewerFriendshipStatus;
   friendshipId: string | null;

@@ -1,3 +1,4 @@
+/** Création manuelle d'une page concert (US-2.1). */
 export interface CreateConcertRequest {
   artistName: string;
   venueName: string;

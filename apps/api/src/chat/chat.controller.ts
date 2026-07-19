@@ -32,6 +32,7 @@ export class ChatController {
     private readonly chatGateway: ChatGateway,
   ) {}
 
+  /** Conversations de l'utilisateur connecté, la plus récemment active en premier (US-10.2). */
   @Get()
   listConversations(
     @CurrentUser() user: PublicUser,
@@ -39,6 +40,7 @@ export class ChatController {
     return this.chatService.listConversations(user.id);
   }
 
+  /** Total des messages non lus, affiché en badge dans la navigation (US-10.3). */
   @Get('unread-count')
   async getUnreadCount(
     @CurrentUser() user: PublicUser,
@@ -56,6 +58,7 @@ export class ChatController {
     return this.chatService.findOrCreateConversation(user.id, pseudo);
   }
 
+  /** Historique paginé, du plus ancien au plus récent ; le curseur remonte le temps (US-10.2). */
   @Get(':id/messages')
   getMessages(
     @Param('id', ParseUUIDPipe) id: string,
@@ -84,6 +87,7 @@ export class ChatController {
     return message;
   }
 
+  /** Marque la conversation comme lue pour l'appelant (US-10.3). */
   @Put(':id/read')
   @HttpCode(204)
   async markRead(

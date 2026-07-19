@@ -3,8 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '@prisma/client';
 import type { PublicUser } from '@reverb/shared';
 import { PostService } from '../post/post.service';
-import { AvatarService } from './avatar/avatar.service';
-import { BannerService } from './banner/banner.service';
+import { ProfileImageService } from './profile-image.service';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
@@ -16,8 +15,7 @@ describe('UserController', () => {
     updateProfile: jest.Mock;
     getPublicProfile: jest.Mock;
   };
-  let avatarService: { uploadForUser: jest.Mock };
-  let bannerService: { uploadForUser: jest.Mock };
+  let profileImageService: { uploadForUser: jest.Mock };
   let postService: { getByAuthorId: jest.Mock };
 
   const currentUser: PublicUser = {
@@ -36,16 +34,14 @@ describe('UserController', () => {
       updateProfile: jest.fn(),
       getPublicProfile: jest.fn(),
     };
-    avatarService = { uploadForUser: jest.fn() };
-    bannerService = { uploadForUser: jest.fn() };
+    profileImageService = { uploadForUser: jest.fn() };
     postService = { getByAuthorId: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
       providers: [
         { provide: UserService, useValue: userService },
-        { provide: AvatarService, useValue: avatarService },
-        { provide: BannerService, useValue: bannerService },
+        { provide: ProfileImageService, useValue: profileImageService },
         { provide: PostService, useValue: postService },
       ],
     }).compile();
@@ -174,11 +170,15 @@ describe('UserController', () => {
         ...currentUser,
         avatarUrl: 'https://example.com/avatar.jpg',
       };
-      avatarService.uploadForUser.mockResolvedValueOnce(updated);
+      profileImageService.uploadForUser.mockResolvedValueOnce(updated);
 
       const result = await controller.uploadMyAvatar(file, currentUser);
 
-      expect(avatarService.uploadForUser).toHaveBeenCalledWith('user-1', file);
+      expect(profileImageService.uploadForUser).toHaveBeenCalledWith(
+        'avatar',
+        'user-1',
+        file,
+      );
       expect(result).toBe(updated);
     });
   });
@@ -190,11 +190,15 @@ describe('UserController', () => {
         ...currentUser,
         bannerUrl: 'https://example.com/banner.jpg',
       };
-      bannerService.uploadForUser.mockResolvedValueOnce(updated);
+      profileImageService.uploadForUser.mockResolvedValueOnce(updated);
 
       const result = await controller.uploadMyBanner(file, currentUser);
 
-      expect(bannerService.uploadForUser).toHaveBeenCalledWith('user-1', file);
+      expect(profileImageService.uploadForUser).toHaveBeenCalledWith(
+        'banner',
+        'user-1',
+        file,
+      );
       expect(result).toBe(updated);
     });
   });

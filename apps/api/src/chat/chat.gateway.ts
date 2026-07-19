@@ -1,4 +1,4 @@
-import { HttpException } from '@nestjs/common';
+import { HttpException, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import {
@@ -21,6 +21,8 @@ import { SessionTokenPayload } from '../auth/auth.service';
 import { SESSION_COOKIE_NAME } from '../auth/session-cookie';
 import { toPublicUser, UserService } from '../user/user.service';
 import { ChatService } from './chat.service';
+import { JoinConversationDto } from './dto/join-conversation.dto';
+import { SendMessageWsDto } from './dto/send-message-ws.dto';
 
 /** Peuplé dans `handleConnection` : l'utilisateur authentifié pour ce socket. */
 interface ChatSocketData {
@@ -70,6 +72,16 @@ function extractCookie(cookieHeader: string, name: string): string | undefined {
     credentials: true,
   },
 })
+// Le ValidationPipe global de main.ts ne couvre que HTTP : les payloads WS
+// doivent être validés ici, avec les mêmes règles de rejet strict.
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    exceptionFactory: () => new WsException('Payload invalide.'),
+  }),
+)
 export class ChatGateway implements OnGatewayConnection {
   @WebSocketServer() private readonly server!: ChatServer;
 
@@ -110,7 +122,7 @@ export class ChatGateway implements OnGatewayConnection {
   @SubscribeMessage('joinConversation')
   async handleJoin(
     @ConnectedSocket() client: ChatSocket,
-    @MessageBody() { conversationId }: { conversationId: string },
+    @MessageBody() { conversationId }: JoinConversationDto,
   ): Promise<void> {
     const user = this.requireUser(client);
     await this.guarded(() =>
@@ -122,8 +134,7 @@ export class ChatGateway implements OnGatewayConnection {
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @ConnectedSocket() client: ChatSocket,
-    @MessageBody()
-    { conversationId, content }: { conversationId: string; content: string },
+    @MessageBody() { conversationId, content }: SendMessageWsDto,
   ): Promise<MessageSummary> {
     const user = this.requireUser(client);
     const message = await this.guarded(() =>

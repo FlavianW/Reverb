@@ -25,6 +25,11 @@ export class GoogleTokenVerifierService {
 
   constructor(private readonly configService: ConfigService) {}
 
+  /**
+   * Retourne le profil Google porté par l'ID token, ou `null` pour tout jeton
+   * invalide (mauvaise audience, email non vérifié, erreur réseau) — c'est
+   * l'appelant qui traduit ce `null` en 401.
+   */
   async verify(idToken: string): Promise<GoogleProfile | null> {
     try {
       const url = new URL(TOKENINFO_URL);

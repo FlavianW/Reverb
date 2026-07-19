@@ -19,9 +19,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { buildImageFileValidator } from '../media/image-upload.validator';
 import { ListPostsDto } from '../post/dto/list-posts.dto';
 import { PostService } from '../post/post.service';
-import { AvatarService } from './avatar/avatar.service';
-import { BannerService } from './banner/banner.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ProfileImageService } from './profile-image.service';
 import type { PublicProfile } from './user.service';
 import { UserService, toPublicUser } from './user.service';
 
@@ -29,8 +28,7 @@ import { UserService, toPublicUser } from './user.service';
 export class UserController {
   constructor(
     private readonly userService: UserService,
-    private readonly avatarService: AvatarService,
-    private readonly bannerService: BannerService,
+    private readonly profileImageService: ProfileImageService,
     private readonly postService: PostService,
   ) {}
 
@@ -93,7 +91,7 @@ export class UserController {
     @UploadedFile(buildImageFileValidator()) file: Express.Multer.File,
     @CurrentUser() user: PublicUser,
   ): Promise<PublicUser> {
-    return this.avatarService.uploadForUser(user.id, file);
+    return this.profileImageService.uploadForUser('avatar', user.id, file);
   }
 
   /** Change la bannière de l'utilisateur connecté (US-4.1). */
@@ -104,6 +102,6 @@ export class UserController {
     @UploadedFile(buildImageFileValidator()) file: Express.Multer.File,
     @CurrentUser() user: PublicUser,
   ): Promise<PublicUser> {
-    return this.bannerService.uploadForUser(user.id, file);
+    return this.profileImageService.uploadForUser('banner', user.id, file);
   }
 }

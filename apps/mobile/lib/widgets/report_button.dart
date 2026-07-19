@@ -77,14 +77,21 @@ class _ReportDialogState extends State<_ReportDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Motif', style: TextStyle(color: context.colors.inkSoft, fontSize: 13)),
-          ...ReportReason.values.map(
-            (r) => RadioListTile<ReportReason>(
-              value: r,
-              groupValue: reason,
-              onChanged: (value) => setState(() => reason = value!),
-              title: Text(r.label),
-              contentPadding: EdgeInsets.zero,
-              dense: true,
+          RadioGroup<ReportReason>(
+            groupValue: reason,
+            onChanged: (value) => setState(() => reason = value!),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: ReportReason.values
+                  .map(
+                    (r) => RadioListTile<ReportReason>(
+                      value: r,
+                      title: Text(r.label),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    ),
+                  )
+                  .toList(),
             ),
           ),
         ],
