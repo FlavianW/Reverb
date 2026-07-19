@@ -46,6 +46,7 @@ export interface ChatServerToClientEvents {
   'message:new': (message: MessageSummary) => void;
 }
 
+/** Évènements émis par le client ; la gateway vérifie à chaque fois que l'émetteur est bien participant. */
 export interface ChatClientToServerEvents {
   joinConversation: (payload: { conversationId: string }) => void;
   sendMessage: (payload: { conversationId: string; content: string }) => void;
