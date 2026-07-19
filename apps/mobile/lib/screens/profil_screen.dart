@@ -420,29 +420,43 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
   }
 
   Future<void> _pickAvatar() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
-    if (picked == null || !mounted) return;
-    final cropped = await cropImage(
-      context,
-      sourcePath: picked.path,
-      aspectRatioX: 1,
-      aspectRatioY: 1,
-    );
-    if (cropped == null || !mounted) return;
-    setState(() => _avatarFile = cropped);
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
+      if (picked == null || !mounted) return;
+      final cropped = await cropImage(
+        context,
+        sourcePath: picked.path,
+        aspectRatioX: 1,
+        aspectRatioY: 1,
+      );
+      if (cropped == null || !mounted) return;
+      setState(() => _avatarFile = cropped);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Impossible de charger la photo : $e')));
+    }
   }
 
   Future<void> _pickBanner() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
-    if (picked == null || !mounted) return;
-    final cropped = await cropImage(
-      context,
-      sourcePath: picked.path,
-      aspectRatioX: 3,
-      aspectRatioY: 1,
-    );
-    if (cropped == null || !mounted) return;
-    setState(() => _bannerFile = cropped);
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
+      if (picked == null || !mounted) return;
+      final cropped = await cropImage(
+        context,
+        sourcePath: picked.path,
+        aspectRatioX: 3,
+        aspectRatioY: 1,
+      );
+      if (cropped == null || !mounted) return;
+      setState(() => _bannerFile = cropped);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Impossible de charger la bannière : $e')));
+    }
   }
 
   Future<void> _submit() async {
