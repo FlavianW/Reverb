@@ -32,6 +32,7 @@ export class PostController {
     private readonly likeService: LikeService,
   ) {}
 
+  /** Fil d'actualité paginé : posts de l'utilisateur connecté et de ses amis (US-8.1). */
   @Get('feed')
   async getFeed(
     @Query() query: ListPostsDto,
@@ -56,6 +57,7 @@ export class PostController {
     });
   }
 
+  /** Supprime un post explicite (réservé à l'auteur ; les posts automatiques suivent leur source). */
   @Delete(':id')
   @HttpCode(204)
   async delete(
@@ -65,6 +67,7 @@ export class PostController {
     await this.postService.delete(id, user.id);
   }
 
+  /** Aime un post (idempotent, US-8.3). */
   @Put(':id/like')
   @HttpCode(204)
   async like(
@@ -74,6 +77,7 @@ export class PostController {
     await this.likeService.like(id, user.id);
   }
 
+  /** Retire un « J'aime » (idempotent, US-8.3). */
   @Delete(':id/like')
   @HttpCode(204)
   async unlike(
