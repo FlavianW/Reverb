@@ -14,10 +14,17 @@ import { ConcertRatingService } from './rating/concert-rating.service';
 import { ReportService } from './report/report.service';
 import { GeocodingService } from './geocoding.service';
 import { SetlistFmService } from './setlistfm.service';
+import { VideoController } from './video/video.controller';
+import { ConcertVideoService } from './video/video.service';
 
 @Module({
   imports: [ArtistModule, AuthModule, MediaModule, PostModule],
-  controllers: [ConcertController, CommentController, PhotoController],
+  controllers: [
+    ConcertController,
+    CommentController,
+    PhotoController,
+    VideoController,
+  ],
   providers: [
     ConcertService,
     SetlistFmService,
@@ -26,6 +33,7 @@ import { SetlistFmService } from './setlistfm.service';
     ConcertRatingService,
     CommentService,
     PhotoService,
+    ConcertVideoService,
     ReportService,
   ],
 })

@@ -9,6 +9,7 @@ describe('ReportService', () => {
   let prisma: {
     comment: { findUnique: jest.Mock };
     photo: { findUnique: jest.Mock };
+    video: { findUnique: jest.Mock };
     report: { findFirst: jest.Mock; create: jest.Mock };
   };
 
@@ -16,6 +17,7 @@ describe('ReportService', () => {
     prisma = {
       comment: { findUnique: jest.fn() },
       photo: { findUnique: jest.fn() },
+      video: { findUnique: jest.fn() },
       report: { findFirst: jest.fn(), create: jest.fn() },
     };
 
@@ -95,6 +97,46 @@ describe('ReportService', () => {
       expect(prisma.report.create).toHaveBeenCalledWith({
         data: {
           photoId: 'photo-1',
+          reporterId: 'user-1',
+          reason: ReportReason.INAPPROPRIATE,
+        },
+      });
+    });
+  });
+
+  describe('reportVideo', () => {
+    it("lève une 404 si la vidéo n'existe pas", async () => {
+      prisma.video.findUnique.mockResolvedValueOnce(null);
+
+      await expect(
+        service.reportVideo('video-1', 'user-1', ReportReason.INAPPROPRIATE),
+      ).rejects.toThrow(NotFoundException);
+      expect(prisma.report.create).not.toHaveBeenCalled();
+    });
+
+    it('refuse un second signalement de la même vidéo par le même utilisateur', async () => {
+      prisma.video.findUnique.mockResolvedValueOnce({ id: 'video-1' });
+      prisma.report.findFirst.mockResolvedValueOnce({ id: 'report-1' });
+
+      await expect(
+        service.reportVideo('video-1', 'user-1', ReportReason.INAPPROPRIATE),
+      ).rejects.toThrow(ConflictException);
+      expect(prisma.report.create).not.toHaveBeenCalled();
+    });
+
+    it('enregistre le signalement de la vidéo', async () => {
+      prisma.video.findUnique.mockResolvedValueOnce({ id: 'video-1' });
+      prisma.report.findFirst.mockResolvedValueOnce(null);
+
+      await service.reportVideo(
+        'video-1',
+        'user-1',
+        ReportReason.INAPPROPRIATE,
+      );
+
+      expect(prisma.report.create).toHaveBeenCalledWith({
+        data: {
+          videoId: 'video-1',
           reporterId: 'user-1',
           reason: ReportReason.INAPPROPRIATE,
         },

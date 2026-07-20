@@ -50,12 +50,31 @@ export class ReportService {
     );
   }
 
+  async reportVideo(
+    videoId: string,
+    reporterId: string,
+    reason: ReportReason,
+  ): Promise<Report> {
+    const video = await this.prisma.video.findUnique({
+      where: { id: videoId },
+    });
+    if (!video) {
+      throw new NotFoundException('Vidéo introuvable.');
+    }
+
+    return this.createIfNotDuplicate(
+      { videoId, reporterId, reason },
+      'Vous avez déjà signalé cette vidéo.',
+    );
+  }
+
   private async createIfNotDuplicate(
     data: {
       reporterId: string;
       reason: ReportReason;
       commentId?: string;
       photoId?: string;
+      videoId?: string;
     },
     duplicateMessage: string,
   ): Promise<Report> {
@@ -64,6 +83,7 @@ export class ReportService {
         reporterId: data.reporterId,
         commentId: data.commentId,
         photoId: data.photoId,
+        videoId: data.videoId,
       },
     });
     if (alreadyReported) {
