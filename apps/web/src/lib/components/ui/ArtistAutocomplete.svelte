@@ -16,6 +16,7 @@
 	let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const listboxId = `${id}-listbox`;
+	const optionId = (index: number) => `${listboxId}-option-${index}`;
 
 	function onInput() {
 		activeIndex = -1;
@@ -85,12 +86,13 @@
 			aria-expanded={open}
 			aria-controls={listboxId}
 			aria-autocomplete="list"
+			aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
 			autocomplete="off"
 		/>
 		{#if open}
 			<ul class="suggestions" id={listboxId} role="listbox">
 				{#each suggestions as suggestion, index (suggestion.name)}
-					<li role="option" aria-selected={index === activeIndex}>
+					<li role="option" id={optionId(index)} aria-selected={index === activeIndex}>
 						<button
 							type="button"
 							class="suggestion"

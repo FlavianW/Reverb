@@ -13,9 +13,13 @@
 	let photos = $state<File[]>([]);
 	let concertQuery = $state('');
 	let concertResults = $state<Concert[]>([]);
+	let concertActiveIndex = $state(-1);
 	let selectedConcert = $state<Concert | null>(null);
 	let submitting = $state(false);
 	let error = $state<string | null>(null);
+
+	const concertListboxId = 'compose-concert-listbox';
+	const concertOptionId = (index: number) => `${concertListboxId}-option-${index}`;
 
 	function handleFiles(event: Event) {
 		const input = event.target as HTMLInputElement;
@@ -23,6 +27,7 @@
 	}
 
 	async function searchConcerts() {
+		concertActiveIndex = -1;
 		if (!concertQuery.trim()) {
 			concertResults = [];
 			return;
@@ -34,6 +39,30 @@
 		selectedConcert = concert;
 		concertResults = [];
 		concertQuery = '';
+		concertActiveIndex = -1;
+	}
+
+	// Même pattern combobox accessible que `ArtistAutocomplete.svelte` :
+	// navigation clavier dans les résultats, sans quoi ils ne sont atteignables
+	// qu'un par un au Tab et jamais annoncés à un lecteur d'écran.
+	function onConcertKeydown(event: KeyboardEvent) {
+		if (concertResults.length === 0) {
+			return;
+		}
+		if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			concertActiveIndex = (concertActiveIndex + 1) % concertResults.length;
+		} else if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			concertActiveIndex =
+				(concertActiveIndex - 1 + concertResults.length) % concertResults.length;
+		} else if (event.key === 'Enter' && concertActiveIndex >= 0) {
+			event.preventDefault();
+			pickConcert(concertResults[concertActiveIndex]);
+		} else if (event.key === 'Escape') {
+			concertResults = [];
+			concertActiveIndex = -1;
+		}
 	}
 
 	async function submit(event: SubmitEvent) {
@@ -86,13 +115,25 @@
 				placeholder="Associer un concert (facultatif)…"
 				bind:value={concertQuery}
 				oninput={searchConcerts}
+				onkeydown={onConcertKeydown}
 				autocomplete="off"
+				role="combobox"
+				aria-expanded={concertResults.length > 0}
+				aria-controls={concertListboxId}
+				aria-autocomplete="list"
+				aria-activedescendant={concertActiveIndex >= 0
+					? concertOptionId(concertActiveIndex)
+					: undefined}
 			/>
 			{#if concertResults.length > 0}
-				<ul class="concert-results">
-					{#each concertResults as concert (concert.id)}
-						<li>
-							<button type="button" onclick={() => pickConcert(concert)}>
+				<ul class="concert-results" id={concertListboxId} role="listbox">
+					{#each concertResults as concert, index (concert.id)}
+						<li role="option" id={concertOptionId(index)} aria-selected={index === concertActiveIndex}>
+							<button
+								type="button"
+								class:active={index === concertActiveIndex}
+								onclick={() => pickConcert(concert)}
+							>
 								{concert.artistName} — {concert.venueName}, {concert.city}
 							</button>
 						</li>
@@ -196,7 +237,8 @@
 	}
 
 	.concert-results button:hover,
-	.concert-results button:focus-visible {
+	.concert-results button:focus-visible,
+	.concert-results button.active {
 		background: var(--accent-soft);
 	}
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api/client';
+	import ConcertListItem from '$lib/components/concert/ConcertListItem.svelte';
 	import ConcertMap from '$lib/components/map/ConcertMap.svelte';
 	import type { NearbyConcert } from '@reverb/shared';
 
@@ -57,8 +58,25 @@
 			{concerts.length}
 			{concerts.length > 1 ? 'concerts à proximité' : 'concert à proximité'}
 		</p>
-		<div class="map-wrapper">
-			<ConcertMap userPosition={position} {concerts} />
+		<div class="layout">
+			<div class="map-wrapper">
+				<ConcertMap userPosition={position} {concerts} />
+			</div>
+			<!-- Équivalent texte de la carte (RGAA 1.3/12.7) : les marqueurs Leaflet
+			     ne sont ni focusables ni consultables au clavier ou au lecteur
+			     d'écran, cette liste porte donc la même information. -->
+			<div class="list-wrapper">
+				<h2 class="list-title">Liste des concerts</h2>
+				{#if concerts.length === 0}
+					<p class="status">Aucun concert à proximité pour l'instant.</p>
+				{:else}
+					<ul class="list">
+						{#each concerts as concert (concert.id)}
+							<li><ConcertListItem {concert} /></li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
 		</div>
 	{/if}
 </div>
@@ -88,10 +106,46 @@
 		margin: 0 0 1.25rem;
 	}
 
+	.layout {
+		display: grid;
+		grid-template-columns: 1.6fr 1fr;
+		gap: 2rem;
+		align-items: start;
+	}
+
 	.map-wrapper {
 		height: 600px;
 		border: 1px solid var(--line);
 		border-radius: var(--radius-md);
 		overflow: hidden;
+	}
+
+	.list-wrapper {
+		max-height: 600px;
+		overflow-y: auto;
+	}
+
+	.list-title {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-weight: 400;
+		font-size: 1.25rem;
+		margin: 0 0 1rem;
+	}
+
+	.list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	@media (max-width: 900px) {
+		.layout {
+			grid-template-columns: 1fr;
+		}
+
+		.list-wrapper {
+			max-height: none;
+		}
 	}
 </style>

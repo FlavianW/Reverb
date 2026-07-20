@@ -38,7 +38,7 @@
 		font-weight: 400;
 		font-size: 2.125rem;
 		line-height: 1.35;
-		color: #fbf6ee;
+		color: var(--on-accent);
 		max-width: 520px;
 		margin: auto 0 0;
 	}
@@ -48,7 +48,7 @@
 		font-style: italic;
 		font-weight: 500;
 		font-size: 1.625rem;
-		color: #fbf6ee;
+		color: var(--on-accent);
 		margin: 0;
 	}
 

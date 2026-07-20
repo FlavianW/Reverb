@@ -14,6 +14,7 @@
 	let { user, unreadMessageCount, children }: Props = $props();
 </script>
 
+<a href="#main-content" class="skip-link">Aller au contenu principal</a>
 <div class="shell">
 	<header class="topbar">
 		<div class="topbar-inner">
@@ -40,7 +41,7 @@
 			</div>
 		</div>
 	</header>
-	<main>
+	<main id="main-content" tabindex="-1">
 		{@render children()}
 	</main>
 </div>
@@ -48,6 +49,27 @@
 <style>
 	.shell {
 		min-height: 100vh;
+	}
+
+	/* Masqué hors focus, visible dès l'arrivée au clavier : permet d'éviter
+	   la navigation (logo + 6 liens + bascule de thème + menu) à chaque page. */
+	.skip-link {
+		position: absolute;
+		top: -3rem;
+		left: 1rem;
+		z-index: 100;
+		padding: 0.625rem 1rem;
+		border-radius: var(--radius-sm);
+		background: var(--accent);
+		color: var(--on-accent);
+		text-decoration: none;
+		font-weight: 700;
+		font-size: 0.875rem;
+		transition: top 0.15s ease;
+	}
+
+	.skip-link:focus {
+		top: 1rem;
 	}
 
 	.topbar {

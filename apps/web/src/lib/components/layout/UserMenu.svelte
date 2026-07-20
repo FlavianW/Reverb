@@ -10,20 +10,48 @@
 
 	let { user }: Props = $props();
 	let open = $state(false);
+	let triggerEl: HTMLButtonElement | undefined = $state();
+	let menuEl: HTMLDivElement | undefined = $state();
 
 	function toggle() {
 		open = !open;
 	}
 
-	function close() {
+	function close(returnFocus = false) {
 		open = false;
+		if (returnFocus) triggerEl?.focus();
 	}
 
+	// Flèches haut/bas entre les items (attendu pour role="menu"/"menuitem")
+	// et retour du focus au bouton déclencheur à la fermeture au clavier —
+	// sinon le focus se perd silencieusement pour un utilisateur clavier.
 	function onKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape') {
-			close();
+			close(true);
+			return;
+		}
+		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+			event.preventDefault();
+			const items = menuEl?.querySelectorAll<HTMLElement>('[role="menuitem"]');
+			if (!items || items.length === 0) return;
+			const list = Array.from(items);
+			const current = list.indexOf(document.activeElement as HTMLElement);
+			const next =
+				event.key === 'ArrowDown'
+					? (current + 1) % list.length
+					: (current - 1 + list.length) % list.length;
+			list[next].focus();
 		}
 	}
+
+	// Focus le premier item à l'ouverture, comme l'attendent les lecteurs
+	// d'écran pour un menu (sans ça, le focus clavier resterait sur le
+	// déclencheur alors que le menu est visuellement ouvert).
+	$effect(() => {
+		if (open) {
+			menuEl?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+		}
+	});
 
 	async function logout() {
 		close();
@@ -32,10 +60,11 @@
 	}
 </script>
 
-<svelte:window onclick={close} />
+<svelte:window onclick={() => close()} />
 
 <div class="menu-wrapper">
 	<button
+		bind:this={triggerEl}
 		type="button"
 		class="trigger"
 		aria-haspopup="menu"
@@ -50,8 +79,8 @@
 	</button>
 
 	{#if open}
-		<div class="menu" role="menu" tabindex="-1" onkeydown={onKeydown}>
-			<a role="menuitem" href="/profil/{user.pseudo}" onclick={close}>Mon profil</a>
+		<div class="menu" role="menu" tabindex="-1" bind:this={menuEl} onkeydown={onKeydown}>
+			<a role="menuitem" href="/profil/{user.pseudo}" onclick={() => close()}>Mon profil</a>
 			<button role="menuitem" type="button" onclick={logout}>Se déconnecter</button>
 		</div>
 	{/if}

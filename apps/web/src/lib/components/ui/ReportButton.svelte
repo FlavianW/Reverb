@@ -163,7 +163,7 @@
 	.actions button[type='submit'] {
 		background: var(--accent);
 		border: 1px solid var(--accent);
-		color: #fbf6ee;
+		color: var(--on-accent);
 	}
 
 	.actions button:disabled {

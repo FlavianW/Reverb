@@ -65,7 +65,7 @@
 		</button>
 	{/if}
 
-	<div class="messages">
+	<div class="messages" role="log" aria-live="polite" aria-label="Messages de la conversation">
 		{#each items as message (message.id)}
 			<MessageBubble {message} isOwn={message.senderId === currentUserId} />
 		{/each}
