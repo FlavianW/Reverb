@@ -12,6 +12,7 @@ class FriendCard extends StatefulWidget {
   final FriendCardKind kind;
   final Future<void> Function()? onAccept;
   final Future<void> Function() onRemove;
+  final Future<void> Function()? onMessage;
 
   const FriendCard({
     super.key,
@@ -19,6 +20,7 @@ class FriendCard extends StatefulWidget {
     required this.kind,
     this.onAccept,
     required this.onRemove,
+    this.onMessage,
   });
 
   @override
@@ -77,6 +79,12 @@ class _FriendCardState extends State<FriendCard> {
     switch (widget.kind) {
       case FriendCardKind.friend:
         return [
+          if (widget.onMessage != null)
+            IconButton(
+              onPressed: () => _handle(widget.onMessage!),
+              icon: const Icon(Icons.chat_bubble_outline, size: 20),
+              tooltip: 'Envoyer un message',
+            ),
           TextButton.icon(
             onPressed: () => _handle(widget.onRemove),
             icon: const Icon(Icons.person_remove_outlined, size: 16),
