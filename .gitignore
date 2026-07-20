@@ -4,7 +4,8 @@ CLAUDE.md
 .env.*
 !.env.example
 
-docs/
+docs/*.apk
+docs/*.xlsx
 node_modules
 dist
 coverage
