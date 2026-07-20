@@ -8,6 +8,7 @@ void main() {
     Object? content,
     Object? ratingValue,
     List<Object?> photos = const [],
+    Object? video,
   }) => {
     'id': 'post-1',
     'type': type,
@@ -16,6 +17,7 @@ void main() {
     'content': content,
     'ratingValue': ratingValue,
     'photos': photos,
+    'video': video,
     'likeCount': 0,
     'likedByMe': false,
     'createdAt': '2026-01-01T10:00:00.000Z',
@@ -56,6 +58,44 @@ void main() {
       expect(post.content, 'Super soirée');
       expect(post.photos, hasLength(2));
       expect(post.concert, isNull);
+      expect(post.video, isNull);
+    });
+
+    test('parse un post vidéo en cours de traitement (url absente)', () {
+      final post = PostSummary.fromJson(
+        basePostJson(
+          video: {
+            'id': 'v1',
+            'status': 'PROCESSING',
+            'url': null,
+            'posterUrl': null,
+            'durationSeconds': null,
+          },
+        ),
+      );
+
+      expect(post.video, isNotNull);
+      expect(post.video!.status, VideoStatus.processing);
+      expect(post.video!.url, isNull);
+      expect(post.photos, isEmpty);
+    });
+
+    test('parse un post vidéo prête avec ses URLs', () {
+      final post = PostSummary.fromJson(
+        basePostJson(
+          video: {
+            'id': 'v1',
+            'status': 'READY',
+            'url': 'https://cdn.example.com/playback.mp4',
+            'posterUrl': 'https://cdn.example.com/poster.jpg',
+            'durationSeconds': 42,
+          },
+        ),
+      );
+
+      expect(post.video!.status, VideoStatus.ready);
+      expect(post.video!.url, 'https://cdn.example.com/playback.mp4');
+      expect(post.video!.durationSeconds, 42);
     });
   });
 

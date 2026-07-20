@@ -405,4 +405,55 @@ class ApiClient {
   Future<void> likePost(String id) => _request('PUT', '/posts/$id/like');
 
   Future<void> unlikePost(String id) => _request('DELETE', '/posts/$id/like');
+
+  /// Génère une URL d'upload vidéo direct vers S3 pour un futur post (US-8.2).
+  /// L'id du post est décidé côté API avant sa création, pour que la clé S3
+  /// puisse le référencer ; on le renvoie tel quel à `createVideoPost`.
+  Future<PresignedVideoUpload> presignPostVideo(String contentType) =>
+      _request(
+        'POST',
+        '/posts/videos/presign',
+        data: {'contentType': contentType},
+        decode: (d) =>
+            PresignedVideoUpload.fromJson(d as Map<String, dynamic>),
+      );
+
+  /// Upload direct vers S3, hors de l'API (jamais de proxy en mémoire pour
+  /// une vidéo, contrairement aux photos) : requête à part, sans cookie de
+  /// session ni URL de base de l'API.
+  Future<void> uploadVideoToStorage(
+    PresignedVideoUpload presigned,
+    File file,
+  ) async {
+    final formData = FormData.fromMap({
+      ...presigned.fields,
+      'file': await MultipartFile.fromFile(file.path),
+    });
+    try {
+      await Dio().post<void>(presigned.uploadUrl, data: formData);
+    } on DioException catch (e) {
+      throw ApiException(
+        e.response?.statusCode ?? 0,
+        "Échec de l'upload vidéo vers le stockage.",
+      );
+    }
+  }
+
+  /// Crée un post explicite dont le média est une vidéo déjà uploadée (US-8.2).
+  Future<PostSummary> createVideoPost({
+    required String postId,
+    required String key,
+    String? content,
+    String? concertId,
+  }) => _request(
+    'POST',
+    '/posts/videos',
+    data: {
+      'postId': postId,
+      'key': key,
+      'content': ?content,
+      'concertId': ?concertId,
+    },
+    decode: (d) => PostSummary.fromJson(d as Map<String, dynamic>),
+  );
 }
