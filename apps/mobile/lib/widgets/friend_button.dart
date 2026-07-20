@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../core/theme.dart';
 import '../models/friendship.dart';
+import '../screens/conversation_screen.dart';
 
 /// Miroir de `apps/web/src/lib/components/profile/FriendButton.svelte`.
 class FriendButton extends StatefulWidget {
@@ -64,6 +65,30 @@ class _FriendButtonState extends State<FriendButton> {
     }
   }
 
+  Future<void> _message() async {
+    setState(() {
+      pending = true;
+      error = null;
+    });
+    try {
+      final conversation = await widget.api.startConversation(widget.pseudo);
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ConversationScreen(
+            conversationId: conversation.id,
+            otherUser: conversation.otherUser,
+          ),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => error = e.message);
+    } finally {
+      if (mounted) setState(() => pending = false);
+    }
+  }
+
   Future<void> _remove() async {
     final id = friendshipId;
     if (id == null) return;
@@ -113,10 +138,21 @@ class _FriendButtonState extends State<FriendButton> {
           ),
         ],
       ),
-      ViewerFriendshipStatus.friends => TextButton.icon(
-        onPressed: pending ? null : _remove,
-        icon: const Icon(Icons.person_remove_outlined, size: 18),
-        label: const Text('Ami·e'),
+      ViewerFriendshipStatus.friends => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          OutlinedButton.icon(
+            onPressed: pending ? null : _message,
+            icon: const Icon(Icons.chat_bubble_outline, size: 18),
+            label: const Text('Envoyer un message'),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: pending ? null : _remove,
+            icon: const Icon(Icons.person_remove_outlined, size: 18),
+            label: const Text('Ami·e'),
+          ),
+        ],
       ),
       ViewerFriendshipStatus.self => const SizedBox.shrink(),
     };

@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/artist.dart';
+import '../models/chat.dart';
 import '../models/concert.dart';
 import '../models/friendship.dart';
 import '../models/post.dart';
@@ -47,17 +48,27 @@ String _resolveBaseUrl() {
 /// de l'app.
 class ApiClient {
   late final Dio _dio;
+  late final CookieJar _cookieJar;
   bool _ready = false;
 
   Future<void> ensureReady() async {
     if (_ready) return;
     final dir = await getApplicationDocumentsDirectory();
-    final cookieJar = PersistCookieJar(
-      storage: FileStorage('${dir.path}/.cookies/'),
-    );
+    _cookieJar = PersistCookieJar(storage: FileStorage('${dir.path}/.cookies/'));
     _dio = Dio(BaseOptions(baseUrl: _resolveBaseUrl()));
-    _dio.interceptors.add(CookieManager(cookieJar));
+    _dio.interceptors.add(CookieManager(_cookieJar));
     _ready = true;
+  }
+
+  String get baseUrl => _resolveBaseUrl();
+
+  /// Cookie de session pour l'en-tête `Cookie` de la connexion Socket.IO :
+  /// contrairement à un navigateur (`withCredentials`), `socket_io_client` ne
+  /// partage pas le pot de cookies de Dio — on le relit donc explicitement.
+  Future<String> sessionCookieHeader() async {
+    await ensureReady();
+    final cookies = await _cookieJar.loadForRequest(Uri.parse(baseUrl));
+    return cookies.map((c) => '${c.name}=${c.value}').join('; ');
   }
 
   Future<T> _request<T>(
@@ -305,6 +316,40 @@ class ApiClient {
 
   Future<void> removeFriendship(String id) =>
       _request('DELETE', '/friendships/$id');
+
+  // Messagerie (US-10.1 à 10.3)
+
+  /// Trouve ou crée la conversation avec cet ami (403 si vous n'êtes pas amis).
+  Future<ConversationSummary> startConversation(String pseudo) => _request(
+    'POST',
+    '/conversations/$pseudo',
+    decode: (d) => ConversationSummary.fromJson(d as Map<String, dynamic>),
+  );
+
+  Future<List<ConversationSummary>> getConversations() => _request(
+    'GET',
+    '/conversations',
+    decode: (d) => (d as List<dynamic>)
+        .map((e) => ConversationSummary.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
+
+  Future<int> getUnreadCount() => _request(
+    'GET',
+    '/conversations/unread-count',
+    decode: (d) => (d as Map<String, dynamic>)['count'] as int,
+  );
+
+  Future<MessagePage> getMessages(String conversationId, [String? cursor]) =>
+      _request(
+        'GET',
+        '/conversations/$conversationId/messages',
+        query: cursor != null ? {'cursor': cursor} : null,
+        decode: (d) => MessagePage.fromJson(d as Map<String, dynamic>),
+      );
+
+  Future<void> markConversationRead(String conversationId) =>
+      _request('PUT', '/conversations/$conversationId/read');
 
   // Fil d'actualité
 

@@ -6,6 +6,7 @@ import '../core/theme.dart';
 import '../models/friendship.dart';
 import '../widgets/friend_card.dart';
 import '../widgets/theme_toggle_button.dart';
+import 'conversation_screen.dart';
 
 /// Miroir de `apps/web/src/routes/amis/+page.svelte`.
 class AmisScreen extends StatefulWidget {
@@ -69,6 +70,25 @@ class _AmisScreenState extends State<AmisScreen> {
   Future<void> _remove(String id) async {
     await context.read<ApiClient>().removeFriendship(id);
     _reload();
+  }
+
+  Future<void> _openConversation(String pseudo) async {
+    final api = context.read<ApiClient>();
+    try {
+      final conversation = await api.startConversation(pseudo);
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ConversationScreen(
+            conversationId: conversation.id,
+            otherUser: conversation.otherUser,
+          ),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   @override
@@ -171,6 +191,7 @@ class _AmisScreenState extends State<AmisScreen> {
                       friendship: friendship,
                       kind: FriendCardKind.friend,
                       onRemove: () => _remove(friendship.id),
+                      onMessage: () => _openConversation(friendship.user.pseudo),
                     ),
                   ),
                 ),
