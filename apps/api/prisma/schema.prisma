@@ -27,6 +27,7 @@ model User {
   ratings                ConcertRating[]
   comments               Comment[]
   photos                 Photo[]
+  videos                 Video[]
   reports                Report[]
   sentFriendRequests     Friendship[]        @relation("FriendshipRequester")
   receivedFriendRequests Friendship[]        @relation("FriendshipAddressee")
@@ -60,6 +61,7 @@ model Concert {
   ratings     ConcertRating[]
   comments    Comment[]
   photos      Photo[]
+  videos      Video[]
   posts       Post[]
 
   @@map("concerts")
@@ -123,6 +125,39 @@ model Photo {
   @@map("photos")
 }
 
+enum VideoStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+/// Vidéo uploadée sur une page concert ou attachée à un post explicite —
+/// une seule table pour les deux contextes (`concertId`/`postId` mutuellement
+/// exclusifs, imposé côté service). Contrairement aux photos, la vidéo a un
+/// cycle de vie asynchrone commun (upload direct S3 puis transcodage Lambda) :
+/// dupliquer ce lifecycle entre deux tables serait redondant, d'où la table
+/// unique plutôt que de suivre le pattern `Photo`/`PostPhoto`.
+model Video {
+  id              String      @id @default(uuid())
+  key             String
+  playbackKey     String?
+  playbackUrl     String?
+  posterKey       String?
+  posterUrl       String?
+  durationSeconds Int?
+  status          VideoStatus @default(PROCESSING)
+  concertId       String?
+  concert         Concert?    @relation(fields: [concertId], references: [id], onDelete: Cascade)
+  postId          String?     @unique
+  post            Post?       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  uploadedById    String
+  uploadedBy      User        @relation(fields: [uploadedById], references: [id])
+  createdAt       DateTime    @default(now())
+  reports         Report[]
+
+  @@map("videos")
+}
+
 enum ReportReason {
   SPAM
   INAPPROPRIATE
@@ -130,8 +165,9 @@ enum ReportReason {
   OTHER
 }
 
-/// Signalement d'un commentaire ou d'une photo (US-6.1). Le traitement par un
-/// modérateur est hors périmètre MVP : seul l'enregistrement est couvert.
+/// Signalement d'un commentaire, d'une photo ou d'une vidéo (US-6.1). Le
+/// traitement par un modérateur est hors périmètre MVP : seul
+/// l'enregistrement est couvert.
 model Report {
   id         String       @id @default(uuid())
   reason     ReportReason
@@ -141,10 +177,13 @@ model Report {
   comment    Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
   photoId    String?
   photo      Photo?       @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  videoId    String?
+  video      Video?       @relation(fields: [videoId], references: [id], onDelete: Cascade)
   createdAt  DateTime     @default(now())
 
   @@unique([reporterId, commentId])
   @@unique([reporterId, photoId])
+  @@unique([reporterId, videoId])
   @@map("reports")
 }
 
@@ -193,6 +232,7 @@ model Post {
   ratingValue Int?
   createdAt   DateTime    @default(now())
   photos      PostPhoto[]
+  video       Video?
   likes       Like[]
 
   @@index([createdAt, id])
