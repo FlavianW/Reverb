@@ -87,8 +87,10 @@ En production, l'architecture cible remplace l'accès public direct par CloudFro
 ## Tests et qualité
 
 ```bash
-pnpm --filter api test        # tests unitaires
-pnpm --filter api test:e2e    # tests end-to-end (nécessite Postgres démarré)
+pnpm --filter api test        # tests unitaires API (Jest)
+pnpm --filter api test:e2e    # tests end-to-end API (nécessite Postgres démarré)
+pnpm --filter web test        # tests unitaires web (Vitest + Testing Library)
+flutter test                  # tests unitaires et widgets mobile (depuis apps/mobile)
 pnpm -r lint
 ```
 
