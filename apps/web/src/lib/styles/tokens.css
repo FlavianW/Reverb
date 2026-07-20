@@ -9,6 +9,11 @@
 	--accent: #e2734a;
 	--accent-soft: #3d2517;
 	--accent-deep: #f0a67d;
+	/* Texte sur fond --accent/--accent-deep (boutons pleins, badges, marqueurs
+	   de carte) : sombre ici, l'accent du thème sombre étant assez clair pour
+	   qu'un texte clair n'y offre pas un contraste AA suffisant (contrôlé,
+	   voir tokens.css du thème clair pour la valeur inverse). */
+	--on-accent: var(--paper);
 
 	--font-serif: 'Newsreader', serif;
 	--font-sans: 'Manrope', sans-serif;
@@ -26,7 +31,12 @@
 	--ink: #1c1a17;
 	--ink-soft: #6b6259;
 	--line: #e4ddd0;
-	--accent: #c1502b;
+	/* Légèrement assombri par rapport au orange « pur » (#c1502b) : à cette
+	   valeur, le texte de la marque n'atteignait pas 4.5:1 sur --paper, ni un
+	   texte clair sur --accent en fond plein (boutons) — contrôlé au ratio
+	   WCAG, cf. audit RGAA. */
+	--accent: #b94d29;
 	--accent-soft: #f3ddcb;
 	--accent-deep: #8f3a1d;
+	--on-accent: #fbf6ee;
 }

@@ -114,7 +114,7 @@
 		align-items: center;
 		justify-content: center;
 		background: var(--accent);
-		color: #fff;
+		color: var(--on-accent);
 		border: 2px solid #fff;
 		border-radius: 50%;
 		font-size: 17px;

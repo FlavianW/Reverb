@@ -51,6 +51,6 @@
 	.attendance.active {
 		background: var(--accent);
 		border-color: var(--accent);
-		color: #fbf6ee;
+		color: var(--on-accent);
 	}
 </style>
