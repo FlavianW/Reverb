@@ -3,7 +3,7 @@ name: Déploiement AWS
 # Authentification par fédération OIDC (aucune clé AWS stockée côté GitHub) :
 # le rôle assumé (reverb-github-actions-deploy) n'accepte que ce dépôt sur la
 # branche develop, et n'autorise que le push sur les deux repos ECR et la
-# mise à jour des deux services ECS concernés — voir sa policy pour le détail.
+# mise à jour des deux services ECS concernés
 on:
   push:
     branches: [develop]
@@ -38,7 +38,7 @@ jobs:
 
       - uses: aws-actions/amazon-ecr-login@v2
 
-      # Depuis la racine, jamais depuis apps/api : le build a besoin de packages/shared (voir CLAUDE.md).
+      # Depuis la racine, jamais depuis apps/api : le build a besoin de packages/shared
       - name: Build et pousse l'image
         run: |
           docker build -f apps/api/Dockerfile \
