@@ -26,12 +26,22 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
-/// Adresse de l'API selon la plateforme d'exécution. L'émulateur Android
-/// route `localhost` vers lui-même : `10.0.2.2` est l'alias documenté par
-/// Google pour atteindre la machine hôte. Le simulateur iOS et le web
-/// partagent le réseau de l'hôte, donc `localhost` y fonctionne directement.
-/// Sur un appareil physique, remplacer par l'IP LAN de la machine de dev.
+/// URL de l'API en production (ALB → ECS Fargate, voir CLAUDE.md).
+const _prodApiUrl = 'https://api.reverb-social.com';
+
+/// Adresse de l'API selon la plateforme d'exécution. Un build release (ex.
+/// l'APK publié sur les releases GitHub, voir `mobile-release.yml`) pointe
+/// toujours vers la prod : sans ça, il ne joindrait que l'API locale du
+/// poste qui l'a compilé, injoignable pour quiconque d'autre. En debug,
+/// l'émulateur Android route `localhost` vers lui-même : `10.0.2.2` est
+/// l'alias documenté par Google pour atteindre la machine hôte. Le
+/// simulateur iOS et le web partagent le réseau de l'hôte, donc `localhost`
+/// y fonctionne directement. Sur un appareil physique en debug, remplacer
+/// par l'IP LAN de la machine de dev.
 String _resolveBaseUrl() {
+  if (kReleaseMode) {
+    return _prodApiUrl;
+  }
   if (kIsWeb) {
     return 'http://localhost:3000';
   }
