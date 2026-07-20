@@ -35,7 +35,7 @@ jobs:
         run: pnpm --filter api build
 
   web:
-    name: Web (check, lint, build)
+    name: Web (check, lint, tests, build)
     runs-on: ubuntu-latest
     env:
       # Valeur factice : aucune étape n'effectue d'appel réseau, mais
@@ -60,6 +60,9 @@ jobs:
 
       - name: Lint
         run: pnpm --filter web lint
+
+      - name: Tests unitaires
+        run: pnpm --filter web test
 
       - name: Build
         run: pnpm --filter web build

@@ -1,6 +1,8 @@
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+// `defineConfig` de vitest/config (pas vite) : seul cet import type le champ
+// `test` ci-dessous, autrement inconnu de `UserConfigExport`.
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	// @reverb/shared est compilé en CommonJS (contrainte de ts-jest côté apps/api) :
@@ -26,5 +28,16 @@ export default defineConfig({
 			// son conteneur ECS (même modèle que l'API), derrière l'ALB.
 			adapter: adapter()
 		})
-	]
+	],
+	// Sous Vitest, Vite résout par défaut les paquets via les conditions "node"
+	// (mode SSR), ce qui donne la build serveur de Svelte (`mount()` y est
+	// indisponible, réservée au DOM). Forcer la condition "browser" fait
+	// résoudre la vraie build client, seule capable de monter un composant
+	// dans jsdom pour les tests.
+	resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined,
+	test: {
+		environment: 'jsdom',
+		setupFiles: ['./vitest-setup.ts'],
+		include: ['src/**/*.{test,spec}.{js,ts}']
+	}
 });
