@@ -1,8 +1,14 @@
 name: Mobile Release
 
+# Un tag `vX.Y.Z` poussé sur le dépôt crée la release GitHub et y attache les
+# builds, dans le même run : on évite ainsi de dépendre d'un release GitHub
+# créé manuellement au préalable (jamais fait jusqu'ici, d'où l'absence
+# d'APK) et du piège du GITHUB_TOKEN par défaut, qui ne redéclenche pas
+# `on: release` sur les autres workflows du dépôt.
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*.*.*"
 
 permissions:
   contents: write
@@ -13,6 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Version depuis le tag
+        id: version
+        # `refs/tags/v1.2.3` -> `1.2.3`, utilisé comme build-name Flutter ;
+        # le numéro de run GitHub sert de build-number, toujours croissant.
+        run: echo "name=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -36,11 +48,15 @@ jobs:
 
       - name: Build APK release
         working-directory: apps/mobile
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release \
+            --build-name=${{ steps.version.outputs.name }} \
+            --build-number=${{ github.run_number }}
 
-      - name: Publier l'APK sur la release GitHub
+      - name: Publier la release GitHub
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           files: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
 
   ios:
@@ -54,6 +70,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Version depuis le tag
+        id: version
+        run: echo "name=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.44.6"
@@ -65,7 +85,10 @@ jobs:
 
       - name: Build iOS sans signature
         working-directory: apps/mobile
-        run: flutter build ios --release --no-codesign
+        run: |
+          flutter build ios --release --no-codesign \
+            --build-name=${{ steps.version.outputs.name }} \
+            --build-number=${{ github.run_number }}
 
       - name: Compresser l'app iOS
         working-directory: apps/mobile/build/ios/iphoneos
@@ -74,4 +97,5 @@ jobs:
       - name: Publier l'app iOS sur la release GitHub
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           files: apps/mobile/build/ios/iphoneos/Runner.app.zip
