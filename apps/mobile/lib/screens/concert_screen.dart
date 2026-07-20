@@ -120,15 +120,13 @@ class _ConcertContent extends StatelessWidget {
       ],
       body: Column(
         children: [
+          if (page.artistImageUrl != null)
+            _ArtistBanner(imageUrl: page.artistImageUrl!),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (page.artistImageUrl != null) ...[
-                  CircleAvatar(radius: 24, backgroundImage: NetworkImage(page.artistImageUrl!)),
-                  const SizedBox(width: 12),
-                ],
                 Expanded(
                   child: Text(
                     '${concert.venueName}, ${concert.city} — $formattedDate',
@@ -163,6 +161,42 @@ class _ConcertContent extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Miroir du hero de `ConcertHero.svelte` : la photo de l'artiste en bandeau
+/// plein cadre, fondue vers le bas dans le fond de page — le texte en dessous
+/// reste sur fond uni, contraste préservé dans les deux thèmes.
+class _ArtistBanner extends StatelessWidget {
+  final String imageUrl;
+
+  const _ArtistBanner({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 150,
+      width: double.infinity,
+      child: ShaderMask(
+        shaderCallback: (rect) => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.black, Colors.transparent],
+        ).createShader(rect),
+        blendMode: BlendMode.dstIn,
+        child: Opacity(
+          opacity: 0.55,
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            alignment: const Alignment(0, -0.5),
+            // Sans photo chargeable, pas de bandeau : l'écran garde sa mise
+            // en page texte, comme le hero web sans photo.
+            errorBuilder: (context, _, _) => const SizedBox.shrink(),
+          ),
+        ),
       ),
     );
   }

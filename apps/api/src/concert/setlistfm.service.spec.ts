@@ -142,6 +142,39 @@ describe('SetlistFmService', () => {
       expect(result[0].longitude).toBeNull();
     });
 
+    it('recherche les concerts récents par pays (mode découverte)', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, {
+          setlist: [
+            {
+              artist: { name: 'Justice' },
+              venue: {
+                name: 'Le Zénith',
+                city: { name: 'Paris', coords: { lat: 48.9, long: 2.39 } },
+              },
+              eventDate: '18-07-2026',
+            },
+          ],
+        }),
+      );
+
+      const result = await service.findRecentConcerts('FR');
+
+      expect(result).toEqual([
+        {
+          artistName: 'Justice',
+          venueName: 'Le Zénith',
+          city: 'Paris',
+          date: new Date(Date.UTC(2026, 6, 18)),
+          latitude: 48.9,
+          longitude: 2.39,
+        },
+      ]);
+      const requestedUrl = fetchMock.mock.calls[0][0] as URL;
+      expect(requestedUrl.searchParams.get('countryCode')).toBe('FR');
+      expect(requestedUrl.searchParams.get('artistName')).toBeNull();
+    });
+
     it('dédoublonne les entrées identiques (même artiste/salle/ville/date)', async () => {
       const entry = {
         artist: { name: 'Radiohead' },

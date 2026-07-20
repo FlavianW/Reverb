@@ -156,7 +156,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(204)
   logout(@Res({ passthrough: true }) res: Response): void {
-    res.clearCookie(SESSION_COOKIE_NAME);
+    res.clearCookie(SESSION_COOKIE_NAME, this.cookieDomain());
   }
 
   /** Émet un JWT de session et le pose dans un cookie httpOnly. */
@@ -166,7 +166,22 @@ export class AuthController {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
+      ...this.cookieDomain(),
     });
+  }
+
+  /**
+   * Attribut `Domain` du cookie de session, piloté par `COOKIE_DOMAIN`.
+   * En prod, le web (`reverb-social.com`) et l'API (`api.reverb-social.com`)
+   * sont des hôtes distincts : sans domaine parent explicite, le cookie
+   * resterait host-only sur l'API et le SSR du web ne verrait jamais la
+   * session. Non défini en local (hosts `localhost` identiques).
+   * `clearCookie` doit recevoir le même attribut, sinon la déconnexion
+   * ne supprime pas le cookie.
+   */
+  private cookieDomain(): { domain?: string } {
+    const domain = this.configService.get<string>('COOKIE_DOMAIN');
+    return domain ? { domain } : {};
   }
 
   /** Première origine autorisée par CORS_ORIGIN — cible de la redirection post-OAuth. */

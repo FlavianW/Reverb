@@ -38,6 +38,43 @@ class Concert {
   );
 }
 
+/// Résultat de recherche (US-3.1) : le concert et la photo de son artiste.
+/// Miroir de `ConcertSearchResult` dans `packages/shared/src/types/concert.ts`.
+class ConcertSearchResult extends Concert {
+  final String? artistImageUrl;
+
+  const ConcertSearchResult({
+    required super.id,
+    required super.artistName,
+    required super.venueName,
+    required super.city,
+    required super.date,
+    required super.latitude,
+    required super.longitude,
+    required super.createdById,
+    required super.createdAt,
+    required super.updatedAt,
+    required this.artistImageUrl,
+  });
+
+  factory ConcertSearchResult.fromJson(Map<String, dynamic> json) {
+    final concert = Concert.fromJson(json);
+    return ConcertSearchResult(
+      id: concert.id,
+      artistName: concert.artistName,
+      venueName: concert.venueName,
+      city: concert.city,
+      date: concert.date,
+      latitude: concert.latitude,
+      longitude: concert.longitude,
+      createdById: concert.createdById,
+      createdAt: concert.createdAt,
+      updatedAt: concert.updatedAt,
+      artistImageUrl: json['artistImageUrl'] as String?,
+    );
+  }
+}
+
 /// Concert à proximité (US-9.1), avec sa distance au point de recherche.
 /// Miroir de `NearbyConcert` dans `packages/shared/src/types/concert.ts`.
 class NearbyConcert extends Concert {

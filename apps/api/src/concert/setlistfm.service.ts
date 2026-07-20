@@ -101,9 +101,26 @@ export class SetlistFmService {
    * pas encore présents en base. Comme `findSetlist`, toute indisponibilité
    * est absorbée en liste vide.
    */
-  async searchConcerts(artistName: string): Promise<SetlistFmConcertMatch[]> {
+  searchConcerts(artistName: string): Promise<SetlistFmConcertMatch[]> {
+    return this.searchSetlistEntries({ artistName });
+  }
+
+  /**
+   * Derniers concerts joués dans un pays (US-3.1, mode découverte) : permet
+   * de peupler le catalogue au-delà des seuls artistes déjà recherchés.
+   * Une seule page Setlist.fm (~20 entrées), la plus récente.
+   */
+  findRecentConcerts(countryCode: string): Promise<SetlistFmConcertMatch[]> {
+    return this.searchSetlistEntries({ countryCode });
+  }
+
+  private async searchSetlistEntries(
+    params: Record<string, string>,
+  ): Promise<SetlistFmConcertMatch[]> {
     const url = new URL(`${SETLISTFM_BASE_URL}/search/setlists`);
-    url.searchParams.set('artistName', artistName);
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, value);
+    }
 
     try {
       const response = await fetch(url, {
@@ -120,7 +137,7 @@ export class SetlistFmService {
 
       if (!response.ok) {
         this.logger.warn(
-          `Setlist.fm a répondu ${response.status} pour la recherche "${artistName}"`,
+          `Setlist.fm a répondu ${response.status} pour la recherche ${JSON.stringify(params)}`,
         );
         return [];
       }

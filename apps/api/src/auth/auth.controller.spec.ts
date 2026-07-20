@@ -48,7 +48,11 @@ describe('AuthController', () => {
     };
     authService = { issueSessionToken: jest.fn() };
     passwordService = { hashPassword: jest.fn(), verifyPassword: jest.fn() };
-    configService = { get: jest.fn().mockReturnValue('http://localhost:5173') };
+    configService = {
+      get: jest.fn((key: string) =>
+        key === 'CORS_ORIGIN' ? 'http://localhost:5173' : undefined,
+      ),
+    };
     googleTokenVerifierService = { verify: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -101,7 +105,7 @@ describe('AuthController', () => {
     });
 
     it("redirige vers '/' si CORS_ORIGIN n'est pas configuré", async () => {
-      configService.get.mockReturnValueOnce(undefined);
+      configService.get.mockImplementation(() => undefined);
       const user = { id: 'user-1' } as User;
       userService.findOrCreateFromGoogleProfile.mockResolvedValueOnce(user);
       authService.issueSessionToken.mockReturnValueOnce('signed-jwt');
@@ -111,6 +115,25 @@ describe('AuthController', () => {
       await controller.googleCallback(req, res);
 
       expect(res.redirect).toHaveBeenCalledWith('/');
+    });
+
+    it('pose le cookie sur le domaine parent quand COOKIE_DOMAIN est défini', async () => {
+      configService.get.mockImplementation((key: string) =>
+        key === 'COOKIE_DOMAIN' ? '.reverb-social.com' : undefined,
+      );
+      const user = { id: 'user-1' } as User;
+      userService.findOrCreateFromGoogleProfile.mockResolvedValueOnce(user);
+      authService.issueSessionToken.mockReturnValueOnce('signed-jwt');
+      const req = { user: googleProfile } as unknown as Request;
+      const res = createResMock();
+
+      await controller.googleCallback(req, res);
+
+      expect(res.cookie).toHaveBeenCalledWith(
+        SESSION_COOKIE_NAME,
+        'signed-jwt',
+        expect.objectContaining({ domain: '.reverb-social.com' }),
+      );
     });
   });
 
@@ -334,7 +357,7 @@ describe('AuthController', () => {
 
       controller.logout(res);
 
-      expect(res.clearCookie).toHaveBeenCalledWith(SESSION_COOKIE_NAME);
+      expect(res.clearCookie).toHaveBeenCalledWith(SESSION_COOKIE_NAME, {});
     });
   });
 });

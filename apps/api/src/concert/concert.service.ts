@@ -7,7 +7,11 @@ import { CommentService, CommentSummary } from './comment/comment.service';
 import { GeocodingService } from './geocoding.service';
 import { PhotoService, PhotoSummary } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
-import { SetlistFmResult, SetlistFmService } from './setlistfm.service';
+import {
+  SetlistFmConcertMatch,
+  SetlistFmResult,
+  SetlistFmService,
+} from './setlistfm.service';
 
 export interface CreateConcertInput {
   artistName: string;
@@ -52,6 +56,20 @@ export interface ConcertPage extends Concert {
   artistImageUrl: string | null;
 }
 
+/** Résultat de recherche (US-3.1) : le concert et la photo de son artiste. */
+export interface ConcertSearchResult extends Concert {
+  artistImageUrl: string | null;
+}
+
+/**
+ * Pays des concerts importés en mode découverte. L'app est francophone et
+ * son public cible en France : choix documenté, à élargir si besoin.
+ */
+const DISCOVERY_COUNTRY_CODE = 'FR';
+
+/** Au plus un import découverte par heure : le catalogue n'a pas besoin de plus frais. */
+const DISCOVERY_INTERVAL_MS = 60 * 60 * 1000;
+
 /**
  * Gère les concerts. La setlist n'est jamais stockée en base : elle est
  * récupérée en direct via Setlist.fm, seulement pour les concerts déjà
@@ -59,6 +77,9 @@ export interface ConcertPage extends Concert {
  */
 @Injectable()
 export class ConcertService {
+  /** Horodatage du dernier import découverte (voir `discoverRecentConcerts`). */
+  private lastDiscoveryAt = 0;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly setlistFmService: SetlistFmService,
@@ -96,10 +117,10 @@ export class ConcertService {
 
   /**
    * Recherche des concerts par artiste ou par salle (US-3.1). Sans `query`
-   * (absente ou vide), sert aussi de fil d'accueil : les concerts les plus
-   * récents. Les résultats les plus récents sont toujours priorisés ; la
-   * liste est vide s'il n'y a aucune correspondance (« aucun résultat » géré
-   * côté client).
+   * (absente ou vide), sert de vitrine : les concerts les plus récents du
+   * catalogue, régulièrement enrichi par un import découverte (voir
+   * `discoverRecentConcerts`). Chaque résultat embarque la photo de son
+   * artiste — peu coûteux grâce au cache de `LastFmService`.
    *
    * Quand `importedForUserId` est fourni avec une requête non vide, Reverb
    * interroge aussi Setlist.fm et importe les concerts correspondants pas
@@ -107,14 +128,21 @@ export class ConcertService {
    * sa setlist réelle) existe donc dès la recherche, pas seulement pour les
    * concerts déjà connus de Reverb.
    */
-  async search(query?: string, importedForUserId?: string): Promise<Concert[]> {
+  async search(
+    query?: string,
+    importedForUserId?: string,
+  ): Promise<ConcertSearchResult[]> {
     const trimmed = query?.trim();
 
-    if (trimmed && importedForUserId) {
-      await this.importFromSetlistFm(trimmed, importedForUserId);
+    if (importedForUserId) {
+      if (trimmed) {
+        await this.importFromSetlistFm(trimmed, importedForUserId);
+      } else {
+        await this.discoverRecentConcerts(importedForUserId);
+      }
     }
 
-    return this.prisma.concert.findMany({
+    const concerts = await this.prisma.concert.findMany({
       where: trimmed
         ? {
             OR: [
@@ -124,8 +152,46 @@ export class ConcertService {
           }
         : undefined,
       orderBy: { date: 'desc' },
-      take: 20,
+      take: 36,
     });
+
+    return this.withArtistImages(concerts);
+  }
+
+  /** Joint à chaque concert la photo de son artiste, résolue une seule fois par artiste distinct. */
+  private async withArtistImages(
+    concerts: Concert[],
+  ): Promise<ConcertSearchResult[]> {
+    const distinctArtists = [...new Set(concerts.map((c) => c.artistName))];
+    const images = await Promise.all(
+      distinctArtists.map((name) => this.lastFmService.getArtistImage(name)),
+    );
+    const imageByArtist = new Map(
+      distinctArtists.map((name, index) => [name, images[index]]),
+    );
+
+    return concerts.map((concert) => ({
+      ...concert,
+      artistImageUrl: imageByArtist.get(concert.artistName) ?? null,
+    }));
+  }
+
+  /**
+   * Import découverte (US-3.1) : les derniers concerts joués en France selon
+   * Setlist.fm, pour que le catalogue vive au-delà des artistes déjà
+   * recherchés. Throttlé en mémoire à un appel par heure — suffisant pour la
+   * fraîcheur, et respectueux du quota de l'API.
+   */
+  private async discoverRecentConcerts(createdById: string): Promise<void> {
+    if (Date.now() - this.lastDiscoveryAt < DISCOVERY_INTERVAL_MS) {
+      return;
+    }
+    this.lastDiscoveryAt = Date.now();
+
+    const matches = await this.setlistFmService.findRecentConcerts(
+      DISCOVERY_COUNTRY_CODE,
+    );
+    await this.importMatches(matches, createdById);
   }
 
   /** Importe les concerts que Setlist.fm connaît pour cet artiste, sans dupliquer ceux déjà en base. */
@@ -134,7 +200,13 @@ export class ConcertService {
     createdById: string,
   ): Promise<void> {
     const matches = await this.setlistFmService.searchConcerts(artistName);
+    await this.importMatches(matches, createdById);
+  }
 
+  private async importMatches(
+    matches: SetlistFmConcertMatch[],
+    createdById: string,
+  ): Promise<void> {
     for (const match of matches) {
       const alreadyImported = await this.prisma.concert.findFirst({
         where: {

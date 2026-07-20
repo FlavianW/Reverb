@@ -1,11 +1,30 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { Concert, Prisma, User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import type { PublicUser } from '@reverb/shared';
 import { LastFmService } from '../artist/lastfm.service';
+import type { ConcertSearchResult } from '../concert/concert.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Code Prisma d'une violation de contrainte unique (ex. email/pseudo déjà pris). */
 const UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
+
+/**
+ * Profil consultable par n'importe quel visiteur (US-4.1, US-4.2) : ni email
+ * ni id, contrairement à `PublicUser` qui est réservé au propriétaire du
+ * compte. `ConcertSearchResult` (et non le `Concert` du contrat partagé) car
+ * ce type interne manipule des `Date` Prisma, sérialisées en ISO 8601 par
+ * Nest à la sortie HTTP — même relation que `ConcertPage`/`NearbyConcert`
+ * dans `ConcertService` avec leurs équivalents `packages/shared`.
+ */
+export interface PublicProfile {
+  pseudo: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  bannerUrl: string | null;
+  favoriteArtist: string | null;
+  favoriteArtistImageUrl: string | null;
+  attendedConcerts: ConcertSearchResult[];
+}
 
 /** Profil minimal renvoyé par Google après une authentification OAuth réussie. */
 export interface GoogleProfile {
@@ -26,20 +45,6 @@ export function toPublicUser(user: User): PublicUser {
     bio: user.bio,
     favoriteArtist: user.favoriteArtist,
   };
-}
-
-/**
- * Profil consultable par n'importe quel visiteur (US-4.1, US-4.2) : ni email
- * ni id, contrairement à `PublicUser` qui est réservé au propriétaire du compte.
- */
-export interface PublicProfile {
-  pseudo: string;
-  bio: string | null;
-  avatarUrl: string | null;
-  bannerUrl: string | null;
-  favoriteArtist: string | null;
-  favoriteArtistImageUrl: string | null;
-  attendedConcerts: Concert[];
 }
 
 /**
@@ -145,14 +150,19 @@ export class UserService {
     };
   }
 
-  /** Concerts marqués « J'y étais » par cet utilisateur, du plus récent au plus ancien (US-4.2). */
-  async findAttendedConcerts(userId: string): Promise<Concert[]> {
+  /**
+   * Concerts marqués « J'y étais » par cet utilisateur, du plus récent au
+   * plus ancien (US-4.2), avec la photo de chaque artiste (mêmes cartes que
+   * la recherche de concerts, pas seulement l'initiale de repli).
+   */
+  async findAttendedConcerts(userId: string): Promise<ConcertSearchResult[]> {
     const attendances = await this.prisma.concertAttendance.findMany({
       where: { userId },
       include: { concert: true },
       orderBy: { concert: { date: 'desc' } },
     });
-    return attendances.map((attendance) => attendance.concert);
+    const concerts = attendances.map((attendance) => attendance.concert);
+    return this.lastFmService.withArtistImages(concerts);
   }
 
   /**

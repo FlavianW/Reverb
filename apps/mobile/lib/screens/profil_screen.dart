@@ -75,6 +75,11 @@ class _ProfilScreenState extends State<ProfilScreen> {
     });
   }
 
+  Future<void> _refresh() async {
+    _reload();
+    await _future;
+  }
+
   Future<void> _loadMorePosts() async {
     final cursor = _postCursor;
     if (cursor == null) return;
@@ -126,203 +131,230 @@ class _ProfilScreenState extends State<ProfilScreen> {
           final (profile, friendshipStatus) = snapshot.data!;
           final editable = session.user?.pseudo == profile.pseudo;
 
-          return ListView(
-            children: [
-              Container(
-                height: 160,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [context.colors.accentDeep, context.colors.accent],
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView(
+              children: [
+                Container(
+                  height: 160,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        context.colors.accentDeep,
+                        context.colors.accent,
+                      ],
+                    ),
+                    image: profile.bannerUrl != null
+                        ? DecorationImage(
+                            image: NetworkImage(profile.bannerUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                  image: profile.bannerUrl != null
-                      ? DecorationImage(
-                          image: NetworkImage(profile.bannerUrl!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Transform.translate(
-                  offset: const Offset(0, -36),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: context.colors.paper,
-                          boxShadow: const [
-                            BoxShadow(color: Colors.black26, blurRadius: 8),
-                          ],
-                        ),
-                        child: ReverbAvatar(
-                          src: profile.avatarUrl,
-                          name: profile.pseudo,
-                          size: 96,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                profile.pseudo,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleLarge?.copyWith(fontSize: 22),
-                              ),
-                              if (profile.bio != null && profile.bio!.isNotEmpty)
-                                Text(
-                                  profile.bio!,
-                                  style: TextStyle(color: context.colors.inkSoft),
-                                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Transform.translate(
+                    offset: const Offset(0, -36),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: context.colors.paper,
+                            boxShadow: const [
+                              BoxShadow(color: Colors.black26, blurRadius: 8),
                             ],
                           ),
+                          child: ReverbAvatar(
+                            src: profile.avatarUrl,
+                            name: profile.pseudo,
+                            size: 96,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  profile.pseudo,
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontSize: 22),
+                                ),
+                                if (profile.bio != null &&
+                                    profile.bio!.isNotEmpty)
+                                  Text(
+                                    profile.bio!,
+                                    style: TextStyle(
+                                      color: context.colors.inkSoft,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              if (editable)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () => _openEditDialog(context, profile),
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        label: const Text('Modifier le profil'),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () =>
-                            context.read<SessionController>().logout(),
-                        icon: const Icon(Icons.logout),
-                        tooltip: 'Se déconnecter',
-                      ),
-                    ],
+                if (editable)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => _openEditDialog(context, profile),
+                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          label: const Text('Modifier le profil'),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () =>
+                              context.read<SessionController>().logout(),
+                          icon: const Icon(Icons.logout),
+                          tooltip: 'Se déconnecter',
+                        ),
+                      ],
+                    ),
+                  )
+                else if (friendshipStatus != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: FriendButton(
+                      api: context.read<ApiClient>(),
+                      pseudo: profile.pseudo,
+                      initialStatus: friendshipStatus.status,
+                      initialFriendshipId: friendshipStatus.friendshipId,
+                    ),
                   ),
-                )
-              else if (friendshipStatus != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: FriendButton(
-                    api: context.read<ApiClient>(),
-                    pseudo: profile.pseudo,
-                    initialStatus: friendshipStatus.status,
-                    initialFriendshipId: friendshipStatus.friendshipId,
+                if (profile.favoriteArtist != null) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _FavoriteArtistCard(
+                      name: profile.favoriteArtist!,
+                      imageUrl: profile.favoriteArtistImageUrl,
+                    ),
                   ),
-                ),
-              if (profile.favoriteArtist != null) ...[
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _FavoriteArtistCard(
-                    name: profile.favoriteArtist!,
-                    imageUrl: profile.favoriteArtistImageUrl,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Concerts assistés',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (profile.attendedConcerts.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(16),
+                ],
+                const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    'Aucun concert assisté pour l\'instant.',
-                    style: TextStyle(color: context.colors.inkSoft),
-                  ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: profile.attendedConcerts
-                        .map(
-                          (concert) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: ConcertCard(
-                              concert: concert,
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      ConcertScreen(concertId: concert.id),
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
+                    'Concerts assistés',
+                    style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
-              const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('Posts', style: TextStyle(fontWeight: FontWeight.w700)),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _postItems.isEmpty
-                    ? Text(
-                        "Aucun post pour l'instant.",
-                        style: TextStyle(color: context.colors.inkSoft),
-                      )
-                    : Column(
-                        children: [
-                          ..._postItems.map(
-                            (post) => Padding(
+                const SizedBox(height: 8),
+                if (profile.attendedConcerts.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Aucun concert assisté pour l\'instant.',
+                      style: TextStyle(color: context.colors.inkSoft),
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: profile.attendedConcerts
+                          .map(
+                            (concert) => Padding(
                               padding: const EdgeInsets.only(bottom: 12),
-                              child: PostCard(
-                                api: context.read<ApiClient>(),
-                                post: post,
-                                canDelete:
-                                    post.type == PostType.photo &&
-                                    post.author.pseudo == session.user?.pseudo,
-                                onDelete: () => _deletePost(post.id),
+                              child: ConcertCard(
+                                concert: concert,
+                                artistImageUrl: concert.artistImageUrl,
+                                onTap: () async {
+                                  // Marquer/retirer sa présence se fait depuis la
+                                  // page concert : on recharge au retour pour que
+                                  // « Concerts assistés » reflète le changement.
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          ConcertScreen(concertId: concert.id),
+                                    ),
+                                  );
+                                  _reload();
+                                },
                               ),
                             ),
-                          ),
-                          if (_postCursor != null)
-                            Center(
-                              child: OutlinedButton(
-                                onPressed: _loadingMorePosts ? null : _loadMorePosts,
-                                child: Text(
-                                  _loadingMorePosts ? 'Chargement…' : 'Charger plus',
+                          )
+                          .toList(),
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'Posts',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _postItems.isEmpty
+                      ? Text(
+                          "Aucun post pour l'instant.",
+                          style: TextStyle(color: context.colors.inkSoft),
+                        )
+                      : Column(
+                          children: [
+                            ..._postItems.map(
+                              (post) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: PostCard(
+                                  api: context.read<ApiClient>(),
+                                  post: post,
+                                  canDelete:
+                                      post.type == PostType.photo &&
+                                      post.author.pseudo ==
+                                          session.user?.pseudo,
+                                  onDelete: () => _deletePost(post.id),
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-              ),
-              const SizedBox(height: 16),
-            ],
+                            if (_postCursor != null)
+                              Center(
+                                child: OutlinedButton(
+                                  onPressed: _loadingMorePosts
+                                      ? null
+                                      : _loadMorePosts,
+                                  child: Text(
+                                    _loadingMorePosts
+                                        ? 'Chargement…'
+                                        : 'Charger plus',
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Future<void> _openEditDialog(BuildContext context, PublicProfile profile) async {
+  Future<void> _openEditDialog(
+    BuildContext context,
+    PublicProfile profile,
+  ) async {
     await showDialog<void>(
       context: context,
-      builder: (context) => _EditProfileDialog(profile: profile, onSaved: _reload),
+      builder: (context) =>
+          _EditProfileDialog(profile: profile, onSaved: _reload),
     );
   }
 }
@@ -404,8 +436,12 @@ class _EditProfileDialog extends StatefulWidget {
 }
 
 class _EditProfileDialogState extends State<_EditProfileDialog> {
-  late final _pseudoController = TextEditingController(text: widget.profile.pseudo);
-  late final _bioController = TextEditingController(text: widget.profile.bio ?? '');
+  late final _pseudoController = TextEditingController(
+    text: widget.profile.pseudo,
+  );
+  late final _bioController = TextEditingController(
+    text: widget.profile.bio ?? '',
+  );
   late String _favoriteArtist = widget.profile.favoriteArtist ?? '';
   File? _avatarFile;
   File? _bannerFile;
@@ -421,7 +457,10 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
 
   Future<void> _pickAvatar() async {
     try {
-      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 90,
+      );
       if (picked == null || !mounted) return;
       final cropped = await cropImage(
         context,
@@ -433,15 +472,18 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
       setState(() => _avatarFile = cropped);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Impossible de charger la photo : $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossible de charger la photo : $e')),
+      );
     }
   }
 
   Future<void> _pickBanner() async {
     try {
-      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 90);
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 90,
+      );
       if (picked == null || !mounted) return;
       final cropped = await cropImage(
         context,
@@ -453,9 +495,9 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
       setState(() => _bannerFile = cropped);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Impossible de charger la bannière : $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossible de charger la bannière : $e')),
+      );
     }
   }
 
@@ -506,7 +548,10 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                   color: context.colors.accentSoft,
                   borderRadius: BorderRadius.circular(ReverbRadius.sm),
                   image: _bannerFile != null
-                      ? DecorationImage(image: FileImage(_bannerFile!), fit: BoxFit.cover)
+                      ? DecorationImage(
+                          image: FileImage(_bannerFile!),
+                          fit: BoxFit.cover,
+                        )
                       : (widget.profile.bannerUrl != null
                             ? DecorationImage(
                                 image: NetworkImage(widget.profile.bannerUrl!),
@@ -516,7 +561,10 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                 ),
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: context.colors.paperAlt,
                       borderRadius: BorderRadius.circular(ReverbRadius.sm),
@@ -524,7 +572,11 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.camera_alt_outlined, size: 14, color: context.colors.accentDeep),
+                        Icon(
+                          Icons.camera_alt_outlined,
+                          size: 14,
+                          color: context.colors.accentDeep,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Changer la bannière',
@@ -544,7 +596,10 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
             Row(
               children: [
                 _avatarFile != null
-                    ? CircleAvatar(radius: 32, backgroundImage: FileImage(_avatarFile!))
+                    ? CircleAvatar(
+                        radius: 32,
+                        backgroundImage: FileImage(_avatarFile!),
+                      )
                     : ReverbAvatar(
                         src: widget.profile.avatarUrl,
                         name: _pseudoController.text,
@@ -577,7 +632,13 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
             ),
             if (error != null) ...[
               const SizedBox(height: 8),
-              Text(error!, style: TextStyle(color: context.colors.accentDeep, fontSize: 13)),
+              Text(
+                error!,
+                style: TextStyle(
+                  color: context.colors.accentDeep,
+                  fontSize: 13,
+                ),
+              ),
             ],
           ],
         ),

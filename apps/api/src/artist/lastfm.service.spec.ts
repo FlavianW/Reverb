@@ -206,5 +206,100 @@ describe('LastFmService', () => {
 
       expect(result).toBeNull();
     });
+
+    it('met la photo en cache : un second appel ne rescrape pas la page', async () => {
+      fetchMock.mockResolvedValueOnce(
+        htmlResponse(
+          200,
+          ogImageHtml('https://lastfm.freetls.fastly.net/i/u/ar0/muse.jpg'),
+        ),
+      );
+
+      await service.getArtistImage('Muse');
+      const result = await service.getArtistImage('muse');
+
+      expect(result).toBe('https://lastfm.freetls.fastly.net/i/u/ar0/muse.jpg');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('sert la dernière photo connue (même périmée) quand Last.fm échoue', async () => {
+      const nowSpy = jest.spyOn(Date, 'now');
+      try {
+        nowSpy.mockReturnValue(0);
+        fetchMock.mockResolvedValueOnce(
+          htmlResponse(
+            200,
+            ogImageHtml('https://lastfm.freetls.fastly.net/i/u/ar0/muse.jpg'),
+          ),
+        );
+        await service.getArtistImage('Muse');
+
+        // Cache périmé (25 h plus tard) et Last.fm en panne (406 anti-bot).
+        nowSpy.mockReturnValue(25 * 60 * 60 * 1000);
+        fetchMock.mockResolvedValueOnce(htmlResponse(406, ''));
+
+        const result = await service.getArtistImage('Muse');
+
+        expect(result).toBe(
+          'https://lastfm.freetls.fastly.net/i/u/ar0/muse.jpg',
+        );
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      } finally {
+        nowSpy.mockRestore();
+      }
+    });
+  });
+
+  describe('withArtistImages', () => {
+    it("résout la photo d'un seul appel par artiste distinct, même avec plusieurs items du même artiste", async () => {
+      fetchMock.mockResolvedValueOnce(
+        htmlResponse(
+          200,
+          ogImageHtml('https://lastfm.freetls.fastly.net/i/u/ar0/muse.jpg'),
+        ),
+      );
+
+      const result = await service.withArtistImages([
+        { id: 'concert-1', artistName: 'Muse' },
+        { id: 'concert-2', artistName: 'Muse' },
+      ]);
+
+      expect(result).toEqual([
+        {
+          id: 'concert-1',
+          artistName: 'Muse',
+          artistImageUrl: 'https://lastfm.freetls.fastly.net/i/u/ar0/muse.jpg',
+        },
+        {
+          id: 'concert-2',
+          artistName: 'Muse',
+          artistImageUrl: 'https://lastfm.freetls.fastly.net/i/u/ar0/muse.jpg',
+        },
+      ]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('renvoie `artistImageUrl: null` pour un artiste sans photo trouvée', async () => {
+      fetchMock.mockResolvedValueOnce(htmlResponse(200, '<html></html>'));
+
+      const result = await service.withArtistImages([
+        { id: 'concert-1', artistName: 'Artiste inconnu' },
+      ]);
+
+      expect(result).toEqual([
+        {
+          id: 'concert-1',
+          artistName: 'Artiste inconnu',
+          artistImageUrl: null,
+        },
+      ]);
+    });
+
+    it('ne fait aucun appel réseau pour une liste vide', async () => {
+      const result = await service.withArtistImages([]);
+
+      expect(result).toEqual([]);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
   });
 });

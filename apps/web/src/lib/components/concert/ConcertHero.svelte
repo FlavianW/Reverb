@@ -18,34 +18,54 @@
 	);
 </script>
 
-<header class="hero">
+<!-- La photo est décorative (le nom de l'artiste est le titre) : fond CSS + aria-hidden.
+     Le dégradé la fond dans le papier, le texte reste donc sur fond ~uni et garde
+     ses couleurs de thème — contraste préservé en clair comme en sombre (RGAA). -->
+<header class="hero" class:has-photo={concert.artistImageUrl}>
 	{#if concert.artistImageUrl}
-		<img class="artist-photo" src={concert.artistImageUrl} alt={concert.artistName} />
+		<div
+			class="backdrop"
+			style:background-image="url({concert.artistImageUrl})"
+			aria-hidden="true"
+		></div>
 	{/if}
-	<div class="text">
-		<h1>{concert.artistName}</h1>
-		<p class="venue">{concert.venueName}, {concert.city} — {formattedDate}</p>
+	<div class="content">
+		<div class="text">
+			<h1>{concert.artistName}</h1>
+			<p class="venue">{concert.venueName}, {concert.city} — {formattedDate}</p>
+		</div>
+		<AttendanceButton concertId={concert.id} initialAttending={attending} />
 	</div>
-	<AttendanceButton concertId={concert.id} initialAttending={attending} />
 </header>
 
 <style>
 	.hero {
+		position: relative;
+	}
+
+	.backdrop {
+		position: absolute;
+		inset: 0;
+		background-size: cover;
+		background-position: center 25%;
+		mask-image: linear-gradient(to bottom, black 0%, transparent 96%);
+		-webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 96%);
+		opacity: 0.45;
+	}
+
+	.hero.has-photo {
+		padding-top: 13rem;
+	}
+
+	.content {
+		position: relative;
 		display: flex;
-		align-items: flex-start;
+		align-items: flex-end;
 		justify-content: space-between;
 		gap: 1.5rem;
 		padding: 3rem 3rem 2rem;
 		max-width: 1200px;
 		margin: 0 auto;
-	}
-
-	.artist-photo {
-		width: 88px;
-		height: 88px;
-		border-radius: 50%;
-		object-fit: cover;
-		flex-shrink: 0;
 	}
 
 	.text {
@@ -60,6 +80,10 @@
 		margin: 0 0 0.5rem;
 	}
 
+	.hero.has-photo h1 {
+		font-size: 3rem;
+	}
+
 	.venue {
 		color: var(--ink-soft);
 		font-size: 1rem;
@@ -67,9 +91,18 @@
 	}
 
 	@media (max-width: 640px) {
-		.hero {
+		.hero.has-photo {
+			padding-top: 7rem;
+		}
+
+		.content {
 			flex-direction: column;
+			align-items: stretch;
 			padding: 2rem 1.25rem 1.5rem;
+		}
+
+		.hero.has-photo h1 {
+			font-size: 2.25rem;
 		}
 	}
 </style>
