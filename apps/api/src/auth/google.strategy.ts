@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy } from 'passport-google-oauth20';
 import { GoogleProfile } from '../user/user.service';
+import { OAuthStateStore } from './oauth-state.store';
 
 /** Flux OAuth Google côté web (US-1.1) : redirection navigateur + callback. */
 @Injectable()
@@ -13,6 +14,11 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientSecret: configService.getOrThrow<string>('GOOGLE_CLIENT_SECRET'),
       callbackURL: configService.getOrThrow<string>('GOOGLE_CALLBACK_URL'),
       scope: ['email', 'profile'],
+      // Vérifie le paramètre `state` du callback OAuth contre un nonce posé
+      // en cookie httpOnly à l'aller (voir OAuthStateStore) : sans ce store,
+      // passport-oauth2 accepte n'importe quel `state`, ouvrant une CSRF de
+      // connexion (compte de l'attaquant imposé à la victime).
+      store: new OAuthStateStore(),
     });
   }
 
