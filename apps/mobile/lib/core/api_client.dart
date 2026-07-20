@@ -26,7 +26,7 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
-/// URL de l'API en production (ALB → ECS Fargate, voir CLAUDE.md).
+/// URL de l'API en production (ALB → ECS Fargate).
 const _prodApiUrl = 'https://api.reverb-social.com';
 
 /// Adresse de l'API selon la plateforme d'exécution. Un build release (ex.

@@ -21,8 +21,8 @@ import 'concert_screen.dart';
 
 /// Miroir de `apps/web/src/routes/profil/[pseudo]/+page.svelte` : édition
 /// visible seulement si `session.user.pseudo == pseudo` (le propriétaire du
-/// profil), pas d'onglets Médias/À propos (voir CLAUDE.md — hors périmètre,
-/// pas de champ correspondant côté API).
+/// profil), pas d'onglets Médias/À propos (hors périmètre du MVP, pas de
+/// champ correspondant côté API).
 class ProfilScreen extends StatefulWidget {
   final String pseudo;
 
