@@ -11,6 +11,17 @@
 	}
 
 	let { profile, editableAs, friendshipStatus }: Props = $props();
+
+	// Une photo qui échoue à charger retombe sur l'initiale, comme le reste
+	// des cartes concert/recherche — réinitialisé si l'URL change (nouveau profil visité).
+	let imageFailed = $state(false);
+	let lastImageUrl = profile.favoriteArtistImageUrl;
+	$effect(() => {
+		if (profile.favoriteArtistImageUrl !== lastImageUrl) {
+			lastImageUrl = profile.favoriteArtistImageUrl;
+			imageFailed = false;
+		}
+	});
 </script>
 
 <header class="profile-header">
@@ -43,8 +54,12 @@
 	{#if profile.favoriteArtist}
 		<div class="favorite-artist-wrap">
 			<div class="favorite-artist">
-				{#if profile.favoriteArtistImageUrl}
-					<img src={profile.favoriteArtistImageUrl} alt={profile.favoriteArtist} />
+				{#if profile.favoriteArtistImageUrl && !imageFailed}
+					<img
+						src={profile.favoriteArtistImageUrl}
+						alt={profile.favoriteArtist}
+						onerror={() => (imageFailed = true)}
+					/>
 				{:else}
 					<div class="favorite-artist-placeholder" aria-hidden="true">
 						{profile.favoriteArtist.charAt(0).toUpperCase()}

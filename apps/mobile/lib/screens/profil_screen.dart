@@ -360,14 +360,31 @@ class _ProfilScreenState extends State<ProfilScreen> {
 }
 
 /// Bandeau proéminent, miroir du bloc "artiste favori" de `ProfileHeader.svelte`.
-class _FavoriteArtistCard extends StatelessWidget {
+class _FavoriteArtistCard extends StatefulWidget {
   final String name;
   final String? imageUrl;
 
   const _FavoriteArtistCard({required this.name, required this.imageUrl});
 
   @override
+  State<_FavoriteArtistCard> createState() => _FavoriteArtistCardState();
+}
+
+class _FavoriteArtistCardState extends State<_FavoriteArtistCard> {
+  bool _imageFailed = false;
+
+  @override
+  void didUpdateWidget(covariant _FavoriteArtistCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      _imageFailed = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final showImage = widget.imageUrl != null && !_imageFailed;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -380,10 +397,18 @@ class _FavoriteArtistCard extends StatelessWidget {
           CircleAvatar(
             radius: 32,
             backgroundColor: context.colors.accentSoft,
-            backgroundImage: imageUrl != null ? NetworkImage(imageUrl!) : null,
-            child: imageUrl == null
+            backgroundImage: showImage ? NetworkImage(widget.imageUrl!) : null,
+            // Une photo qui ne charge pas retombe sur l'initiale, comme
+            // `ConcertCard._Fallback` — `CircleAvatar` n'a pas d'`errorBuilder`,
+            // d'où ce callback + état local pour reconstruire sans elle.
+            onBackgroundImageError: showImage
+                ? (_, _) => setState(() => _imageFailed = true)
+                : null,
+            child: !showImage
                 ? Text(
-                    name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
+                    widget.name.isEmpty
+                        ? '?'
+                        : widget.name.substring(0, 1).toUpperCase(),
                     style: TextStyle(
                       color: context.colors.accentDeep,
                       fontWeight: FontWeight.w700,
@@ -408,7 +433,7 @@ class _FavoriteArtistCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  name,
+                  widget.name,
                   style: TextStyle(
                     color: context.colors.ink,
                     fontSize: 19,
