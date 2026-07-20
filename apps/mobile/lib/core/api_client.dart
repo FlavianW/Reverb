@@ -136,12 +136,14 @@ class ApiClient {
 
   // Concerts
 
-  Future<List<Concert>> searchConcerts([String? q]) => _request(
+  /// Sans requête, renvoie les concerts récents du catalogue (et déclenche
+  /// côté API l'import découverte des derniers concerts joués en France).
+  Future<List<ConcertSearchResult>> searchConcerts([String? q]) => _request(
     'GET',
     '/concerts/search',
     query: q != null && q.isNotEmpty ? {'q': q} : null,
     decode: (d) => (d as List<dynamic>)
-        .map((e) => Concert.fromJson(e as Map<String, dynamic>))
+        .map((e) => ConcertSearchResult.fromJson(e as Map<String, dynamic>))
         .toList(),
   );
 
