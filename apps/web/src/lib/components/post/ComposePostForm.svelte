@@ -11,6 +11,7 @@
 
 	let content = $state('');
 	let photos = $state<File[]>([]);
+	let video = $state<File | null>(null);
 	let concertQuery = $state('');
 	let concertResults = $state<Concert[]>([]);
 	let concertActiveIndex = $state(-1);
@@ -21,9 +22,24 @@
 	const concertListboxId = 'compose-concert-listbox';
 	const concertOptionId = (index: number) => `${concertListboxId}-option-${index}`;
 
-	function handleFiles(event: Event) {
+	function handlePhotos(event: Event) {
 		const input = event.target as HTMLInputElement;
-		photos = input.files ? Array.from(input.files).slice(0, 4) : [];
+		const files = input.files ? Array.from(input.files).slice(0, 4) : [];
+		if (files.length > 0) {
+			video = null;
+		}
+		photos = files;
+	}
+
+	// Un post a soit des photos, soit une vidéo, jamais les deux (contrainte
+	// imposée côté API) : sélectionner l'une efface l'autre.
+	function handleVideo(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0] ?? null;
+		if (file) {
+			photos = [];
+		}
+		video = file;
 	}
 
 	async function searchConcerts() {
@@ -67,21 +83,24 @@
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
-		if (!content.trim() && photos.length === 0) {
-			error = 'Ajoutez du texte ou au moins une photo.';
+		if (!content.trim() && photos.length === 0 && !video) {
+			error = 'Ajoutez du texte, des photos ou une vidéo.';
 			return;
 		}
 
 		submitting = true;
 		error = null;
 		try {
-			const post = await api.createPost({
-				content: content.trim() || undefined,
-				concertId: selectedConcert?.id,
-				photos
-			});
+			const post = video
+				? await submitVideoPost(video)
+				: await api.createPost({
+						content: content.trim() || undefined,
+						concertId: selectedConcert?.id,
+						photos
+					});
 			content = '';
 			photos = [];
+			video = null;
 			selectedConcert = null;
 			onPosted(post);
 		} catch (e) {
@@ -89,6 +108,17 @@
 		} finally {
 			submitting = false;
 		}
+	}
+
+	async function submitVideoPost(file: File): Promise<PostSummary> {
+		const presigned = await api.presignPostVideo(file.type);
+		await api.uploadVideoToStorage(presigned, file);
+		return api.createVideoPost({
+			postId: presigned.postId,
+			key: presigned.key,
+			content: content.trim() || undefined,
+			concertId: selectedConcert?.id
+		});
 	}
 </script>
 
@@ -144,23 +174,49 @@
 	{/if}
 
 	<div class="photo-input">
-		<label class="photo-upload-button" for="compose-photos">
-			<span class="plus" aria-hidden="true">+</span>
-			Ajouter des photos
-		</label>
-		<input
-			id="compose-photos"
-			type="file"
-			accept="image/jpeg,image/png,image/webp"
-			multiple
-			class="sr-only"
-			onchange={handleFiles}
-		/>
-		<p class="photo-count">
-			{photos.length > 0
-				? `${photos.length} photo${photos.length > 1 ? 's' : ''} sélectionnée${photos.length > 1 ? 's' : ''}`
-				: '4 photos maximum'}
-		</p>
+		{#if !video}
+			<label class="photo-upload-button" for="compose-photos">
+				<span class="plus" aria-hidden="true">+</span>
+				Ajouter des photos
+			</label>
+			<input
+				id="compose-photos"
+				type="file"
+				accept="image/jpeg,image/png,image/webp"
+				multiple
+				class="sr-only"
+				onchange={handlePhotos}
+			/>
+		{/if}
+		{#if photos.length === 0}
+			<label class="photo-upload-button" for="compose-video">
+				<span class="plus" aria-hidden="true">+</span>
+				Ajouter une vidéo
+			</label>
+			<input
+				id="compose-video"
+				type="file"
+				accept="video/mp4,video/quicktime"
+				class="sr-only"
+				onchange={handleVideo}
+			/>
+		{/if}
+		{#if photos.length > 0}
+			<p class="photo-count">
+				{photos.length} photo{photos.length > 1 ? 's' : ''} sélectionnée{photos.length > 1
+					? 's'
+					: ''}
+			</p>
+		{:else if video}
+			<p class="photo-count">
+				Vidéo sélectionnée : {video.name}
+				<button type="button" class="remove-media" onclick={() => (video = null)}>
+					Retirer
+				</button>
+			</p>
+		{:else}
+			<p class="photo-count">4 photos maximum, ou 1 vidéo (mp4/mov, 150 Mo maximum)</p>
+		{/if}
 	</div>
 
 	{#if error}
@@ -290,6 +346,17 @@
 		font-size: 0.8125rem;
 		color: var(--ink-soft);
 		margin: 0.5rem 0 0;
+	}
+
+	.remove-media {
+		border: none;
+		background: none;
+		color: var(--accent-deep);
+		text-decoration: underline;
+		font-size: inherit;
+		cursor: pointer;
+		padding: 0;
+		margin-left: 0.375rem;
 	}
 
 	.error {

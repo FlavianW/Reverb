@@ -18,6 +18,27 @@
 	}: Props = $props();
 
 	let loading = $state(false);
+	let pollCount = $state(0);
+	const MAX_POLLS = 15;
+
+	// Le transcodage vidéo est asynchrone (Lambda déclenché par S3) : tant
+	// qu'un post affiché a une vidéo en PROCESSING, on rafraîchit la première
+	// page à intervalle et on fusionne par id, sans perturber la pagination
+	// déjà chargée au-delà (pas de nouvel endpoint dédié pour ça).
+	$effect(() => {
+		const hasProcessing = items.some((item) => item.video?.status === 'PROCESSING');
+		if (!hasProcessing || pollCount >= MAX_POLLS) return;
+
+		const timeout = setTimeout(async () => {
+			const page =
+				source.type === 'feed' ? await api.getFeed() : await api.getUserPosts(source.pseudo);
+			const byId = new Map(page.items.map((item) => [item.id, item]));
+			items = items.map((item) => byId.get(item.id) ?? item);
+			pollCount += 1;
+		}, 4000);
+
+		return () => clearTimeout(timeout);
+	});
 
 	async function loadMore() {
 		if (!cursor) return;
