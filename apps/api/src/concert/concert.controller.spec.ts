@@ -7,6 +7,7 @@ import { ConcertService } from './concert.service';
 import { CommentService } from './comment/comment.service';
 import { PhotoService } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
+import { ConcertVideoService } from './video/video.service';
 
 describe('ConcertController', () => {
   let controller: ConcertController;
@@ -25,6 +26,7 @@ describe('ConcertController', () => {
   let ratingService: { rate: jest.Mock };
   let commentService: { create: jest.Mock };
   let photoService: { uploadForConcert: jest.Mock };
+  let videoService: { presignUpload: jest.Mock; confirmUpload: jest.Mock };
 
   const currentUser: PublicUser = {
     id: 'user-1',
@@ -51,6 +53,7 @@ describe('ConcertController', () => {
     ratingService = { rate: jest.fn() };
     commentService = { create: jest.fn() };
     photoService = { uploadForConcert: jest.fn() };
+    videoService = { presignUpload: jest.fn(), confirmUpload: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ConcertController],
@@ -60,6 +63,7 @@ describe('ConcertController', () => {
         { provide: ConcertRatingService, useValue: ratingService },
         { provide: CommentService, useValue: commentService },
         { provide: PhotoService, useValue: photoService },
+        { provide: ConcertVideoService, useValue: videoService },
       ],
     }).compile();
 
@@ -271,6 +275,79 @@ describe('ConcertController', () => {
         fakeFile,
       );
       expect(result).toBe(uploaded);
+    });
+  });
+
+  describe('presignVideo', () => {
+    it("lève une 404 si le concert n'existe pas", async () => {
+      concertService.exists.mockResolvedValueOnce(false);
+
+      await expect(
+        controller.presignVideo('concert-1', { contentType: 'video/mp4' }),
+      ).rejects.toThrow(NotFoundException);
+      expect(videoService.presignUpload).not.toHaveBeenCalled();
+    });
+
+    it("délègue au service avec l'id du concert et le type de contenu", async () => {
+      concertService.exists.mockResolvedValueOnce(true);
+      const presigned = {
+        uploadUrl: 'https://reverb-media.s3.eu-west-3.amazonaws.com/',
+        fields: { key: 'concerts/concert-1/abc/original.mp4' },
+        key: 'concerts/concert-1/abc/original.mp4',
+      };
+      videoService.presignUpload.mockResolvedValueOnce(presigned);
+
+      const result = await controller.presignVideo('concert-1', {
+        contentType: 'video/mp4',
+      });
+
+      expect(videoService.presignUpload).toHaveBeenCalledWith(
+        'concert-1',
+        'video/mp4',
+      );
+      expect(result).toBe(presigned);
+    });
+  });
+
+  describe('confirmVideo', () => {
+    it("lève une 404 si le concert n'existe pas", async () => {
+      concertService.exists.mockResolvedValueOnce(false);
+
+      await expect(
+        controller.confirmVideo(
+          'concert-1',
+          { key: 'concerts/concert-1/abc/original.mp4' },
+          currentUser,
+        ),
+      ).rejects.toThrow(NotFoundException);
+      expect(videoService.confirmUpload).not.toHaveBeenCalled();
+    });
+
+    it("confirme l'upload pour l'utilisateur connecté", async () => {
+      concertService.exists.mockResolvedValueOnce(true);
+      const summary = {
+        id: 'video-1',
+        status: 'PROCESSING',
+        url: null,
+        posterUrl: null,
+        durationSeconds: null,
+        pseudo: 'ana-etoile',
+        createdAt: new Date().toISOString(),
+      };
+      videoService.confirmUpload.mockResolvedValueOnce(summary);
+
+      const result = await controller.confirmVideo(
+        'concert-1',
+        { key: 'concerts/concert-1/abc/original.mp4' },
+        currentUser,
+      );
+
+      expect(videoService.confirmUpload).toHaveBeenCalledWith(
+        'concert-1',
+        'user-1',
+        'concerts/concert-1/abc/original.mp4',
+      );
+      expect(result).toBe(summary);
     });
   });
 });

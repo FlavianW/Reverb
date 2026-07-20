@@ -1,6 +1,7 @@
 import type { CommentSummary } from './comment';
 import type { PhotoSummary } from './photo';
 import type { ConcertRatingSummary } from './rating';
+import type { ConcertVideoSummary } from './video';
 
 /**
  * Forme JSON réellement reçue par le client — les champs date sont des
@@ -32,6 +33,7 @@ export interface ConcertPage extends Concert {
   rating: ConcertRatingSummary;
   comments: CommentSummary[];
   photos: PhotoSummary[];
+  videos: ConcertVideoSummary[];
   /** Photo de l'artiste via Last.fm, `null` si introuvable. */
   artistImageUrl: string | null;
 }

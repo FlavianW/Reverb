@@ -2,6 +2,7 @@ import type { ConfigService } from '@nestjs/config';
 import { S3Service } from './s3.service';
 
 const sendMock = jest.fn();
+const createPresignedPostMock = jest.fn();
 
 jest.mock('@aws-sdk/client-s3', () => ({
   S3Client: jest.fn().mockImplementation(() => ({ send: sendMock })),
@@ -11,6 +12,19 @@ jest.mock('@aws-sdk/client-s3', () => ({
   DeleteObjectCommand: jest
     .fn()
     .mockImplementation((input: unknown) => ({ input })),
+  HeadObjectCommand: jest
+    .fn()
+    .mockImplementation((input: unknown) => ({ input })),
+}));
+
+jest.mock('@aws-sdk/s3-presigned-post', () => ({
+  createPresignedPost: (
+    ...args: unknown[]
+  ): Promise<{ url: string; fields: Record<string, string> }> =>
+    createPresignedPostMock(...args) as Promise<{
+      url: string;
+      fields: Record<string, string>;
+    }>,
 }));
 
 describe('S3Service', () => {
@@ -30,6 +44,7 @@ describe('S3Service', () => {
 
   beforeEach(() => {
     sendMock.mockReset().mockResolvedValue({});
+    createPresignedPostMock.mockReset();
     service = new S3Service(configService as unknown as ConfigService);
   });
 
@@ -65,6 +80,74 @@ describe('S3Service', () => {
     expect(command.input).toEqual({
       Bucket: 'reverb-media',
       Key: 'concerts/concert-1/photo.jpg',
+    });
+  });
+
+  describe('publicUrl', () => {
+    it('résout la même URL que celle renvoyée après un upload', () => {
+      expect(service.publicUrl('posts/post-1/original.mp4')).toBe(
+        'http://localhost:9000/reverb-media/posts/post-1/original.mp4',
+      );
+    });
+  });
+
+  describe('headObject', () => {
+    it("renvoie true quand l'objet existe", async () => {
+      sendMock.mockResolvedValueOnce({});
+
+      await expect(
+        service.headObject('posts/post-1/original.mp4'),
+      ).resolves.toBe(true);
+    });
+
+    it("renvoie false quand l'objet n'existe pas (erreur NotFound)", async () => {
+      const notFound = new Error('not found');
+      notFound.name = 'NotFound';
+      sendMock.mockRejectedValueOnce(notFound);
+
+      await expect(
+        service.headObject('posts/post-1/original.mp4'),
+      ).resolves.toBe(false);
+    });
+
+    it('relance toute autre erreur inattendue', async () => {
+      sendMock.mockRejectedValueOnce(new Error('S3 down'));
+
+      await expect(
+        service.headObject('posts/post-1/original.mp4'),
+      ).rejects.toThrow('S3 down');
+    });
+  });
+
+  describe('createPresignedUpload', () => {
+    it('délègue à createPresignedPost avec la taille max et le type MIME imposés', async () => {
+      createPresignedPostMock.mockResolvedValueOnce({
+        url: 'http://localhost:9000/reverb-media',
+        fields: { key: 'posts/post-1/original.mp4' },
+      });
+
+      const result = await service.createPresignedUpload(
+        'posts/post-1/original.mp4',
+        'video/mp4',
+        150 * 1024 * 1024,
+      );
+
+      expect(createPresignedPostMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          Bucket: 'reverb-media',
+          Key: 'posts/post-1/original.mp4',
+          Conditions: [
+            ['content-length-range', 0, 150 * 1024 * 1024],
+            ['eq', '$Content-Type', 'video/mp4'],
+          ],
+          Fields: { 'Content-Type': 'video/mp4' },
+        }),
+      );
+      expect(result).toEqual({
+        url: 'http://localhost:9000/reverb-media',
+        fields: { key: 'posts/post-1/original.mp4' },
+      });
     });
   });
 });

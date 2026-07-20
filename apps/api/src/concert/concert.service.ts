@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Concert } from '@prisma/client';
-import type { ConcertRatingSummary } from '@reverb/shared';
+import type { ConcertRatingSummary, ConcertVideoSummary } from '@reverb/shared';
 import { LastFmService } from '../artist/lastfm.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommentService, CommentSummary } from './comment/comment.service';
@@ -12,6 +12,7 @@ import {
   SetlistFmResult,
   SetlistFmService,
 } from './setlistfm.service';
+import { ConcertVideoService } from './video/video.service';
 
 export interface CreateConcertInput {
   artistName: string;
@@ -53,6 +54,7 @@ export interface ConcertPage extends Concert {
   rating: ConcertRatingSummary;
   comments: CommentSummary[];
   photos: PhotoSummary[];
+  videos: ConcertVideoSummary[];
   artistImageUrl: string | null;
 }
 
@@ -87,6 +89,7 @@ export class ConcertService {
     private readonly ratingService: ConcertRatingService,
     private readonly commentService: CommentService,
     private readonly photoService: PhotoService,
+    private readonly videoService: ConcertVideoService,
     private readonly lastFmService: LastFmService,
   ) {}
 
@@ -261,7 +264,7 @@ export class ConcertService {
     }
 
     const isPast = concert.date.getTime() <= Date.now();
-    const [setlist, rating, comments, photos, artistImageUrl] =
+    const [setlist, rating, comments, photos, videos, artistImageUrl] =
       await Promise.all([
         isPast
           ? this.setlistFmService.findSetlist({
@@ -273,9 +276,18 @@ export class ConcertService {
         this.ratingService.getSummary(id),
         this.commentService.findByConcert(id),
         this.photoService.findByConcert(id),
+        this.videoService.findByConcert(id),
         this.lastFmService.getArtistImage(concert.artistName),
       ]);
 
-    return { ...concert, setlist, rating, comments, photos, artistImageUrl };
+    return {
+      ...concert,
+      setlist,
+      rating,
+      comments,
+      photos,
+      videos,
+      artistImageUrl,
+    };
   }
 }

@@ -7,6 +7,7 @@ import { GeocodingService } from './geocoding.service';
 import { PhotoService } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { SetlistFmService } from './setlistfm.service';
+import { ConcertVideoService } from './video/video.service';
 
 describe('ConcertService', () => {
   let service: ConcertService;
@@ -27,6 +28,7 @@ describe('ConcertService', () => {
   let ratingService: { getSummary: jest.Mock };
   let commentService: { findByConcert: jest.Mock };
   let photoService: { findByConcert: jest.Mock };
+  let videoService: { findByConcert: jest.Mock };
   let lastFmService: { getArtistImage: jest.Mock };
 
   const baseConcert = {
@@ -41,6 +43,7 @@ describe('ConcertService', () => {
   const emptyRating = { average: null, count: 0 };
   const noComments: never[] = [];
   const noPhotos: never[] = [];
+  const noVideos: never[] = [];
 
   beforeEach(async () => {
     prisma = {
@@ -60,6 +63,7 @@ describe('ConcertService', () => {
     ratingService = { getSummary: jest.fn().mockResolvedValue(emptyRating) };
     commentService = { findByConcert: jest.fn().mockResolvedValue(noComments) };
     photoService = { findByConcert: jest.fn().mockResolvedValue(noPhotos) };
+    videoService = { findByConcert: jest.fn().mockResolvedValue(noVideos) };
     lastFmService = { getArtistImage: jest.fn().mockResolvedValue(null) };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -71,6 +75,7 @@ describe('ConcertService', () => {
         { provide: ConcertRatingService, useValue: ratingService },
         { provide: CommentService, useValue: commentService },
         { provide: PhotoService, useValue: photoService },
+        { provide: ConcertVideoService, useValue: videoService },
         { provide: LastFmService, useValue: lastFmService },
       ],
     }).compile();
@@ -164,6 +169,7 @@ describe('ConcertService', () => {
         rating: emptyRating,
         comments: noComments,
         photos: noPhotos,
+        videos: noVideos,
         artistImageUrl: null,
       });
     });
@@ -189,6 +195,7 @@ describe('ConcertService', () => {
         rating: emptyRating,
         comments: noComments,
         photos: noPhotos,
+        videos: noVideos,
         artistImageUrl: null,
       });
     });
@@ -209,6 +216,7 @@ describe('ConcertService', () => {
         rating: emptyRating,
         comments: noComments,
         photos: noPhotos,
+        videos: noVideos,
         artistImageUrl: null,
       });
     });

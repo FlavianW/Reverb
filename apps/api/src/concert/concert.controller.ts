@@ -16,7 +16,11 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Comment, Concert } from '@prisma/client';
-import type { PublicUser } from '@reverb/shared';
+import type {
+  ConcertVideoSummary,
+  PresignVideoUploadResponse,
+  PublicUser,
+} from '@reverb/shared';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { buildImageFileValidator } from '../media/image-upload.validator';
@@ -35,6 +39,9 @@ import { SearchConcertsDto } from './dto/search-concerts.dto';
 import { PhotoService, PhotoSummary } from './photo/photo.service';
 import { ConcertRatingService } from './rating/concert-rating.service';
 import { RateConcertDto } from './rating/dto/rate-concert.dto';
+import { ConfirmVideoDto } from './video/dto/confirm-video.dto';
+import { PresignVideoDto } from './video/dto/presign-video.dto';
+import { ConcertVideoService } from './video/video.service';
 
 @Controller('concerts')
 export class ConcertController {
@@ -44,6 +51,7 @@ export class ConcertController {
     private readonly ratingService: ConcertRatingService,
     private readonly commentService: CommentService,
     private readonly photoService: PhotoService,
+    private readonly videoService: ConcertVideoService,
   ) {}
 
   /** Crée une page concert saisie manuellement (US-2.1), géocodée pour la carte (US-9.1). */
@@ -176,6 +184,29 @@ export class ConcertController {
   ): Promise<PhotoSummary> {
     await this.assertConcertExists(id);
     return this.photoService.uploadForConcert(id, user.id, file);
+  }
+
+  /** Demande une URL d'upload vidéo direct vers S3 pour la galerie du concert (US-5.1). */
+  @Post(':id/videos/presign')
+  @UseGuards(JwtAuthGuard)
+  async presignVideo(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: PresignVideoDto,
+  ): Promise<PresignVideoUploadResponse> {
+    await this.assertConcertExists(id);
+    return this.videoService.presignUpload(id, dto.contentType);
+  }
+
+  /** Confirme qu'une vidéo présignée a bien été déposée sur S3 (US-5.1). */
+  @Post(':id/videos')
+  @UseGuards(JwtAuthGuard)
+  async confirmVideo(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ConfirmVideoDto,
+    @CurrentUser() user: PublicUser,
+  ): Promise<ConcertVideoSummary> {
+    await this.assertConcertExists(id);
+    return this.videoService.confirmUpload(id, user.id, dto.key);
   }
 
   private async assertConcertExists(id: string): Promise<void> {
