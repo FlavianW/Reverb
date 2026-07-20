@@ -27,6 +27,8 @@ describe('HealthController', () => {
   it('lève une ServiceUnavailableException quand la base est injoignable', async () => {
     prisma.$queryRaw.mockRejectedValue(new Error('connexion refusée'));
 
-    await expect(controller.check()).rejects.toThrow(ServiceUnavailableException);
+    await expect(controller.check()).rejects.toThrow(
+      ServiceUnavailableException,
+    );
   });
 });
