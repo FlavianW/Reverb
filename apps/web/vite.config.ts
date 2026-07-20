@@ -38,6 +38,10 @@ export default defineConfig({
 	test: {
 		environment: 'jsdom',
 		setupFiles: ['./vitest-setup.ts'],
-		include: ['src/**/*.{test,spec}.{js,ts}']
+		include: ['src/**/*.{test,spec}.{js,ts}'],
+		// Sans ça, l'historique d'appels d'un vi.fn() d'un test survit au
+		// suivant (les mocks sont déclarés une fois au niveau du module via
+		// vi.hoisted) — un test peut alors voir les appels d'un précédent.
+		clearMocks: true
 	}
 });
