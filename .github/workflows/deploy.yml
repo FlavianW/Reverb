@@ -1,0 +1,109 @@
+name: Déploiement AWS
+
+# Authentification par fédération OIDC (aucune clé AWS stockée côté GitHub) :
+# le rôle assumé (reverb-github-actions-deploy) n'accepte que ce dépôt sur la
+# branche develop, et n'autorise que le push sur les deux repos ECR et la
+# mise à jour des deux services ECS concernés — voir sa policy pour le détail.
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-3
+  ECR_REGISTRY: 964775859021.dkr.ecr.eu-west-3.amazonaws.com
+  ECS_CLUSTER: reverb-cluster
+  AWS_ROLE_ARN: arn:aws:iam::964775859021:role/reverb-github-actions-deploy
+
+jobs:
+  deploy-api:
+    name: Déployer l'API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      # Depuis la racine, jamais depuis apps/api : le build a besoin de packages/shared (voir CLAUDE.md).
+      - name: Build et pousse l'image
+        run: |
+          docker build -f apps/api/Dockerfile \
+            -t $ECR_REGISTRY/reverb-api:${{ github.sha }} \
+            -t $ECR_REGISTRY/reverb-api:latest \
+            .
+          docker push $ECR_REGISTRY/reverb-api:${{ github.sha }}
+          docker push $ECR_REGISTRY/reverb-api:latest
+
+      # Nouvelle révision de la task definition plutôt qu'un simple
+      # --force-new-deployment sur `:latest` : chaque déploiement référence une
+      # image identifiée par son SHA de commit, traçable et re-déployable.
+      - name: Enregistre une nouvelle révision de la task definition
+        run: |
+          aws ecs describe-task-definition --task-definition reverb-api --query taskDefinition > task-def.json
+          jq --arg IMAGE "$ECR_REGISTRY/reverb-api:${{ github.sha }}" \
+            '.containerDefinitions[0].image = $IMAGE
+             | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+            task-def.json > new-task-def.json
+          aws ecs register-task-definition --cli-input-json file://new-task-def.json
+
+      - name: Met à jour le service ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service reverb-api-svc \
+            --task-definition reverb-api \
+            --force-new-deployment
+
+  deploy-web:
+    name: Déployer le web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build et pousse l'image
+        run: |
+          docker build -f apps/web/Dockerfile \
+            --build-arg PUBLIC_API_URL=https://api.reverb-social.com \
+            -t $ECR_REGISTRY/reverb-web:${{ github.sha }} \
+            -t $ECR_REGISTRY/reverb-web:latest \
+            .
+          docker push $ECR_REGISTRY/reverb-web:${{ github.sha }}
+          docker push $ECR_REGISTRY/reverb-web:latest
+
+      - name: Enregistre une nouvelle révision de la task definition
+        run: |
+          aws ecs describe-task-definition --task-definition reverb-web --query taskDefinition > task-def.json
+          jq --arg IMAGE "$ECR_REGISTRY/reverb-web:${{ github.sha }}" \
+            '.containerDefinitions[0].image = $IMAGE
+             | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+            task-def.json > new-task-def.json
+          aws ecs register-task-definition --cli-input-json file://new-task-def.json
+
+      - name: Met à jour le service ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service reverb-web-svc \
+            --task-definition reverb-web \
+            --force-new-deployment
