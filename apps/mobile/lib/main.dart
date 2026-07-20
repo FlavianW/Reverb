@@ -3,6 +3,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'core/api_client.dart';
+import 'core/first_launch.dart';
 import 'core/session.dart';
 import 'core/theme.dart';
 import 'core/theme_controller.dart';
@@ -12,11 +13,14 @@ import 'screens/root_shell.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr_FR');
-  runApp(const ReverbApp());
+  final isFirstLaunch = await consumeFirstLaunch();
+  runApp(ReverbApp(isFirstLaunch: isFirstLaunch));
 }
 
 class ReverbApp extends StatelessWidget {
-  const ReverbApp({super.key});
+  final bool isFirstLaunch;
+
+  const ReverbApp({super.key, required this.isFirstLaunch});
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +41,7 @@ class ReverbApp extends StatelessWidget {
           theme: buildReverbLightTheme(),
           darkTheme: buildReverbDarkTheme(),
           themeMode: themeController.mode,
-          home: const _AuthGate(),
+          home: _AuthGate(isFirstLaunch: isFirstLaunch),
         ),
       ),
     );
@@ -48,7 +52,9 @@ class ReverbApp extends StatelessWidget {
 /// redirige vers la connexion tant que `SessionController` n'a pas confirmé
 /// un utilisateur authentifié.
 class _AuthGate extends StatelessWidget {
-  const _AuthGate();
+  final bool isFirstLaunch;
+
+  const _AuthGate({required this.isFirstLaunch});
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +66,7 @@ class _AuthGate extends StatelessWidget {
       case SessionStatus.authenticated:
         return const RootShell();
       case SessionStatus.anonymous:
-        return const ConnexionScreen();
+        return ConnexionScreen(initialSignup: isFirstLaunch);
       case SessionStatus.error:
         return const Scaffold(
           body: Center(
