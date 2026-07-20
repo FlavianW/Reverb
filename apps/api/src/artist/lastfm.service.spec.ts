@@ -287,7 +287,11 @@ describe('LastFmService', () => {
       ]);
 
       expect(result).toEqual([
-        { id: 'concert-1', artistName: 'Artiste inconnu', artistImageUrl: null },
+        {
+          id: 'concert-1',
+          artistName: 'Artiste inconnu',
+          artistImageUrl: null,
+        },
       ]);
     });
 

@@ -188,8 +188,9 @@ export class ConcertService {
     }
     this.lastDiscoveryAt = Date.now();
 
-    const matches =
-      await this.setlistFmService.findRecentConcerts(DISCOVERY_COUNTRY_CODE);
+    const matches = await this.setlistFmService.findRecentConcerts(
+      DISCOVERY_COUNTRY_CODE,
+    );
     await this.importMatches(matches, createdById);
   }
 

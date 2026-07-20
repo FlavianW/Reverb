@@ -44,7 +44,10 @@ describe('UserService', () => {
       withArtistImages: jest.fn(async (items: { artistName: string }[]) => {
         const distinctArtists = [...new Set(items.map((i) => i.artistName))];
         const images = await Promise.all(
-          distinctArtists.map((name) => lastFmService.getArtistImage(name)),
+          distinctArtists.map(
+            (name) =>
+              lastFmService.getArtistImage(name) as Promise<string | null>,
+          ),
         );
         const imageByArtist = new Map(
           distinctArtists.map((name, index) => [name, images[index]]),
