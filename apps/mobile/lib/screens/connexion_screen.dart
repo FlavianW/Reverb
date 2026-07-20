@@ -22,14 +22,19 @@ Future<void> _ensureGoogleSignInInitialized() {
 
 /// Miroir de `apps/web/src/lib/components/auth/LoginSignupForm.svelte`.
 class ConnexionScreen extends StatefulWidget {
-  const ConnexionScreen({super.key});
+  /// Ouvre sur le formulaire d'inscription plutôt que de connexion : réservé
+  /// au tout premier lancement de l'app (voir `main.dart`), où « Bon retour
+  /// parmi nous » n'aurait pas de sens pour quelqu'un qui n'est jamais venu.
+  final bool initialSignup;
+
+  const ConnexionScreen({super.key, this.initialSignup = false});
 
   @override
   State<ConnexionScreen> createState() => _ConnexionScreenState();
 }
 
 class _ConnexionScreenState extends State<ConnexionScreen> {
-  bool isSignup = false;
+  late bool isSignup = widget.initialSignup;
   final _pseudoController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
