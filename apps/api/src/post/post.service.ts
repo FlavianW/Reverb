@@ -7,8 +7,17 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Post, PostPhoto, Prisma } from '@prisma/client';
-import type { PostPage, PostSummary } from '@reverb/shared';
+import { Post, PostPhoto, Prisma, Video } from '@prisma/client';
+import type {
+  PostPage,
+  PostSummary,
+  PresignPostVideoUploadResponse,
+} from '@reverb/shared';
+import {
+  MAX_VIDEO_SIZE_BYTES,
+  VIDEO_EXTENSION_BY_MIME_TYPE,
+  isAllowedVideoMimeType,
+} from '../media/video-upload.config';
 import { S3Service } from '../media/s3.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -25,6 +34,7 @@ const POST_INCLUDE = (viewerId: string) =>
       select: { id: true, artistName: true, venueName: true, city: true },
     },
     photos: true,
+    video: true,
     likes: { where: { userId: viewerId }, select: { id: true } },
     _count: { select: { likes: true } },
   }) satisfies Prisma.PostInclude;
@@ -38,6 +48,7 @@ type PostWithRelations = Post & {
     city: string;
   } | null;
   photos: PostPhoto[];
+  video: Video | null;
   likes: { id: string }[];
   _count: { likes: number };
 };
@@ -141,10 +152,68 @@ export class PostService {
     return this.toSummary(post);
   }
 
+  /**
+   * Génère une URL d'upload vidéo direct vers S3 pour un futur post. L'id du
+   * post est décidé ici (avant qu'il existe) afin que la clé S3 puisse le
+   * référencer ; le client renvoie ce même id à `createVideoPost`.
+   */
+  async presignVideoUpload(
+    contentType: string,
+  ): Promise<PresignPostVideoUploadResponse> {
+    if (!isAllowedVideoMimeType(contentType)) {
+      throw new BadRequestException(
+        'Format vidéo non supporté (MP4 ou MOV attendu).',
+      );
+    }
+    const postId = randomUUID();
+    const extension = VIDEO_EXTENSION_BY_MIME_TYPE[contentType];
+    const key = `posts/${postId}/original.${extension}`;
+    const { url, fields } = await this.s3Service.createPresignedUpload(
+      key,
+      contentType,
+      MAX_VIDEO_SIZE_BYTES,
+    );
+    return { uploadUrl: url, fields, key, postId };
+  }
+
+  /** Crée un post explicite dont le média est une vidéo déjà uploadée (mutuellement exclusif des photos). */
+  async createVideoPost(
+    authorId: string,
+    input: {
+      postId: string;
+      key: string;
+      content?: string;
+      concertId?: string;
+    },
+  ): Promise<PostSummary> {
+    if (!input.key.startsWith(`posts/${input.postId}/original.`)) {
+      throw new BadRequestException('Clé vidéo invalide pour ce post.');
+    }
+    if (!(await this.s3Service.headObject(input.key))) {
+      throw new BadRequestException(
+        "La vidéo n'a pas été trouvée dans le stockage — vérifiez que l'upload est terminé.",
+      );
+    }
+
+    const post = await this.prisma.post.create({
+      data: {
+        id: input.postId,
+        type: 'PHOTO',
+        authorId,
+        concertId: input.concertId,
+        content: input.content,
+        video: { create: { key: input.key, uploadedById: authorId } },
+      },
+      include: POST_INCLUDE(authorId),
+    });
+
+    return this.toSummary(post);
+  }
+
   async delete(postId: string, userId: string): Promise<void> {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
-      include: { photos: true },
+      include: { photos: true, video: true },
     });
     if (!post) {
       throw new NotFoundException('Post introuvable.');
@@ -155,6 +224,15 @@ export class PostService {
 
     for (const photo of post.photos) {
       await this.s3Service.deleteObject(photo.key);
+    }
+    if (post.video) {
+      await this.s3Service.deleteObject(post.video.key);
+      if (post.video.playbackKey) {
+        await this.s3Service.deleteObject(post.video.playbackKey);
+      }
+      if (post.video.posterKey) {
+        await this.s3Service.deleteObject(post.video.posterKey);
+      }
     }
     await this.prisma.post.delete({ where: { id: postId } });
   }
@@ -229,6 +307,15 @@ export class PostService {
       content: post.content,
       ratingValue: post.ratingValue,
       photos: post.photos.map((photo) => ({ id: photo.id, url: photo.url })),
+      video: post.video
+        ? {
+            id: post.video.id,
+            status: post.video.status,
+            url: post.video.playbackUrl,
+            posterUrl: post.video.posterUrl,
+            durationSeconds: post.video.durationSeconds,
+          }
+        : null,
       likeCount: post._count.likes,
       likedByMe: post.likes.length > 0,
       createdAt: post.createdAt.toISOString(),

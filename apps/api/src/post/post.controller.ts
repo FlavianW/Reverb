@@ -14,12 +14,19 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import type { PostPage, PostSummary, PublicUser } from '@reverb/shared';
+import type {
+  PostPage,
+  PostSummary,
+  PresignPostVideoUploadResponse,
+  PublicUser,
+} from '@reverb/shared';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { buildOptionalImageFilesValidator } from '../media/image-upload.validator';
 import { CreatePostDto } from './dto/create-post.dto';
+import { CreateVideoPostDto } from './dto/create-video-post.dto';
 import { ListPostsDto } from './dto/list-posts.dto';
+import { PresignVideoPostDto } from './dto/presign-video-post.dto';
 import { LikeService } from './like/like.service';
 import { PostService } from './post.service';
 
@@ -54,6 +61,28 @@ export class PostController {
       content: dto.content,
       concertId: dto.concertId,
       files: files ?? [],
+    });
+  }
+
+  /** Demande une URL d'upload vidéo direct vers S3 pour un futur post (US-8.2). */
+  @HttpPost('videos/presign')
+  async presignVideo(
+    @Body() dto: PresignVideoPostDto,
+  ): Promise<PresignPostVideoUploadResponse> {
+    return this.postService.presignVideoUpload(dto.contentType);
+  }
+
+  /** Crée un post explicite dont le média est une vidéo déjà uploadée (US-8.2). */
+  @HttpPost('videos')
+  async createVideoPost(
+    @Body() dto: CreateVideoPostDto,
+    @CurrentUser() user: PublicUser,
+  ): Promise<PostSummary> {
+    return this.postService.createVideoPost(user.id, {
+      postId: dto.postId,
+      key: dto.key,
+      content: dto.content,
+      concertId: dto.concertId,
     });
   }
 
