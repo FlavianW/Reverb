@@ -33,17 +33,18 @@ describe('InternalVideoController', () => {
   });
 
   describe('complete', () => {
-    it('marque la vidéo READY avec les URLs résolues depuis les clés reçues', async () => {
+    it('marque la vidéo READY avec les URLs résolues depuis les clés reçues, retrouvée par la clé originale', async () => {
       prisma.video.update.mockResolvedValueOnce({});
 
-      await controller.complete('video-1', {
+      await controller.complete({
+        originalKey: 'posts/post-1/original.mp4',
         playbackKey: 'posts/post-1/playback.mp4',
         posterKey: 'posts/post-1/poster.jpg',
         durationSeconds: 42,
       });
 
       expect(prisma.video.update).toHaveBeenCalledWith({
-        where: { id: 'video-1' },
+        where: { key: 'posts/post-1/original.mp4' },
         data: {
           status: 'READY',
           playbackKey: 'posts/post-1/playback.mp4',
@@ -64,7 +65,8 @@ describe('InternalVideoController', () => {
       );
 
       await expect(
-        controller.complete('video-1', {
+        controller.complete({
+          originalKey: 'posts/post-1/original.mp4',
           playbackKey: 'posts/post-1/playback.mp4',
           posterKey: 'posts/post-1/poster.jpg',
         }),
@@ -73,13 +75,13 @@ describe('InternalVideoController', () => {
   });
 
   describe('fail', () => {
-    it('marque la vidéo FAILED', async () => {
+    it('marque la vidéo FAILED, retrouvée par la clé originale', async () => {
       prisma.video.update.mockResolvedValueOnce({});
 
-      await controller.fail('video-1');
+      await controller.fail({ originalKey: 'posts/post-1/original.mp4' });
 
       expect(prisma.video.update).toHaveBeenCalledWith({
-        where: { id: 'video-1' },
+        where: { key: 'posts/post-1/original.mp4' },
         data: { status: 'FAILED' },
       });
     });

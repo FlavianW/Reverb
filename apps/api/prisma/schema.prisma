@@ -139,7 +139,11 @@ enum VideoStatus {
 /// unique plutôt que de suivre le pattern `Photo`/`PostPhoto`.
 model Video {
   id              String      @id @default(uuid())
-  key             String
+  /// Clé S3 de l'original uploadé — unique car c'est la seule information
+  /// que le Lambda de transcodage connaît de la vidéo (il reçoit un
+  /// événement S3, pas un id de ligne) : le webhook interne retrouve la
+  /// ligne par cette clé plutôt que par `id`.
+  key             String      @unique
   playbackKey     String?
   playbackUrl     String?
   posterKey       String?
