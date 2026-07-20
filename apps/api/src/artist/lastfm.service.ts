@@ -162,6 +162,29 @@ export class LastFmService {
     }
   }
 
+  /**
+   * Associe à chaque item la photo de son artiste, résolue une seule fois
+   * par nom d'artiste distinct (peu coûteux grâce au cache de
+   * `getArtistImage`). Partagé entre la recherche de concerts et les
+   * concerts assistés d'un profil : même besoin, même logique.
+   */
+  async withArtistImages<T extends { artistName: string }>(
+    items: T[],
+  ): Promise<(T & { artistImageUrl: string | null })[]> {
+    const distinctArtists = [...new Set(items.map((item) => item.artistName))];
+    const images = await Promise.all(
+      distinctArtists.map((name) => this.getArtistImage(name)),
+    );
+    const imageByArtist = new Map(
+      distinctArtists.map((name, index) => [name, images[index]]),
+    );
+
+    return items.map((item) => ({
+      ...item,
+      artistImageUrl: imageByArtist.get(item.artistName) ?? null,
+    }));
+  }
+
   private cacheImage(cacheKey: string, url: string | null): void {
     if (
       this.imageCache.size >= IMAGE_CACHE_MAX_ENTRIES &&

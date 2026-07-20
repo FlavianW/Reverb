@@ -17,7 +17,7 @@ describe('UserService', () => {
     user: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
     concertAttendance: { findMany: jest.Mock };
   };
-  let lastFmService: { getArtistImage: jest.Mock };
+  let lastFmService: { getArtistImage: jest.Mock; withArtistImages: jest.Mock };
 
   const googleProfile: GoogleProfile = {
     googleId: 'google-123',
@@ -37,7 +37,24 @@ describe('UserService', () => {
         findMany: jest.fn(),
       },
     };
-    lastFmService = { getArtistImage: jest.fn().mockResolvedValue(null) };
+    lastFmService = {
+      getArtistImage: jest.fn().mockResolvedValue(null),
+      // Mime `LastFmService.withArtistImages` en passant par le même mock
+      // `getArtistImage`, pour que les tests restent focalisés sur ce dernier.
+      withArtistImages: jest.fn(async (items: { artistName: string }[]) => {
+        const distinctArtists = [...new Set(items.map((i) => i.artistName))];
+        const images = await Promise.all(
+          distinctArtists.map((name) => lastFmService.getArtistImage(name)),
+        );
+        const imageByArtist = new Map(
+          distinctArtists.map((name, index) => [name, images[index]]),
+        );
+        return items.map((item) => ({
+          ...item,
+          artistImageUrl: imageByArtist.get(item.artistName) ?? null,
+        }));
+      }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -220,11 +237,14 @@ describe('UserService', () => {
   });
 
   describe('findAttendedConcerts', () => {
-    it('renvoie les concerts assistés du plus récent au plus ancien', async () => {
+    it('renvoie les concerts assistés avec la photo de leur artiste, du plus récent au plus ancien', async () => {
       const concert = { id: 'concert-1', artistName: 'Muse' };
       prisma.concertAttendance.findMany.mockResolvedValueOnce([
         { id: 'attendance-1', concert },
       ]);
+      lastFmService.getArtistImage.mockResolvedValueOnce(
+        'https://example.com/muse.jpg',
+      );
 
       const result = await service.findAttendedConcerts('user-1');
 
@@ -233,7 +253,10 @@ describe('UserService', () => {
         include: { concert: true },
         orderBy: { concert: { date: 'desc' } },
       });
-      expect(result).toEqual([concert]);
+      expect(lastFmService.getArtistImage).toHaveBeenCalledWith('Muse');
+      expect(result).toEqual([
+        { ...concert, artistImageUrl: 'https://example.com/muse.jpg' },
+      ]);
     });
   });
 

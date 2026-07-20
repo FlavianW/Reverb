@@ -9,7 +9,7 @@ class PublicProfile {
   final String? bannerUrl;
   final String? favoriteArtist;
   final String? favoriteArtistImageUrl;
-  final List<Concert> attendedConcerts;
+  final List<ConcertSearchResult> attendedConcerts;
 
   const PublicProfile({
     required this.pseudo,
@@ -29,7 +29,7 @@ class PublicProfile {
     favoriteArtist: json['favoriteArtist'] as String?,
     favoriteArtistImageUrl: json['favoriteArtistImageUrl'] as String?,
     attendedConcerts: (json['attendedConcerts'] as List<dynamic>)
-        .map((e) => Concert.fromJson(e as Map<String, dynamic>))
+        .map((e) => ConcertSearchResult.fromJson(e as Map<String, dynamic>))
         .toList(),
   );
 }

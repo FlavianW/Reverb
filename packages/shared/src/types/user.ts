@@ -1,4 +1,4 @@
-import type { Concert } from './concert';
+import type { ConcertSearchResult } from './concert';
 
 /** Représentation d'un utilisateur exposable au client (sans googleId ni dates internes). */
 export interface PublicUser {
@@ -23,5 +23,6 @@ export interface PublicProfile {
   favoriteArtist: string | null;
   /** Photo de `favoriteArtist` via Last.fm, `null` si non renseigné ou introuvable. */
   favoriteArtistImageUrl: string | null;
-  attendedConcerts: Concert[];
+  /** Chaque concert embarque la photo de son artiste, comme un résultat de recherche. */
+  attendedConcerts: ConcertSearchResult[];
 }
