@@ -1,3 +1,5 @@
+import type { VideoSummary } from './video';
+
 /**
  * Union de littéraux indépendante de Prisma (ce package est aussi consommé
  * par le navigateur). Reflète `enum PostType` dans `apps/api/prisma/schema.prisma`.
@@ -15,6 +17,8 @@ export interface PostSummary {
   content: string | null;
   ratingValue: number | null;
   photos: { id: string; url: string }[];
+  /** `null` si le post n'a pas de vidéo (mutuellement exclusif de `photos`). */
+  video: VideoSummary | null;
   likeCount: number;
   likedByMe: boolean;
   createdAt: string;
