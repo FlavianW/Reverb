@@ -6,6 +6,7 @@ import '../core/theme.dart';
 import '../models/post.dart';
 import 'avatar.dart';
 import 'like_button.dart';
+import 'post_video_player.dart';
 
 /// Miroir de `apps/web/src/lib/components/post/PostCard.svelte` : rendu
 /// conditionnel selon le type (notation, présence, ou post explicite photo/texte).
@@ -191,9 +192,36 @@ class _PostCardState extends State<PostCard> {
                         'Photo partagée par ${post.author.pseudo}',
                   ),
                 ),
-              ),
+              )
+            else if (post.video != null)
+              _videoSection(context, post.video!),
           ],
         );
     }
+  }
+
+  Widget _videoSection(BuildContext context, PostVideoRef video) {
+    if (video.status == VideoStatus.ready && video.url != null) {
+      return PostVideoPlayer(url: video.url!);
+    }
+    final failed = video.status == VideoStatus.failed;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.colors.paper,
+        borderRadius: BorderRadius.circular(ReverbRadius.sm),
+      ),
+      child: Text(
+        failed
+            ? 'Échec du traitement de la vidéo.'
+            : 'Vidéo en cours de traitement…',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: failed ? context.colors.accentDeep : context.colors.inkSoft,
+          fontSize: 13,
+        ),
+      ),
+    );
   }
 }

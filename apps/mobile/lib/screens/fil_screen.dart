@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -31,8 +32,13 @@ class _FilScreenState extends State<FilScreen> {
   List<Concert> _concertResults = [];
   Concert? _selectedConcert;
   List<XFile> _photos = [];
+  XFile? _video;
   bool _submitting = false;
   String? _composeError;
+
+  Timer? _pollTimer;
+  int _pollCount = 0;
+  static const _maxPolls = 15;
 
   @override
   void initState() {
@@ -44,6 +50,7 @@ class _FilScreenState extends State<FilScreen> {
   void dispose() {
     _contentController.dispose();
     _concertQueryController.dispose();
+    _pollTimer?.cancel();
     super.dispose();
   }
 
@@ -51,7 +58,31 @@ class _FilScreenState extends State<FilScreen> {
     final page = await context.read<ApiClient>().getFeed();
     _items = page.items;
     _cursor = page.nextCursor;
+    _schedulePollIfNeeded();
     return page;
+  }
+
+  // Le transcodage vidéo est asynchrone (Lambda déclenché par S3) : tant
+  // qu'un post affiché a une vidéo en PROCESSING, on rafraîchit la première
+  // page à intervalle et on fusionne par id, sans perturber la pagination
+  // déjà chargée au-delà (pas de nouvel endpoint dédié pour ça).
+  void _schedulePollIfNeeded() {
+    _pollTimer?.cancel();
+    final hasProcessing = _items.any(
+      (post) => post.video?.status == VideoStatus.processing,
+    );
+    if (!hasProcessing || _pollCount >= _maxPolls) return;
+
+    _pollTimer = Timer(const Duration(seconds: 4), () async {
+      final page = await context.read<ApiClient>().getFeed();
+      if (!mounted) return;
+      final byId = {for (final post in page.items) post.id: post};
+      setState(() {
+        _items = _items.map((post) => byId[post.id] ?? post).toList();
+        _pollCount += 1;
+      });
+      _schedulePollIfNeeded();
+    });
   }
 
   Future<void> _loadMore() async {
@@ -93,14 +124,29 @@ class _FilScreenState extends State<FilScreen> {
       imageQuality: 90,
       limit: 4,
     );
-    setState(() => _photos = picked);
+    if (picked.isEmpty) return;
+    setState(() {
+      _photos = picked;
+      _video = null;
+    });
+  }
+
+  // Un post a soit des photos, soit une vidéo, jamais les deux (contrainte
+  // imposée côté API) : sélectionner l'une efface l'autre.
+  Future<void> _pickVideo() async {
+    final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
+    if (picked == null) return;
+    setState(() {
+      _video = picked;
+      _photos = [];
+    });
   }
 
   Future<void> _submit() async {
     final content = _contentController.text.trim();
-    if (content.isEmpty && _photos.isEmpty) {
+    if (content.isEmpty && _photos.isEmpty && _video == null) {
       setState(
-        () => _composeError = 'Ajoutez du texte ou au moins une photo.',
+        () => _composeError = 'Ajoutez du texte, des photos ou une vidéo.',
       );
       return;
     }
@@ -110,23 +156,42 @@ class _FilScreenState extends State<FilScreen> {
       _composeError = null;
     });
     try {
-      final post = await context.read<ApiClient>().createPost(
-        content: content.isEmpty ? null : content,
-        concertId: _selectedConcert?.id,
-        photos: _photos.map((file) => File(file.path)).toList(),
-      );
+      final post = _video != null
+          ? await _submitVideoPost(content)
+          : await context.read<ApiClient>().createPost(
+              content: content.isEmpty ? null : content,
+              concertId: _selectedConcert?.id,
+              photos: _photos.map((file) => File(file.path)).toList(),
+            );
       if (!mounted) return;
       setState(() {
         _items = [post, ..._items];
         _contentController.clear();
         _photos = [];
+        _video = null;
         _selectedConcert = null;
       });
+      _schedulePollIfNeeded();
     } on ApiException catch (e) {
       setState(() => _composeError = e.message);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  Future<PostSummary> _submitVideoPost(String content) async {
+    final api = context.read<ApiClient>();
+    final file = File(_video!.path);
+    final presigned = await api.presignPostVideo(
+      _video!.mimeType ?? 'video/mp4',
+    );
+    await api.uploadVideoToStorage(presigned, file);
+    return api.createVideoPost(
+      postId: presigned.postId,
+      key: presigned.key,
+      content: content.isEmpty ? null : content,
+      concertId: _selectedConcert?.id,
+    );
   }
 
   @override
@@ -255,14 +320,33 @@ class _FilScreenState extends State<FilScreen> {
             ),
           ],
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: _pickPhotos,
-            icon: const Icon(Icons.add_photo_alternate_outlined),
-            label: Text(
-              _photos.isEmpty
-                  ? 'Ajouter des photos'
-                  : '${_photos.length} photo${_photos.length > 1 ? 's' : ''} sélectionnée${_photos.length > 1 ? 's' : ''}',
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (_video == null)
+                OutlinedButton.icon(
+                  onPressed: _pickPhotos,
+                  icon: const Icon(Icons.add_photo_alternate_outlined),
+                  label: Text(
+                    _photos.isEmpty
+                        ? 'Ajouter des photos'
+                        : '${_photos.length} photo${_photos.length > 1 ? 's' : ''} sélectionnée${_photos.length > 1 ? 's' : ''}',
+                  ),
+                ),
+              if (_photos.isEmpty)
+                if (_video != null)
+                  Chip(
+                    label: Text(_video!.name),
+                    onDeleted: () => setState(() => _video = null),
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: _pickVideo,
+                    icon: const Icon(Icons.videocam_outlined),
+                    label: const Text('Ajouter une vidéo'),
+                  ),
+            ],
           ),
           if (_composeError != null)
             Padding(

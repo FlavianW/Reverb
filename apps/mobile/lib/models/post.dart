@@ -55,6 +55,72 @@ class PostPhotoRef {
       PostPhotoRef(id: json['id'] as String, url: json['url'] as String);
 }
 
+/// Miroir de `VideoStatus` dans `packages/shared/src/types/video.ts`.
+enum VideoStatus {
+  processing('PROCESSING'),
+  ready('READY'),
+  failed('FAILED');
+
+  final String wireValue;
+  const VideoStatus(this.wireValue);
+
+  static VideoStatus fromWire(String value) =>
+      values.firstWhere((status) => status.wireValue == value);
+}
+
+/// Vidéo attachée à un post (US-8.2), miroir de `VideoSummary`. `url` est
+/// `null` tant que le transcodage n'est pas terminé (`status != ready`).
+class PostVideoRef {
+  final String id;
+  final VideoStatus status;
+  final String? url;
+  final String? posterUrl;
+  final int? durationSeconds;
+
+  const PostVideoRef({
+    required this.id,
+    required this.status,
+    required this.url,
+    required this.posterUrl,
+    required this.durationSeconds,
+  });
+
+  factory PostVideoRef.fromJson(Map<String, dynamic> json) => PostVideoRef(
+    id: json['id'] as String,
+    status: VideoStatus.fromWire(json['status'] as String),
+    url: json['url'] as String?,
+    posterUrl: json['posterUrl'] as String?,
+    durationSeconds: json['durationSeconds'] as int?,
+  );
+}
+
+/// Champs à soumettre tels quels dans le `FormData` d'un POST multipart
+/// directement vers `uploadUrl` (S3 presigned POST), avec l'id du post déjà
+/// décidé côté API pour que la clé S3 puisse le référencer avant sa création.
+class PresignedVideoUpload {
+  final String uploadUrl;
+  final Map<String, String> fields;
+  final String key;
+  final String postId;
+
+  const PresignedVideoUpload({
+    required this.uploadUrl,
+    required this.fields,
+    required this.key,
+    required this.postId,
+  });
+
+  factory PresignedVideoUpload.fromJson(Map<String, dynamic> json) =>
+      PresignedVideoUpload(
+        uploadUrl: json['uploadUrl'] as String,
+        fields: (json['fields'] as Map<String, dynamic>).map(
+          (key, value) => MapEntry(key, value as String),
+        ),
+        key: json['key'] as String,
+        postId: json['postId'] as String,
+      );
+}
+
 /// Post tel qu'affiché dans le fil d'actualité ou sur un profil (US-8.x).
 class PostSummary {
   final String id;
@@ -64,6 +130,8 @@ class PostSummary {
   final String? content;
   final int? ratingValue;
   final List<PostPhotoRef> photos;
+  /// `null` si le post n'a pas de vidéo (mutuellement exclusif de `photos`).
+  final PostVideoRef? video;
   final int likeCount;
   final bool likedByMe;
   final DateTime createdAt;
@@ -76,6 +144,7 @@ class PostSummary {
     required this.content,
     required this.ratingValue,
     required this.photos,
+    required this.video,
     required this.likeCount,
     required this.likedByMe,
     required this.createdAt,
@@ -93,6 +162,9 @@ class PostSummary {
     photos: (json['photos'] as List<dynamic>)
         .map((e) => PostPhotoRef.fromJson(e as Map<String, dynamic>))
         .toList(),
+    video: json['video'] == null
+        ? null
+        : PostVideoRef.fromJson(json['video'] as Map<String, dynamic>),
     likeCount: json['likeCount'] as int,
     likedByMe: json['likedByMe'] as bool,
     createdAt: DateTime.parse(json['createdAt'] as String),
