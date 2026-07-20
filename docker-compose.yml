@@ -1,6 +1,6 @@
 # Services pour le développement local de apps/api uniquement.
 # N'interviennent pas dans l'image de production (voir apps/api/Dockerfile).
-# En prod, Postgres est RDS et le stockage média est S3 + CloudFront (voir CLAUDE.md) :
+# En prod, Postgres est RDS et le stockage média est S3 + CloudFront :
 # MinIO ci-dessous ne sert qu'à émuler l'API S3 en local, sans compte AWS.
 services:
   postgres:
