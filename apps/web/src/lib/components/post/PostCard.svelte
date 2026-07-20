@@ -67,6 +67,19 @@
 						<img src={photo.url} alt="Photo partagée par {post.author.pseudo}" loading="lazy" />
 					{/each}
 				</div>
+			{:else if post.video}
+				<div class="video">
+					{#if post.video.status === 'READY' && post.video.url}
+						<video controls preload="metadata" poster={post.video.posterUrl ?? undefined}>
+							<source src={post.video.url} type="video/mp4" />
+							Votre navigateur ne prend pas en charge la lecture vidéo.
+						</video>
+					{:else if post.video.status === 'FAILED'}
+						<p class="video-status video-status-failed">Échec du traitement de la vidéo.</p>
+					{:else}
+						<p class="video-status">Vidéo en cours de traitement…</p>
+					{/if}
+				</div>
 			{/if}
 		{/if}
 	</div>
@@ -161,6 +174,27 @@
 		aspect-ratio: 1;
 		object-fit: cover;
 		border-radius: var(--radius-sm);
+	}
+
+	.video video {
+		width: 100%;
+		max-height: 480px;
+		border-radius: var(--radius-sm);
+		background: #000;
+	}
+
+	.video-status {
+		margin: 0;
+		padding: 1.5rem;
+		text-align: center;
+		border-radius: var(--radius-sm);
+		background: var(--paper);
+		color: var(--ink-soft);
+		font-size: 0.875rem;
+	}
+
+	.video-status-failed {
+		color: var(--accent-deep);
 	}
 
 	footer {

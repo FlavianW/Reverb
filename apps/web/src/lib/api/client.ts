@@ -5,6 +5,7 @@ import type {
 	Concert,
 	ConcertPage,
 	ConversationSummary,
+	CreateVideoPostRequest,
 	FriendshipOverview,
 	FriendshipStatusWithUser,
 	FriendshipSummary,
@@ -15,6 +16,7 @@ import type {
 	PhotoSummary,
 	PostPage,
 	PostSummary,
+	PresignPostVideoUploadResponse,
 	PublicProfile,
 	PublicUser,
 	RegisterRequest,
@@ -49,6 +51,27 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 	}
 
 	return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+}
+
+/**
+ * Upload direct navigateur -> S3 via une URL présignée (`createPresignedPost`
+ * côté API) : le fichier ne transite jamais par notre API, indispensable pour
+ * une vidéo (contrairement aux photos, trop volumineuse pour un proxy en mémoire).
+ */
+async function uploadToPresignedUrl(
+	presigned: { uploadUrl: string; fields: Record<string, string> },
+	file: File
+): Promise<void> {
+	const form = new FormData();
+	for (const [key, value] of Object.entries(presigned.fields)) {
+		form.append(key, value);
+	}
+	form.append('file', file);
+
+	const response = await fetch(presigned.uploadUrl, { method: 'POST', body: form });
+	if (!response.ok) {
+		throw new ApiError(response.status, "Échec de l'upload vers le stockage.");
+	}
 }
 
 /** Toutes les mutations et GET déclenchés côté client (le navigateur porte le cookie de session nativement). */
@@ -131,6 +154,15 @@ export const api = {
 	deletePost: (id: string) => request<void>(`/posts/${id}`, { method: 'DELETE' }),
 	likePost: (id: string) => request<void>(`/posts/${id}/like`, { method: 'PUT' }),
 	unlikePost: (id: string) => request<void>(`/posts/${id}/like`, { method: 'DELETE' }),
+
+	presignPostVideo: (contentType: string) =>
+		request<PresignPostVideoUploadResponse>('/posts/videos/presign', {
+			method: 'POST',
+			body: JSON.stringify({ contentType })
+		}),
+	uploadVideoToStorage: uploadToPresignedUrl,
+	createVideoPost: (body: CreateVideoPostRequest) =>
+		request<PostSummary>('/posts/videos', { method: 'POST', body: JSON.stringify(body) }),
 
 	startConversation: (pseudo: string) =>
 		request<ConversationSummary>(`/conversations/${pseudo}`, { method: 'POST' }),
