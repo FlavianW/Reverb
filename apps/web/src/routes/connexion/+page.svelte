@@ -25,7 +25,10 @@
 
 	.hero {
 		position: relative;
-		background: linear-gradient(160deg, var(--accent-deep), var(--accent));
+		background-image: linear-gradient(180deg, rgba(20, 16, 13, 0.35) 0%, rgba(20, 16, 13, 0.85) 100%),
+			url('/images/connexion-hero.jpg');
+		background-size: cover;
+		background-position: center;
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
@@ -38,7 +41,7 @@
 		font-weight: 400;
 		font-size: 2.125rem;
 		line-height: 1.35;
-		color: var(--on-accent);
+		color: #f7f2ea;
 		max-width: 520px;
 		margin: auto 0 0;
 	}
@@ -48,7 +51,7 @@
 		font-style: italic;
 		font-weight: 500;
 		font-size: 1.625rem;
-		color: var(--on-accent);
+		color: #f7f2ea;
 		margin: 0;
 	}
 

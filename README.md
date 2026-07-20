@@ -82,7 +82,7 @@ Pour utiliser un vrai bucket S3 (déploiement, démonstration) :
    ```
 4. Renseigner dans `apps/api/.env` : `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL` (`https://<bucket>.s3.<region>.amazonaws.com`), et laisser `S3_ENDPOINT` vide.
 
-En production, l'architecture cible remplace l'accès public direct par CloudFront + Origin Access Control (bucket resté privé) — voir `CLAUDE.md`.
+En production, l'architecture cible remplace l'accès public direct par CloudFront + Origin Access Control (bucket resté privé).
 
 ## Tests et qualité
 
