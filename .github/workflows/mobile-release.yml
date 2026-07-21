@@ -50,20 +50,31 @@ jobs:
       # apps/mobile/android/app/build.gradle.kts) arrive par secret GitHub,
       # encodée en base64. Sans le secret, le build retombe sur la clé de
       # debug du runner : l'APK reste installable, seule la connexion Google
-      # y est inopérante.
-      - name: Préparer la clé de signature release
+      # y est inopérante. GitHub stocke les secrets tels quels, blancs de
+      # copier-coller compris : les valeurs sont nettoyées (retours à la
+      # ligne, retours chariot) puis le mot de passe est vérifié contre le
+      # keystore par keytool AVANT le build - un secret mal collé échoue en
+      # quelques secondes avec un message clair, pas au bout de cinq minutes
+      # au moment de la signature.
+      - name: Préparer et vérifier la clé de signature release
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/reverb-release.jks"
+            printf '%s' "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 -d > "$RUNNER_TEMP/reverb-release.jks"
+            CLEAN_PASSWORD=$(printf '%s' "$KEYSTORE_PASSWORD" | tr -d '\r\n')
+            if ! keytool -list -keystore "$RUNNER_TEMP/reverb-release.jks" \
+                -alias reverb -storepass "$CLEAN_PASSWORD" > /dev/null 2>&1; then
+              echo "::error::Le secret ANDROID_KEYSTORE_PASSWORD ne déverrouille pas le keystore (ou l'alias 'reverb' est absent). Vérifier les deux secrets."
+              exit 1
+            fi
             echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/reverb-release.jks" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$CLEAN_PASSWORD" >> "$GITHUB_ENV"
           fi
 
       - name: Build APK release
         working-directory: apps/mobile
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           flutter build apk --release \
             --build-name=${{ steps.version.outputs.name }} \
