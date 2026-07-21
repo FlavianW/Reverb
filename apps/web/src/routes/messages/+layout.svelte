@@ -29,7 +29,12 @@
 		margin: 0 auto;
 		display: grid;
 		grid-template-columns: 320px 1fr;
-		min-height: calc(100vh - 73px);
+		/* Hauteur de la fenêtre moins la topbar et, sur mobile, la barre de
+		   navigation basse (variable posée par AppShell) — sans quoi le
+		   composer du fil de discussion passerait dessous. `dvh` suit la
+		   barre d'URL mobile qui se replie ; `vh` reste en secours. */
+		min-height: calc(100vh - 73px - var(--bottom-nav-height, 0px));
+		min-height: calc(100dvh - 73px - var(--bottom-nav-height, 0px));
 	}
 
 	.sidebar {

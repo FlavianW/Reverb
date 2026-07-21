@@ -238,5 +238,17 @@
 		.page {
 			padding: 2rem 1.25rem 3rem;
 		}
+
+		.intro {
+			margin-bottom: 2rem;
+		}
+
+		.intro h1 {
+			font-size: 1.75rem;
+		}
+
+		.side {
+			padding: 1.25rem;
+		}
 	}
 </style>

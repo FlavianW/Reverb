@@ -187,4 +187,14 @@
 		white-space: nowrap;
 		border: 0;
 	}
+
+	@media (max-width: 640px) {
+		.page {
+			padding: 2rem 1.25rem 3rem;
+		}
+
+		.add-form {
+			flex-direction: column;
+		}
+	}
 </style>
