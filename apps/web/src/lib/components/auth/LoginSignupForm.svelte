@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { PUBLIC_API_URL } from '$env/static/public';
+	import { PASSWORD_REQUIREMENTS } from '@reverb/shared';
 	import { api, ApiError } from '$lib/api/client';
 	import Button from '$lib/components/ui/Button.svelte';
 	import FormField from '$lib/components/ui/FormField.svelte';
@@ -13,6 +14,13 @@
 	let submitting = $state(false);
 
 	const isSignup = $derived(mode === 'signup');
+	const passwordChecklist = $derived(
+		PASSWORD_REQUIREMENTS.map((requirement) => ({
+			label: requirement.label,
+			met: requirement.test(password)
+		}))
+	);
+	const passwordMeetsRequirements = $derived(passwordChecklist.every((item) => item.met));
 	const title = $derived(isSignup ? 'Rejoindre Reverb' : 'Bon retour parmi nous');
 	const subtitle = $derived(
 		isSignup
@@ -75,11 +83,29 @@
 			autocomplete={isSignup ? 'new-password' : 'current-password'}
 		/>
 
+		{#if isSignup}
+			<ul class="password-requirements">
+				{#each passwordChecklist as item (item.label)}
+					<li class:met={item.met}>
+						<span aria-hidden="true">{item.met ? '✓' : '○'}</span>
+						{item.label}
+						<span class="sr-only">{item.met ? '(respecté)' : '(non respecté)'}</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+
 		{#if error}
 			<p class="form-error" role="alert">{error}</p>
 		{/if}
 
-		<Button type="submit" fullWidth disabled={submitting}>{submitLabel}</Button>
+		<Button
+			type="submit"
+			fullWidth
+			disabled={submitting || (isSignup && !passwordMeetsRequirements)}
+		>
+			{submitLabel}
+		</Button>
 	</form>
 
 	<div class="divider">
@@ -135,10 +161,47 @@
 		margin: 0 0 2rem;
 	}
 
+	.password-requirements {
+		list-style: none;
+		display: grid;
+		gap: 0.25rem;
+		margin: -0.5rem 0 1.25rem;
+		padding: 0;
+		font-size: 0.8125rem;
+		color: var(--ink-soft);
+	}
+
+	.password-requirements li {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.password-requirements li.met {
+		color: var(--ink);
+	}
+
+	.password-requirements li span[aria-hidden] {
+		width: 1rem;
+		text-align: center;
+	}
+
 	.form-error {
 		margin: -0.5rem 0 1.25rem;
 		font-size: 0.875rem;
 		color: var(--accent-deep);
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	.divider {

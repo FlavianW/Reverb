@@ -102,9 +102,10 @@ class ApiClient {
       return decode(response.data);
     } on DioException catch (e) {
       final body = e.response?.data;
-      final message = body is Map && body['message'] != null
-          ? body['message'].toString()
-          : (e.message ?? 'Une erreur est survenue.');
+      final rawMessage = body is Map ? body['message'] : null;
+      final message = rawMessage is List
+          ? rawMessage.join(' ')
+          : rawMessage?.toString() ?? (e.message ?? 'Une erreur est survenue.');
       throw ApiException(e.response?.statusCode ?? 0, message);
     }
   }

@@ -46,8 +46,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 	});
 
 	if (!response.ok) {
-		const body = (await response.json().catch(() => null)) as { message?: string } | null;
-		throw new ApiError(response.status, body?.message ?? response.statusText);
+		const body = (await response.json().catch(() => null)) as {
+			message?: string | string[];
+		} | null;
+		const message = Array.isArray(body?.message)
+			? body.message.join(' ')
+			: (body?.message ?? response.statusText);
+		throw new ApiError(response.status, message);
 	}
 
 	return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
