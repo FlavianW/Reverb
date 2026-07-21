@@ -33,6 +33,23 @@ class ConnexionScreen extends StatefulWidget {
   State<ConnexionScreen> createState() => _ConnexionScreenState();
 }
 
+/// Mirroir de `PASSWORD_REQUIREMENTS` (`packages/shared/src/requests/auth.ts`),
+/// affiché comme prérequis pendant la saisie et appliqué côté API dans
+/// `RegisterDto` - source de vérité pour la validation, jamais dupliquée ici.
+const _passwordRequirements = <(String label, bool Function(String) test)>[
+  ('Au moins 8 caractères', _hasMinLength),
+  ('Une majuscule', _hasUppercase),
+  ('Une minuscule', _hasLowercase),
+  ('Un chiffre', _hasDigit),
+  ('Un caractère spécial', _hasSpecialChar),
+];
+
+bool _hasMinLength(String value) => value.length >= 8;
+bool _hasUppercase(String value) => value.contains(RegExp('[A-Z]'));
+bool _hasLowercase(String value) => value.contains(RegExp('[a-z]'));
+bool _hasDigit(String value) => value.contains(RegExp('[0-9]'));
+bool _hasSpecialChar(String value) => value.contains(RegExp('[^a-zA-Z0-9]'));
+
 class _ConnexionScreenState extends State<ConnexionScreen> {
   late bool isSignup = widget.initialSignup;
   final _pseudoController = TextEditingController();
@@ -43,12 +60,22 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
   bool googleSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _pseudoController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
+
+  bool get _passwordMeetsRequirements => _passwordRequirements.every(
+    (requirement) => requirement.$2(_passwordController.text),
+  );
 
   Future<void> _submit() async {
     setState(() {
@@ -171,6 +198,19 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => busy ? null : _submit(),
                   ),
+                  if (isSignup) ...[
+                    const SizedBox(height: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final requirement in _passwordRequirements)
+                          _PasswordRequirementRow(
+                            label: requirement.$1,
+                            met: requirement.$2(_passwordController.text),
+                          ),
+                      ],
+                    ),
+                  ],
                   if (error != null) ...[
                     const SizedBox(height: 12),
                     Text(
@@ -185,7 +225,10 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: busy ? null : _submit,
+                      onPressed:
+                          busy || (isSignup && !_passwordMeetsRequirements)
+                          ? null
+                          : _submit,
                       child: Text(
                         isSignup ? 'Créer mon compte' : 'Se connecter',
                       ),
@@ -257,6 +300,35 @@ class _ConnexionScreenState extends State<ConnexionScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Ligne d'un prérequis de mot de passe : icône + libellé, jamais la couleur
+/// seule pour porter l'état (accessibilité, miroir de `LoginSignupForm.svelte`).
+class _PasswordRequirementRow extends StatelessWidget {
+  final String label;
+  final bool met;
+
+  const _PasswordRequirementRow({required this.label, required this.met});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = met ? context.colors.ink : context.colors.inkSoft;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            met ? Icons.check_circle : Icons.circle_outlined,
+            size: 14,
+            color: color,
+          ),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(fontSize: 13, color: color)),
+        ],
       ),
     );
   }
