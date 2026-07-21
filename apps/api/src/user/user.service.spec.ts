@@ -14,7 +14,12 @@ const uniqueConstraintViolation = () =>
 describe('UserService', () => {
   let service: UserService;
   let prisma: {
-    user: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock };
+    user: {
+      findUnique: jest.Mock;
+      findFirst: jest.Mock;
+      create: jest.Mock;
+      update: jest.Mock;
+    };
     concertAttendance: { findMany: jest.Mock };
   };
   let lastFmService: { getArtistImage: jest.Mock; withArtistImages: jest.Mock };
@@ -30,6 +35,7 @@ describe('UserService', () => {
     prisma = {
       user: {
         findUnique: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn(),
         update: jest.fn(),
       },
@@ -68,6 +74,33 @@ describe('UserService', () => {
     }).compile();
 
     service = module.get(UserService);
+  });
+
+  describe('findByPseudo', () => {
+    it('privilégie la correspondance exacte sans requête supplémentaire', async () => {
+      const exactUser = { id: 'user-1', pseudo: 'ana' } as User;
+      prisma.user.findUnique.mockResolvedValueOnce(exactUser);
+
+      await expect(service.findByPseudo('ana')).resolves.toBe(exactUser);
+      expect(prisma.user.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('retombe sur une recherche insensible à la casse (« Ana » trouve « ana »)', async () => {
+      const user = { id: 'user-1', pseudo: 'ana' } as User;
+      prisma.user.findUnique.mockResolvedValueOnce(null);
+      prisma.user.findFirst.mockResolvedValueOnce(user);
+
+      await expect(service.findByPseudo('Ana')).resolves.toBe(user);
+      expect(prisma.user.findFirst).toHaveBeenCalledWith({
+        where: { pseudo: { equals: 'Ana', mode: 'insensitive' } },
+      });
+    });
+
+    it('renvoie null quand aucun pseudo ne correspond, même sans la casse', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.findByPseudo('inconnu')).resolves.toBeNull();
+    });
   });
 
   describe('findOrCreateFromGoogleProfile', () => {

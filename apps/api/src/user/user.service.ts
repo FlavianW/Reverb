@@ -66,8 +66,21 @@ export class UserService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  findByPseudo(pseudo: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { pseudo } });
+  /**
+   * Recherche par pseudo insensible à la casse : un pseudo se partage à
+   * l'oral ou de mémoire, la casse exacte ne doit pas être un piège
+   * (« Ana » doit trouver « ana »). L'égalité stricte reste prioritaire au
+   * cas où deux pseudos ne différant que par la casse coexisteraient,
+   * l'unicité en base étant sensible à la casse.
+   */
+  async findByPseudo(pseudo: string): Promise<User | null> {
+    const exact = await this.prisma.user.findUnique({ where: { pseudo } });
+    if (exact) {
+      return exact;
+    }
+    return this.prisma.user.findFirst({
+      where: { pseudo: { equals: pseudo, mode: 'insensitive' } },
+    });
   }
 
   findById(id: string): Promise<User | null> {
