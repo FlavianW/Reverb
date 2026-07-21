@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { PublicUser } from '@reverb/shared';
+	import BottomNav from './BottomNav.svelte';
 	import NavLink from './NavLink.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 	import UserMenu from './UserMenu.svelte';
@@ -44,11 +45,17 @@
 	<main id="main-content" tabindex="-1">
 		{@render children()}
 	</main>
+	<BottomNav {user} {unreadMessageCount} />
 </div>
 
 <style>
 	.shell {
 		min-height: 100vh;
+		/* Hauteur de la barre de navigation basse mobile (0 sur desktop) :
+		   lue par `main` ici et par le layout messages pour caler la hauteur
+		   du fil de discussion — une seule source de vérité pour ne jamais
+		   laisser la barre recouvrir du contenu. */
+		--bottom-nav-height: 0px;
 	}
 
 	/* Masqué hors focus, visible dès l'arrivée au clavier : permet d'éviter
@@ -131,13 +138,24 @@
 		font-weight: 700;
 	}
 
-	@media (max-width: 640px) {
+	/* Sous 800px, les 7 liens ne tiennent plus sur une ligne : la navigation
+	   bascule sur une barre basse (BottomNav, miroir de l'app mobile), la
+	   topbar ne garde que le logo, la bascule de thème et le menu du compte. */
+	@media (max-width: 800px) {
+		.shell {
+			--bottom-nav-height: calc(3.375rem + env(safe-area-inset-bottom, 0px));
+		}
+
+		main {
+			padding-bottom: var(--bottom-nav-height);
+		}
+
 		.topbar-inner {
-			padding: 1rem 1.25rem;
+			padding: 0.875rem 1.25rem;
 		}
 
 		nav {
-			gap: 1rem;
+			display: none;
 		}
 	}
 </style>

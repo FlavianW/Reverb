@@ -148,4 +148,15 @@
 			max-height: none;
 		}
 	}
+
+	@media (max-width: 640px) {
+		.page {
+			padding: 2rem 1.25rem 3rem;
+		}
+
+		.map-wrapper {
+			height: 55vh;
+			min-height: 320px;
+		}
+	}
 </style>
