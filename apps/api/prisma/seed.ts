@@ -14,6 +14,8 @@ const CONCERT_IDS = {
   fontaines: '00000000-0000-0000-0000-000000000004',
   cure: '00000000-0000-0000-0000-000000000005',
   air: '00000000-0000-0000-0000-000000000006',
+  phoenix: '00000000-0000-0000-0000-000000000007',
+  idles: '00000000-0000-0000-0000-000000000008',
 };
 
 const daysAgo = (days: number): Date =>
@@ -275,6 +277,38 @@ async function main() {
       latitude: 45.7601,
       longitude: 4.8197,
       createdById: marco.id,
+    },
+  });
+
+  // Deux villes de plus (Lille) pour que la carte et « Autour de toi » aient
+  // du contenu ailleurs qu'à Paris/Lyon selon la position de la personne qui teste.
+  await prisma.concert.upsert({
+    where: { id: CONCERT_IDS.phoenix },
+    update: { date: daysFromNow(14) },
+    create: {
+      id: CONCERT_IDS.phoenix,
+      artistName: 'Phoenix',
+      venueName: 'Zénith de Lille',
+      city: 'Lille',
+      date: daysFromNow(14),
+      latitude: 50.6346,
+      longitude: 3.0757,
+      createdById: lea.id,
+    },
+  });
+
+  await prisma.concert.upsert({
+    where: { id: CONCERT_IDS.idles },
+    update: { date: daysFromNow(28) },
+    create: {
+      id: CONCERT_IDS.idles,
+      artistName: 'IDLES',
+      venueName: "L'Aéronef",
+      city: 'Lille',
+      date: daysFromNow(28),
+      latitude: 50.637,
+      longitude: 3.0709,
+      createdById: nina.id,
     },
   });
 

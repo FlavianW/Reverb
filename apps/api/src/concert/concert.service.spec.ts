@@ -401,6 +401,9 @@ describe('ConcertService', () => {
       prisma.concert.findMany.mockResolvedValueOnce([]);
 
       await service.search(undefined, 'user-1');
+      // L'import découverte tourne en arrière-plan (la vitrine ne l'attend
+      // pas) : on laisse sa chaîne de promesses se terminer avant de vérifier.
+      await new Promise(setImmediate);
 
       expect(setlistFmService.findRecentConcerts).toHaveBeenCalledWith('FR');
       expect(prisma.concert.create).toHaveBeenCalledWith({
