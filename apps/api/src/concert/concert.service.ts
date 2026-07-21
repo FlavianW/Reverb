@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Concert } from '@prisma/client';
 import type { ConcertRatingSummary, ConcertVideoSummary } from '@reverb/shared';
 import { LastFmService } from '../artist/lastfm.service';
@@ -79,6 +79,8 @@ const DISCOVERY_INTERVAL_MS = 60 * 60 * 1000;
  */
 @Injectable()
 export class ConcertService {
+  private readonly logger = new Logger(ConcertService.name);
+
   /** Horodatage du dernier import découverte (voir `discoverRecentConcerts`). */
   private lastDiscoveryAt = 0;
 
@@ -141,7 +143,17 @@ export class ConcertService {
       if (trimmed) {
         await this.importFromSetlistFm(trimmed, importedForUserId);
       } else {
-        await this.discoverRecentConcerts(importedForUserId);
+        // La vitrine n'attend pas l'import découverte : ses résultats ne sont
+        // pas ceux de la recherche en cours (contrairement à l'import par
+        // artiste ci-dessus), et l'attendre gelait la navigation vers la page
+        // Recherche plusieurs secondes au premier affichage de l'heure. Le
+        // catalogue courant est servi immédiatement, l'import l'enrichit en
+        // arrière-plan pour les visites suivantes.
+        this.discoverRecentConcerts(importedForUserId).catch((error: unknown) =>
+          this.logger.warn(
+            `Échec de l'import découverte : ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        );
       }
     }
 
