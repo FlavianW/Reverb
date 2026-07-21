@@ -2,15 +2,16 @@
 
 Réseau social dédié aux concerts live : pages concerts (setlist, médias, notes, commentaires), profils, recherche et signalement de contenu.
 
-Ce projet sert de support à la certification RNCP39583 — Expert en développement logiciel (Bloc 2).
+Ce projet sert de support à la certification RNCP39583 - Expert en développement logiciel (Bloc 2).
 
 ## Stack
 
-- **Web** : SvelteKit (SSR) — **Mobile** : Flutter
+- **Web** : SvelteKit (SSR) - **Mobile** : Flutter
 - **API** : NestJS (TypeScript strict)
-- **Données** : PostgreSQL · cache Redis (ElastiCache en production)
-- **Médias** : S3 (MinIO en local) + CloudFront en production
-- **APIs externes** : Setlist.fm (setlists)
+- **Données** : PostgreSQL (Prisma)
+- **Médias** : S3 (MinIO en local) + transcodage vidéo AWS Lambda/FFmpeg en production
+- **Temps réel** : Socket.IO (messagerie privée)
+- **APIs externes** : Setlist.fm (setlists et import de concerts), Last.fm (photos d'artiste), Nominatim/OpenStreetMap (géocodage des salles)
 
 ## Prérequis
 
@@ -22,10 +23,11 @@ Ce projet sert de support à la certification RNCP39583 — Expert en développe
 ```bash
 pnpm install
 cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
 docker-compose up -d
 ```
 
-Renseigner dans `apps/api/.env` au minimum `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (OAuth) et `SETLISTFM_API_KEY` (setlists) si vous testez ces fonctionnalités.
+Les valeurs par défaut des deux `.env` suffisent pour démarrer et utiliser l'application en local (inscription, concerts, fil, amis, messagerie, photos...). Trois fonctionnalités demandent de vraies clés dans `apps/api/.env` pour être testées : la connexion Google (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`), l'import de concerts (`SETLISTFM_API_KEY`, clé gratuite) et les photos d'artiste (`LASTFM_API_KEY`, clé gratuite). Le transcodage vidéo s'appuie sur un Lambda AWS : en local, les posts vidéo restent volontairement en « traitement en cours ».
 
 ## Base de données
 
