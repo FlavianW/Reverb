@@ -23,11 +23,13 @@ import { PasswordService } from './password.service';
       useFactory: (configService: ConfigService) => ({
         secret: configService.getOrThrow<string>('JWT_SECRET'),
         signOptions: {
-          // Durée de vie en secondes (ex: 3600 = 1h) ; `expiresIn` attend un
+          // Durée de vie en secondes (ex: 43200 = 12h) ; `expiresIn` attend un
           // nombre ou un littéral du type `StringValue` de la lib `ms`, pas
-          // une chaîne quelconque issue d'une variable d'environnement.
+          // une chaîne quelconque issue d'une variable d'environnement. 12h
+          // plutôt qu'1h : l'appli mobile n'a pas de refresh token, une
+          // session doit tenir le temps d'un concert sans reconnexion forcée.
           expiresIn: Number(
-            configService.get<string>('JWT_EXPIRES_IN') ?? 3600,
+            configService.get<string>('JWT_EXPIRES_IN') ?? 43200,
           ),
         },
       }),
