@@ -202,7 +202,7 @@ class _PostCardState extends State<PostCard> {
 
   Widget _videoSection(BuildContext context, PostVideoRef video) {
     if (video.status == VideoStatus.ready && video.url != null) {
-      return PostVideoPlayer(url: video.url!);
+      return PostVideoPlayer(url: video.url!, posterUrl: video.posterUrl);
     }
     final failed = video.status == VideoStatus.failed;
     return Container(
