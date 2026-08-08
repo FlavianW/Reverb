@@ -31,7 +31,7 @@
 		"@testing-library/svelte": "^5.4.2",
 		"@types/leaflet": "^1.9.21",
 		"@vitest/coverage-v8": "^4.1.10",
-		"eslint": "^9.18.0",
+		"eslint": "^10.8.0",
 		"eslint-plugin-svelte": "^3.20.0",
 		"globals": "^17.0.0",
 		"jsdom": "^29.1.1",
