@@ -29,7 +29,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@testing-library/jest-dom": "^7.0.0",
 		"@testing-library/svelte": "^5.4.2",
-		"@types/leaflet": "^1.9.21",
+		"@types/leaflet": "^1.9.22",
 		"@vitest/coverage-v8": "^4.1.10",
 		"eslint": "^9.18.0",
 		"eslint-plugin-svelte": "^3.20.0",
