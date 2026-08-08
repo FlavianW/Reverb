@@ -1,0 +1,37 @@
+version: 2
+
+updates:
+  # apps/api, apps/web, packages/shared (workspace pnpm unique)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+
+  # Lambda de transcodage vidéo, hors workspace pnpm (package.json propre)
+  - package-ecosystem: "npm"
+    directory: "/apps/video-transcode-lambda"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+
+  # Application mobile Flutter
+  - package-ecosystem: "pub"
+    directory: "/apps/mobile"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+
+  # Actions utilisées dans les workflows CI/CD
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
