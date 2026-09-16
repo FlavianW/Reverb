@@ -12,7 +12,7 @@ import '../widgets/post_card.dart';
 import '../widgets/theme_toggle_button.dart';
 import 'concert_screen.dart';
 
-const _maxArtistConcerts = 5;
+const _maxArtistConcerts = 2;
 const _maxFeedPreview = 3;
 const _maxNearbyConcerts = 5;
 
@@ -48,8 +48,10 @@ class _AccueilScreenState extends State<AccueilScreen> {
 
   void _load() {
     final api = context.read<ApiClient>();
-    final favoriteArtist =
-        context.read<SessionController>().user?.favoriteArtist;
+    final favoriteArtist = context
+        .read<SessionController>()
+        .user
+        ?.favoriteArtist;
     _artistConcertsFuture = favoriteArtist == null
         ? null
         : api.searchConcerts(favoriteArtist);
@@ -108,8 +110,10 @@ class _AccueilScreenState extends State<AccueilScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final favoriteArtist =
-        context.watch<SessionController>().user?.favoriteArtist;
+    final favoriteArtist = context
+        .watch<SessionController>()
+        .user
+        ?.favoriteArtist;
 
     return Scaffold(
       appBar: AppBar(

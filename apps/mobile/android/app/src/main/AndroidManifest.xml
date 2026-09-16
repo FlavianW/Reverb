@@ -15,7 +15,7 @@
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
-            android:screenOrientation="sensorLandscape"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
@@ -30,12 +30,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- Requis par image_cropper (recadrage avatar/bannière, US-4.1) —
-             paysage comme le reste de l'app, sinon l'écran de recadrage
-             pivoterait seul en portrait puis reviendrait à la fermeture. -->
+        <!-- Requis par image_cropper (recadrage avatar/bannière, US-4.1) -->
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
-            android:screenOrientation="sensorLandscape"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
