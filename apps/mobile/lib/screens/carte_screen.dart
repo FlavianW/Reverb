@@ -80,7 +80,9 @@ class _CarteScreenState extends State<CarteScreen> {
       context: context,
       backgroundColor: context.colors.paper,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(ReverbRadius.lg)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ReverbRadius.lg),
+        ),
       ),
       builder: (context) => SafeArea(
         child: Padding(
@@ -95,7 +97,10 @@ class _CarteScreenState extends State<CarteScreen> {
                   const SizedBox(width: 6),
                   Text(
                     'À ${concert.distanceKm.toStringAsFixed(concert.distanceKm < 10 ? 1 : 0)} km de toi',
-                    style: TextStyle(color: context.colors.inkSoft, fontSize: 13),
+                    style: TextStyle(
+                      color: context.colors.inkSoft,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
@@ -155,10 +160,17 @@ class _CarteScreenState extends State<CarteScreen> {
   }
 
   Widget _buildMap(LatLng position) {
-    // Tuiles CARTO assorties au thème : le fond de carte suit le mode
-    // sombre/clair de l'app au lieu du style OSM par défaut, toujours clair.
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final tileStyle = isDark ? 'dark_all' : 'light_all';
+
+    // Tuiles OpenStreetMap brutes (CARTO a fermé son accès anonyme aux fonds
+    // de carte : `basemaps.cartocdn.com` renvoie désormais un visuel
+    // « API key required » à la place des tuiles). Pas de variante sombre
+    // officielle sans clé : on simule le mode sombre par inversion de
+    // couleurs plutôt que d'ajouter une dépendance à un fournisseur payant.
+    final tileLayer = TileLayer(
+      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      userAgentPackageName: 'com.reverb.mobile',
+    );
 
     return Column(
       children: [
@@ -187,12 +199,34 @@ class _CarteScreenState extends State<CarteScreen> {
                 child: FlutterMap(
                   options: MapOptions(initialCenter: position, initialZoom: 11),
                   children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://{s}.basemaps.cartocdn.com/$tileStyle/{z}/{x}/{y}.png',
-                      subdomains: const ['a', 'b', 'c', 'd'],
-                      userAgentPackageName: 'com.reverb.mobile',
-                    ),
+                    if (isDark)
+                      ColorFiltered(
+                        colorFilter: const ColorFilter.matrix(<double>[
+                          -1,
+                          0,
+                          0,
+                          0,
+                          255,
+                          0,
+                          -1,
+                          0,
+                          0,
+                          255,
+                          0,
+                          0,
+                          -1,
+                          0,
+                          255,
+                          0,
+                          0,
+                          0,
+                          1,
+                          0,
+                        ]),
+                        child: tileLayer,
+                      )
+                    else
+                      tileLayer,
                     MarkerLayer(
                       markers: [
                         Marker(
@@ -218,7 +252,7 @@ class _CarteScreenState extends State<CarteScreen> {
                       ],
                     ),
                     const SimpleAttributionWidget(
-                      source: Text('© OpenStreetMap, © CARTO'),
+                      source: Text('© OpenStreetMap contributors'),
                     ),
                   ],
                 ),
