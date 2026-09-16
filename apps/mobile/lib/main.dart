@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
@@ -12,6 +13,13 @@ import 'screens/root_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // App pensée pour un usage à deux mains en paysage (setlists, médias,
+  // clavier + fil de discussion côte à côte) : verrouillée à l'horizontale
+  // sur toutes les tailles d'écran, tablette comprise.
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
   await initializeDateFormatting('fr_FR');
   final isFirstLaunch = await consumeFirstLaunch();
   runApp(ReverbApp(isFirstLaunch: isFirstLaunch));
@@ -28,7 +36,8 @@ class ReverbApp extends StatelessWidget {
       providers: [
         Provider<ApiClient>(create: (_) => ApiClient()),
         ChangeNotifierProvider<SessionController>(
-          create: (context) => SessionController(context.read<ApiClient>())..refresh(),
+          create: (context) =>
+              SessionController(context.read<ApiClient>())..refresh(),
         ),
         ChangeNotifierProvider<ThemeController>(
           create: (_) => ThemeController()..load(),

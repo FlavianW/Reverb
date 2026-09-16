@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import type { Map as LeafletMap, TileLayer } from 'leaflet';
+	import type { Map as LeafletMap } from 'leaflet';
 	import type { NearbyConcert } from '@reverb/shared';
 	import 'leaflet/dist/leaflet.css';
 
@@ -13,12 +13,12 @@
 
 	let mapContainer: HTMLDivElement;
 	let map: LeafletMap | undefined;
-	let tileLayer: TileLayer | undefined;
-	let themeObserver: MutationObserver | undefined;
 
-	/** Fond de carte CARTO assorti au thème de l'app (sombre par défaut). */
-	const tileUrlFor = (theme: string | undefined) =>
-		`https://{s}.basemaps.cartocdn.com/${theme === 'light' ? 'light_all' : 'dark_all'}/{z}/{x}/{y}{r}.png`;
+	// Tuiles OpenStreetMap brutes : CARTO a fermé son accès anonyme aux fonds
+	// de carte (`basemaps.cartocdn.com` renvoie désormais un visuel « API key
+	// required » à la place des tuiles). Pas de variante sombre officielle
+	// sans clé : le mode sombre est simulé par un filtre CSS plus bas.
+	const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 	const formatDate = (iso: string) =>
 		new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -39,22 +39,11 @@
 
 		map = L.map(mapContainer).setView([userPosition.lat, userPosition.lng], 11);
 
-		tileLayer = L.tileLayer(tileUrlFor(document.documentElement.dataset.theme), {
+		L.tileLayer(TILE_URL, {
 			attribution:
-				'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-			subdomains: 'abcd',
+				'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 			maxZoom: 19
 		}).addTo(map);
-
-		// La bascule de thème pose `data-theme` sur <html> : on change le fond
-		// de carte en direct pour qu'il reste assorti sans recharger la page.
-		themeObserver = new MutationObserver(() => {
-			tileLayer?.setUrl(tileUrlFor(document.documentElement.dataset.theme));
-		});
-		themeObserver.observe(document.documentElement, {
-			attributes: true,
-			attributeFilter: ['data-theme']
-		});
 
 		// Marqueurs aux couleurs de Reverb (divIcon + CSS) plutôt que les
 		// épingles bleues par défaut de Leaflet.
@@ -87,7 +76,6 @@
 	});
 
 	onDestroy(() => {
-		themeObserver?.disconnect();
 		map?.remove();
 	});
 </script>
@@ -131,5 +119,12 @@
 
 	.map :global(.leaflet-popup-content a) {
 		color: var(--accent);
+	}
+
+	/* OpenStreetMap n'a pas de variante sombre en accès libre (contrairement
+	   à CARTO) : on approche le thème sombre par inversion de couleurs des
+	   tuiles plutôt que d'ajouter une dépendance à un fournisseur payant. */
+	:global(html:not([data-theme='light']) .map .leaflet-tile-pane) {
+		filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
 	}
 </style>

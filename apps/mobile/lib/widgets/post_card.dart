@@ -40,6 +40,10 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
+  /// Même plafond que `ConcertCard` : sans lui, la carte s'étire plein écran
+  /// dans le fil et devient démesurée sur tablette/paysage.
+  static const double _maxWidth = 480;
+
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
@@ -48,67 +52,72 @@ class _PostCardState extends State<PostCard> {
       'fr_FR',
     ).format(post.createdAt);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: context.colors.line),
-        borderRadius: BorderRadius.circular(ReverbRadius.md),
-        color: context.colors.paperAlt,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxWidth),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: context.colors.line),
+            borderRadius: BorderRadius.circular(ReverbRadius.md),
+            color: context.colors.paperAlt,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ReverbAvatar(
-                src: post.author.avatarUrl,
-                name: post.author.pseudo,
-                size: 40,
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
-                  Text(
-                    post.author.pseudo,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(fontSize: 15),
+                  ReverbAvatar(
+                    src: post.author.avatarUrl,
+                    name: post.author.pseudo,
+                    size: 40,
                   ),
-                  Text(
-                    formattedDate,
-                    style: TextStyle(
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post.author.pseudo,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleLarge?.copyWith(fontSize: 15),
+                      ),
+                      Text(
+                        formattedDate,
+                        style: TextStyle(
+                          color: context.colors.inkSoft,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _body(context),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  LikeButton(
+                    api: widget.api,
+                    postId: post.id,
+                    initialLikeCount: post.likeCount,
+                    initialLikedByMe: post.likedByMe,
+                  ),
+                  if (widget.canDelete) ...[
+                    const Spacer(),
+                    IconButton(
+                      onPressed: deleting ? null : _delete,
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      tooltip: 'Supprimer',
                       color: context.colors.inkSoft,
-                      fontSize: 12,
                     ),
-                  ),
+                  ],
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          _body(context),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              LikeButton(
-                api: widget.api,
-                postId: post.id,
-                initialLikeCount: post.likeCount,
-                initialLikedByMe: post.likedByMe,
-              ),
-              if (widget.canDelete) ...[
-                const Spacer(),
-                IconButton(
-                  onPressed: deleting ? null : _delete,
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  tooltip: 'Supprimer',
-                  color: context.colors.inkSoft,
-                ),
-              ],
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -161,10 +170,7 @@ class _PostCardState extends State<PostCard> {
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
                   'À propos de ${post.concert!.artistName}',
-                  style: TextStyle(
-                    color: context.colors.inkSoft,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: context.colors.inkSoft, fontSize: 13),
                 ),
               ),
             if (post.content != null && post.content!.isNotEmpty)
@@ -188,8 +194,7 @@ class _PostCardState extends State<PostCard> {
                   child: Image.network(
                     post.photos[index].url,
                     fit: BoxFit.cover,
-                    semanticLabel:
-                        'Photo partagée par ${post.author.pseudo}',
+                    semanticLabel: 'Photo partagée par ${post.author.pseudo}',
                   ),
                 ),
               )

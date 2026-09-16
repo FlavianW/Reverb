@@ -24,6 +24,7 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   bool _starting = false;
+  bool _failed = false;
 
   @override
   void dispose() {
@@ -33,11 +34,27 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
   }
 
   Future<void> _start() async {
-    setState(() => _starting = true);
+    setState(() {
+      _starting = true;
+      _failed = false;
+    });
     final videoController = VideoPlayerController.networkUrl(
       Uri.parse(widget.url),
     );
-    await videoController.initialize();
+    // `initialize()` peut échouer (réseau, codec non supporté par l'appareil) :
+    // sans ce try/catch, l'exception non interceptée laissait `_starting` à
+    // `true` indéfiniment — un spinner qui ne s'arrête jamais.
+    try {
+      await videoController.initialize();
+    } catch (_) {
+      videoController.dispose();
+      if (!mounted) return;
+      setState(() {
+        _starting = false;
+        _failed = true;
+      });
+      return;
+    }
     if (!mounted) {
       videoController.dispose();
       return;
@@ -82,6 +99,23 @@ class _PostVideoPlayerState extends State<PostVideoPlayer> {
               Center(
                 child: _starting
                     ? CircularProgressIndicator(color: context.colors.accent)
+                    : _failed
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(
+                            Icons.error_outline,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: 6),
+                          Text(
+                            'Lecture impossible, touchez pour réessayer',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ],
+                      )
                     : const Icon(
                         Icons.play_circle_fill,
                         size: 56,

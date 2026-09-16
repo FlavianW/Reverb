@@ -20,46 +20,60 @@ class ConcertCard extends StatelessWidget {
     required this.onTap,
   });
 
+  /// La photo en `AspectRatio` s'étire jusqu'à la largeur disponible : dans
+  /// une `ListView` plein écran, ça rend la tuile démesurée sur tablette/
+  /// paysage. On plafonne donc la largeur de la carte plutôt que celle de
+  /// chaque écran qui l'affiche (accueil, recherche, profil, carte).
+  static const double _maxWidth = 420;
+
   @override
   Widget build(BuildContext context) {
     final upcoming = !concert.date.isBefore(DateTime.now());
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(ReverbRadius.md),
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _Media(
-              artistName: concert.artistName,
-              artistImageUrl: artistImageUrl,
-              date: concert.date,
-              upcoming: upcoming,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    concert.artistName,
-                    style: Theme.of(context).textTheme.titleLarge,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxWidth),
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(ReverbRadius.md),
+            onTap: onTap,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Media(
+                  artistName: concert.artistName,
+                  artistImageUrl: artistImageUrl,
+                  date: concert.date,
+                  upcoming: upcoming,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        concert.artistName,
+                        style: Theme.of(context).textTheme.titleLarge,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${concert.venueName} · ${concert.city}',
+                        style: TextStyle(
+                          color: context.colors.inkSoft,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${concert.venueName} · ${concert.city}',
-                    style: TextStyle(color: context.colors.inkSoft, fontSize: 14),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -94,7 +108,8 @@ class _Media extends StatelessWidget {
               artistImageUrl!,
               fit: BoxFit.cover,
               // Une photo qui ne charge pas retombe sur l'initiale stylisée.
-              errorBuilder: (context, _, _) => _Fallback(artistName: artistName),
+              errorBuilder: (context, _, _) =>
+                  _Fallback(artistName: artistName),
             )
           else
             _Fallback(artistName: artistName),
@@ -134,7 +149,10 @@ class _Media extends StatelessWidget {
               top: 10,
               right: 10,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: context.colors.accent,
                   borderRadius: BorderRadius.circular(999),
